@@ -62,6 +62,9 @@ Skill 优化工具，根据 skill-validator 的检查报告自动修复和优化
 - **排版**：选择美丽、独特、有趣的字体，避免通用字体（Arial、Inter）
 - **色彩主题**：使用 CSS 变量保持一致性，主导色配合鲜明的强调色
 - **动效**：CSS 动画、微交互、页面加载编排、滚动触发、悬停状态
+  - 推荐使用流行动画库：Framer Motion (3M+ 下载)、GSAP (1M+ 下载)、Lottie (500K+ 下载)
+  - 支持开机动画、滑动动画、页面过渡等效果
+  - 详见 [前端动画开发指南](./FRONTEND_ANIMATION_GUIDE.md)
 - **空间构图**：非对称布局、重叠、对角线流动、打破网格、负空间
 - **背景细节**：渐变网格、噪点纹理、几何图案、分层透明、戏剧性阴影
 
@@ -424,6 +427,15 @@ AI: 🎨 生成设计系统...
 - **配色方案**: 避免紫色渐变等陈词滥调
 - **布局风格**: 非对称、重叠、对角线、打破网格
 - **动效实现**: CSS 动画、微交互、页面加载编排
+- **动画库推荐**: 
+  - Framer Motion (3M+ 下载) - React 项目首选
+  - GSAP (1M+ 下载) - 专业级动画引擎
+  - AOS (500K+ 下载) - 轻量级滚动动画
+  - Lottie (500K+ 下载) - 矢量动画播放
+  - React Spring (800K+ 下载) - 物理弹簧动画
+  - Anime.js (300K+ 下载) - 轻量级动画库
+- **动画类型**: 开机动画、滑动动画、页面过渡、微交互、加载动画
+- **参考文档**: [前端动画开发指南](./FRONTEND_ANIMATION_GUIDE.md)
 
 ### Git Auto Commit 配置
 - **Skills 目录**: `.cursor/skills/git-auto-commit/`
@@ -499,6 +511,10 @@ AI: 🎨 生成设计系统...
 - [Tailwind CSS 文档](https://tailwindcss.com/docs)
 - [Heroicons 图标库](https://heroicons.com/)
 - [Lucide 图标库](https://lucide.dev/)
+- [Framer Motion 文档](https://www.framer.com/motion/)
+- [GSAP 文档](https://greensock.com/docs/)
+- [Lottie 文档](https://airbnb.io/lottie/)
+- [LottieFiles 动画库](https://lottiefiles.com/)
 
 ---
 
@@ -625,3 +641,4 @@ description: 详细描述，包含触发条件和使用场景
 - [本地开发指南](./LOCAL_DEVELOPMENT.md)
 - [Git 推送指南](./GIT_PUSH_GUIDE.md)
 - [项目总结](./PROJECT_SUMMARY.md)
+- [前端动画开发指南](./FRONTEND_ANIMATION_GUIDE.md) ⭐ 新增
