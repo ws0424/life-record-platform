@@ -1,0 +1,148 @@
+# Cursor AI 项目规则
+
+## 项目信息
+- 项目名称: 生活记录平台 (Life Record Platform)
+- Git 仓库: https://github.com/ws0424/life-record-platform.git
+- 开发模式: 本地开发 + Docker 数据库
+
+## 技术栈
+- 前端: Next.js 14 + React 18 + Ant Design 5 + TypeScript
+- 后端: FastAPI + Python 3.11 + PostgreSQL + Redis
+- 开发工具: nvm (Node 18.18.0) + Docker
+
+## 代码规范
+
+### 前端规范
+- 使用 TypeScript，严格类型检查
+- 使用 Ant Design 组件库，不要使用其他 UI 库
+- 使用 CSS Modules 或 Less 编写样式
+- 组件文件使用 PascalCase 命名
+- 工具函数使用 camelCase 命名
+- 使用 ESLint 和 Prettier 格式化代码
+
+### 后端规范
+- 使用 Python 3.11+ 特性
+- 遵循 PEP 8 代码规范
+- 使用 Black 格式化代码
+- 使用 type hints 进行类型注解
+- API 路由使用 RESTful 风格
+- 使用 Pydantic 进行数据验证
+
+### Git 提交规范
+使用语义化提交信息（Conventional Commits）：
+
+- `feat:` 新功能
+- `fix:` 修复 bug
+- `docs:` 文档更新
+- `style:` 代码格式调整（不影响功能）
+- `refactor:` 重构代码
+- `perf:` 性能优化
+- `test:` 测试相关
+- `chore:` 构建/工具链相关
+- `ci:` CI/CD 相关
+
+示例：
+```
+feat: 添加用户登录功能
+fix: 修复图片上传失败的问题
+docs: 更新 API 文档
+```
+
+## 开发流程
+
+### 1. 启动开发环境
+```bash
+# 启动 Docker 数据库
+cd docker && docker-compose -f docker-compose.dev.yml up -d
+
+# 启动后端
+cd backend && source venv/bin/activate && uvicorn app.main:app --reload
+
+# 启动前端
+cd frontend && nvm use && npm run dev
+```
+
+### 2. 开发新功能
+- 先在后端创建 API 接口
+- 然后在前端调用 API
+- 使用 Ant Design 组件构建 UI
+- 编写必要的测试
+
+### 3. 提交代码
+- 确保代码通过 lint 检查
+- 编写清晰的 commit message
+- 提交前运行测试
+
+## 文件组织
+
+### 前端
+- `src/app/` - Next.js 页面路由
+- `src/components/` - React 组件
+- `src/lib/api/` - API 调用
+- `src/lib/hooks/` - 自定义 Hooks
+- `src/lib/store/` - 状态管理
+- `src/styles/` - 样式文件
+
+### 后端
+- `app/api/` - API 路由
+- `app/models/` - 数据库模型
+- `app/schemas/` - Pydantic 模型
+- `app/crud/` - 数据库操作
+- `app/services/` - 业务逻辑
+- `app/core/` - 核心配置
+
+## 注意事项
+
+1. **不要提交敏感信息**
+   - `.env` 文件不要提交
+   - 密钥、密码等敏感信息使用环境变量
+
+2. **数据库迁移**
+   - 修改模型后创建迁移文件
+   - 提交迁移文件到 Git
+
+3. **依赖管理**
+   - 前端: 更新 `package.json`
+   - 后端: 更新 `requirements.txt`
+
+4. **代码审查**
+   - 提交前自我审查代码
+   - 确保代码符合规范
+   - 删除调试代码和注释
+
+## AI 辅助开发建议
+
+当使用 Cursor AI 开发时：
+
+1. **明确需求** - 清楚描述要实现的功能
+2. **遵循规范** - 让 AI 遵循项目的代码规范
+3. **增量开发** - 一次实现一个小功能
+4. **测试验证** - 让 AI 帮助编写测试代码
+5. **文档同步** - 更新相关文档
+
+## 自动化任务
+
+### 代码格式化
+```bash
+# 前端
+npm run lint && npm run format
+
+# 后端
+black app/ && isort app/ && flake8 app/
+```
+
+### 运行测试
+```bash
+# 前端
+npm run test
+
+# 后端
+pytest
+```
+
+### 构建部署
+```bash
+# 生产环境
+cd docker && docker-compose -f docker-compose.prod.yml up -d
+```
+

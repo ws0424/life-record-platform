@@ -1,0 +1,37 @@
+{
+  "name": "utils-web-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,less}\""
+  },
+  "dependencies": {
+    "next": "^14.0.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "antd": "^5.12.5",
+    "@ant-design/icons": "^5.2.6",
+    "axios": "^1.6.2",
+    "zustand": "^4.4.7",
+    "@tanstack/react-query": "^5.14.2",
+    "dayjs": "^1.11.10",
+    "mapbox-gl": "^3.0.1",
+    "video.js": "^8.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/node": "^20.10.5",
+    "less": "^4.2.0",
+    "less-loader": "^11.1.3",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.0.4",
+    "prettier": "^3.1.1"
+  }
+}
+

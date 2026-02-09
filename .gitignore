@@ -1,0 +1,91 @@
+# .gitignore
+
+# 依赖
+node_modules/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+.env.prod
+
+# 日志
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# 测试
+coverage/
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+docker-compose.override.yml
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 上传文件（开发环境）
+uploads/
+media/
+
+# 证书
+*.pem
+*.key
+*.crt
+ssl/
+
+# Python
+*.egg-info/
+.eggs/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Alembic
+alembic/versions/*.pyc
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 备份文件
+*.bak
+*.backup
+
