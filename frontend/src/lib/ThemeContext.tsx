@@ -63,11 +63,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setThemeState(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  // 防止服务端渲染时的闪烁
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}

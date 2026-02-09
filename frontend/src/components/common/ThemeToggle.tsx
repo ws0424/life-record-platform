@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import styles from './ThemeToggle.module.css';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,6 +21,12 @@ export function ThemeToggle() {
       </div>
     );
   }
+
+  return <ThemeToggleClient />;
+}
+
+function ThemeToggleClient() {
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <button
