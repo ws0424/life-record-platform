@@ -1,36 +1,105 @@
 .toggle {
   position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-primary);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-xl);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-base);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 渐变背景效果 */
+.toggle::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
 }
 
 .toggle:hover {
-  background-color: var(--bg-tertiary);
-  border-color: var(--border-focus);
-  transform: scale(1.05);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.toggle:hover::before {
+  opacity: 0.1;
 }
 
 .toggle:active {
-  transform: scale(0.95);
+  transform: translateY(0);
 }
 
 .icon {
-  width: 20px;
-  height: 20px;
+  position: relative;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
   color: var(--text-primary);
-  stroke-width: 2;
-  transition: transform var(--transition-base);
+  transition: all var(--transition-normal);
+  stroke-width: 2.5;
 }
 
 .toggle:hover .icon {
-  transform: rotate(15deg);
+  color: var(--color-primary);
+  transform: scale(1.1) rotate(15deg);
+}
+
+/* 旋转进入动画 */
+.icon {
+  animation: rotateIn var(--transition-slow) ease-out;
+}
+
+@keyframes rotateIn {
+  from {
+    transform: rotate(-180deg) scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 焦点状态 - 键盘导航 */
+.toggle:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.2);
+}
+
+/* 脉冲效果 */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: var(--shadow-sm);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.15);
+  }
+}
+
+.toggle:focus-visible {
+  animation: pulse 1s ease-in-out;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .toggle {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .icon {
+    width: 20px;
+    height: 20px;
+  }
 }
 
