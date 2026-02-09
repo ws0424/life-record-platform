@@ -12,6 +12,14 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   },
+
+  // CSS 配置
+  cssModules: true,
+
+  // Webpack 配置
+  webpack: (config) => {
+    return config;
+  },
 };
 
 module.exports = nextConfig;
