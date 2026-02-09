@@ -61,6 +61,9 @@ Skill 优化工具，根据 skill-validator 的检查报告自动修复和优化
 ##### 🎯 美学指南
 - **排版**：选择美丽、独特、有趣的字体，避免通用字体（Arial、Inter）
 - **色彩主题**：使用 CSS 变量保持一致性，主导色配合鲜明的强调色
+  - 支持日间/夜间主题切换
+  - 所有颜色、间距、字体通过 CSS 变量定义
+  - 详见 [主题系统开发指南](./THEME_SYSTEM_GUIDE.md)
 - **动效**：CSS 动画、微交互、页面加载编排、滚动触发、悬停状态
   - 推荐使用流行动画库：Framer Motion (3M+ 下载)、GSAP (1M+ 下载)、Lottie (500K+ 下载)
   - 支持开机动画、滑动动画、页面过渡等效果
@@ -426,6 +429,11 @@ AI: 🎨 生成设计系统...
 - **字体选择**: 避免 Inter、Roboto、Arial、系统字体
 - **配色方案**: 避免紫色渐变等陈词滥调
 - **布局风格**: 非对称、重叠、对角线、打破网格
+- **主题系统**: 
+  - 支持日间/夜间模式切换
+  - 使用 CSS 变量定义所有设计令牌
+  - 系统偏好检测和持久化存储
+  - 参考文档: [主题系统开发指南](./THEME_SYSTEM_GUIDE.md)
 - **动效实现**: CSS 动画、微交互、页面加载编排
 - **动画库推荐**: 
   - Framer Motion (3M+ 下载) - React 项目首选
@@ -515,6 +523,8 @@ AI: 🎨 生成设计系统...
 - [GSAP 文档](https://greensock.com/docs/)
 - [Lottie 文档](https://airbnb.io/lottie/)
 - [LottieFiles 动画库](https://lottiefiles.com/)
+- [CSS Variables (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties)
+- [next-themes](https://github.com/pacocoursey/next-themes)
 
 ---
 
@@ -642,3 +652,4 @@ description: 详细描述，包含触发条件和使用场景
 - [Git 推送指南](./GIT_PUSH_GUIDE.md)
 - [项目总结](./PROJECT_SUMMARY.md)
 - [前端动画开发指南](./FRONTEND_ANIMATION_GUIDE.md) ⭐ 新增
+- [主题系统开发指南](./THEME_SYSTEM_GUIDE.md) ⭐ 新增
