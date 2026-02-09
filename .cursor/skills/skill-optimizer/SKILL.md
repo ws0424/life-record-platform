@@ -30,12 +30,12 @@ description: Skill 优化工具。当用户说"优化skill"、"修复skill"、"o
 **示例：**
 ```bash
 # 清理空目录
-rm -rf .claude/skills/skill-name/references/
-rm -rf .claude/skills/skill-name/scripts/
+rm -rf .cursor/skills/skill-name/references/
+rm -rf .cursor/skills/skill-name/scripts/
 
 # 删除不规范文件
-rm .claude/skills/skill-name/README.md
-rm .claude/skills/skill-name/CHANGELOG.md
+rm .cursor/skills/skill-name/README.md
+rm .cursor/skills/skill-name/CHANGELOG.md
 ```
 
 ### 2. YAML Frontmatter 优化
@@ -324,8 +324,8 @@ description: 示例工具。当用户说"使用示例"、"example"时使用此�
 **执行操作：**
 ```bash
 # 清理空目录
-rm -rf .claude/skills/skill-validator/references/
-rm -rf .claude/skills/skill-validator/scripts/
+rm -rf .cursor/skills/skill-validator/references/
+rm -rf .cursor/skills/skill-validator/scripts/
 ```
 
 **输出：**
@@ -558,10 +558,10 @@ if (skillMd.lines > 500) {
 
 ```bash
 # 创建备份
-cp -r .claude/skills/skill-name .claude/skills/skill-name.backup
+cp -r .cursor/skills/skill-name .cursor/skills/skill-name.backup
 
 # 如果优化失败，可以恢复
-mv .claude/skills/skill-name.backup .claude/skills/skill-name
+mv .cursor/skills/skill-name.backup .cursor/skills/skill-name
 ```
 
 ### 2. 确认机制
@@ -673,6 +673,6 @@ full-auto:
 [验证状态]
 
 ### 💾 备份位置
-`.claude/skills/[skill-name].backup`
+`.cursor/skills/[skill-name].backup`
 ```
 

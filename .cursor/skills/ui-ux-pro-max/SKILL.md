@@ -1,6 +1,11 @@
-# ui-ux-pro-max
+---
+name: ui-ux-pro-max
+description: 综合性 UI/UX 设计指南工具。当用户说"设计"、"UI"、"UX"、"界面"、"美化"、"优化界面"、"创建页面"或"landing page"时使用此技能。包含 67 种样式、96 种调色板、57 种字体配对、99 条 UX 指南和 25 种图表类型，覆盖 13 种技术栈。提供基于优先级的可搜索设计系统推荐，支持设计系统持久化和页面级覆盖。适用于生成完整设计系统、获取设计建议、优化用户体验等场景。
+---
 
-Comprehensive design guide for web and mobile applications. Contains 67 styles, 96 color palettes, 57 font pairings, 99 UX guidelines, and 25 chart types across 13 technology stacks. Searchable database with priority-based recommendations.
+# UI/UX Pro Max
+
+综合性 UI/UX 设计指南工具。包含 67 种样式、96 种调色板、57 种字体配对、99 条 UX 指南和 25 种图表类型，覆盖 13 种技术栈。提供基于优先级的可搜索设计系统推荐。
 
 ## Prerequisites
 

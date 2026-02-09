@@ -1,11 +1,11 @@
 ---
 name: skill-validator
-description: Skill 验证工具。当用户说"检查skill"、"验证skill"、"validate skill"或"check skill"时使用此技能。自动检查 .claude/skills 目录中的 skills 是否符合 OpenSkills 标准，包括目录结构、文件命名、YAML frontmatter 格式、description 完整性、文件组织和资源引用等。检查完成后，如果发现问题，会自动建议使用 skill-optimizer 进行优化修复。适用于确保项目中的 skills 符合规范。
+description: Skill 验证工具。当用户说"检查skill"、"验证skill"、"validate skill"或"check skill"时使用此技能。自动检查 .cursor/skills 目录中的 skills 是否符合 OpenSkills 标准，包括目录结构、文件命名、YAML frontmatter 格式、description 完整性、文件组织和资源引用等。检查完成后，如果发现问题，会自动建议使用 skill-optimizer 进行优化修复。适用于确保项目中的 skills 符合规范。
 ---
 
 # Skill 验证工具
 
-自动检查 `.claude/skills` 目录中的 skills 是否符合 OpenSkills 标准规范。检查完成后，如果发现问题，会自动建议调用 skill-optimizer 进行优化。
+自动检查 `.cursor/skills` 目录中的 skills 是否符合 OpenSkills 标准规范。检查完成后，如果发现问题，会自动建议调用 skill-optimizer 进行优化。
 
 ## 快速开始
 
@@ -23,7 +23,7 @@ description: Skill 验证工具。当用户说"检查skill"、"验证skill"、"v
 
 **必需结构：**
 ```
-.claude/skills/
+./skills/
 └── skill-name/
     ├── SKILL.md          ✅ 必需（主文档）
     ├── references/       ⚠️ 可选（参考文档）
@@ -107,7 +107,7 @@ description: 代码优化工具
 ### 步骤 1：扫描目录
 ```bash
 # 列出所有 skill 目录
-ls -d .claude/skills/*/
+ls -d .cursor/skills/*/
 ```
 
 ### 步骤 2：检查每个 Skill
@@ -209,7 +209,7 @@ ls -d .claude/skills/*/
 
 #### 问题 1：缺少 SKILL.md
 **修复方案：**
-创建 `.claude/skills/example-skill/SKILL.md` 文件，包含：
+创建 `.cursor/skills/example-skill/SKILL.md` 文件，包含：
 ```yaml
 ---
 name: example-skill
@@ -353,7 +353,7 @@ description: 代码检查与优化工具。当用户说"检查代码"、"优化�
 
 ```bash
 # 检查所有 skills
-for dir in .claude/skills/*/; do
+for dir in .cursor/skills/*/; do
   skill_name=$(basename "$dir")
   echo "检查: $skill_name"
   
