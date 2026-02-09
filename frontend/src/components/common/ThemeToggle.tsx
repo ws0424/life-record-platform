@@ -1,10 +1,27 @@
 'use client';
 
 import { useTheme } from '@/lib/ThemeContext';
+import { useEffect, useState } from 'react';
 import styles from './ThemeToggle.module.css';
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 避免服务端渲染不匹配
+  if (!mounted) {
+    return (
+      <div className={styles.toggle} style={{ opacity: 0.5 }}>
+        <svg className={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="5" />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <button
