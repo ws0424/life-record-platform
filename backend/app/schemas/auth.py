@@ -51,16 +51,18 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     """用户登录请求模型"""
-    email: EmailStr = Field(..., description="邮箱地址", example="user@example.com")
+    identifier: str = Field(..., description="用户名或邮箱地址", example="user@example.com")
     password: str = Field(..., min_length=6, max_length=20, description="密码", example="test123")
     remember: bool = Field(default=False, description="是否记住登录状态（影响 Refresh Token 有效期）", example=False)
+    login_type: Optional[str] = Field(default=None, pattern="^(email|username)$", description="登录类型：email（邮箱）或 username（用户名），不传则自动判断", example="email")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "email": "user@example.com",
+                "identifier": "user@example.com",
                 "password": "test123",
-                "remember": False
+                "remember": False,
+                "login_type": "email"
             }
         }
 

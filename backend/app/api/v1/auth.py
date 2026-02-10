@@ -283,7 +283,7 @@ async def register(
     "/login",
     response_model=TokenResponse,
     summary="用户登录",
-    description="使用邮箱和密码登录",
+    description="使用用户名/邮箱和密码登录",
     response_description="返回 JWT Token 和用户信息",
     responses={
         200: {
@@ -347,17 +347,21 @@ async def login(
     """
     ## 用户登录
     
-    使用邮箱和密码登录，登录成功后返回 JWT Token。
+    使用用户名/邮箱和密码登录，登录成功后返回 JWT Token。
     
     ### 请求参数
-    - **email**: 邮箱地址（必填）
+    - **identifier**: 用户名或邮箱地址（必填）
     - **password**: 密码（必填）
     - **remember**: 是否记住登录状态（可选，默认 false）
         - `true`: Refresh Token 有效期 7 天
         - `false`: Refresh Token 有效期 1 天
+    - **login_type**: 登录类型（可选，不传则自动判断）
+        - `email`: 使用邮箱登录
+        - `username`: 使用用户名登录
+        - 不传：自动判断（包含 @ 则为邮箱，否则为用户名）
     
     ### 验证规则
-    - 邮箱必须已注册
+    - 用户名/邮箱必须已注册
     - 密码必须正确
     - 账户必须处于激活状态
     
@@ -365,10 +369,19 @@ async def login(
     - **Access Token**: 用于访问受保护的 API，有效期 1 小时
     - **Refresh Token**: 用于刷新 Access Token，有效期根据 remember 参数决定
     
-    ### 示例请求
+    ### 示例请求（邮箱登录）
     ```json
     {
-        "email": "user@example.com",
+        "identifier": "user@example.com",
+        "password": "test123",
+        "remember": false
+    }
+    ```
+    
+    ### 示例请求（用户名登录）
+    ```json
+    {
+        "identifier": "张三",
         "password": "test123",
         "remember": false
     }

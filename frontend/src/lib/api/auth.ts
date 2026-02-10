@@ -2,9 +2,10 @@ import apiClient from './client';
 
 // 登录请求数据
 export interface LoginData {
-  email: string;
+  identifier: string; // 用户名或邮箱
   password: string;
   remember?: boolean;
+  login_type?: 'email' | 'username';
 }
 
 // 注册请求数据

@@ -154,21 +154,33 @@ class AuthService:
             )
     
     async def login_user(self, login_data: UserLogin) -> TokenResponse:
-        """用户登录"""
+        """用户登录 - 支持用户名或邮箱"""
         try:
-            # 查找用户
-            user = self.db.query(User).filter(User.email == login_data.email).first()
+            # 判断登录类型
+            login_type = login_data.login_type
+            if not login_type:
+                # 自动判断：包含 @ 则为邮箱，否则为用户名
+                login_type = 'email' if '@' in login_data.identifier else 'username'
+            
+            # 根据登录类型查找用户
+            if login_type == 'email':
+                user = self.db.query(User).filter(User.email == login_data.identifier).first()
+                error_msg = "邮箱或密码错误"
+            else:
+                user = self.db.query(User).filter(User.username == login_data.identifier).first()
+                error_msg = "用户名或密码错误"
+            
             if not user:
                 raise HTTPException(
                     status_code=status.HTTP_200_OK,
-                    detail="邮箱或密码错误"
+                    detail=error_msg
                 )
             
             # 验证密码
             if not verify_password(login_data.password, user.password_hash):
                 raise HTTPException(
                     status_code=status.HTTP_200_OK,
-                    detail="邮箱或密码错误"
+                    detail=error_msg
                 )
             
             # 检查账户是否激活

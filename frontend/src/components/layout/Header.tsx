@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
+import { useAuthStore } from '@/lib/store/authStore';
+import { useState } from 'react';
 import styles from './Header.module.css';
 
 const navItems = [
@@ -16,6 +18,14 @@ const navItems = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, logout } = useAuthStore();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
     <header className={styles.header}>
@@ -42,16 +52,78 @@ export function Header() {
 
         <div className={styles.actions}>
           <ThemeToggle />
-          <Link href="/create" className={styles.createBtn}>
-            <svg className={styles.createIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>创建</span>
-          </Link>
-          <Link href="/login" className={styles.loginBtn}>
-            登录
-          </Link>
+          
+          {isAuthenticated ? (
+            <>
+              <Link href="/create" className={styles.createBtn}>
+                <svg className={styles.createIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>创建</span>
+              </Link>
+              
+              <div className={styles.userMenu}>
+                <button
+                  className={styles.userBtn}
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                >
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt={user.username} className={styles.avatar} />
+                  ) : (
+                    <div className={styles.avatarPlaceholder}>
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className={styles.username}>{user?.username}</span>
+                  <svg className={styles.chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+                
+                {showUserMenu && (
+                  <div className={styles.dropdown}>
+                    <Link href="/dashboard" className={styles.dropdownItem}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      个人中心
+                    </Link>
+                    <Link href="/settings" className={styles.dropdownItem}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
+                      </svg>
+                      设置
+                    </Link>
+                    <div className={styles.divider} />
+                    <button onClick={handleLogout} className={styles.dropdownItem}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      退出登录
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Link href="/create" className={styles.createBtn}>
+                <svg className={styles.createIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>创建</span>
+              </Link>
+              <Link href="/login" className={styles.loginBtn}>
+                登录
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>

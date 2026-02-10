@@ -1,0 +1,462 @@
+/* 页面容器 */
+.page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  padding: 2rem 1rem;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* 加载状态 */
+.loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: white;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 头部 */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: white;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  color: white;
+}
+
+/* 内容区 */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* 区块 */
+.section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-primary);
+}
+
+/* 设置列表 */
+.settingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+}
+
+.settingItem:hover {
+  background: var(--bg-secondary);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.settingInfo {
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.settingInfo h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.settingInfo p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* 切换开关 */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-primary);
+  border-radius: 30px;
+  transition: all var(--transition-normal);
+}
+
+.toggleSlider::before {
+  content: '';
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle input:checked + .toggleSlider {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+}
+
+.toggle input:checked + .toggleSlider::before {
+  transform: translateX(26px);
+}
+
+/* 下拉选择 */
+.select {
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  min-width: 200px;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+}
+
+.select:hover {
+  border-color: var(--color-primary);
+}
+
+/* 操作按钮 */
+.actionBtn {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-cta);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.actionBtn:hover {
+  background: var(--color-cta-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* 存储信息 */
+.storageInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.storageBar {
+  width: 100%;
+  height: 8px;
+  background: var(--border-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.storageUsed {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.storageText {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+/* 危险区域 */
+.dangerSection {
+  border: 2px solid var(--color-error);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.dangerSection .sectionTitle {
+  color: var(--color-error);
+  border-bottom-color: var(--color-error);
+}
+
+.dangerBtn {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--color-error);
+  border: 2px solid var(--color-error);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.dangerBtn:hover {
+  background: var(--color-error);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .page {
+    padding: 1rem 0.5rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .section {
+    padding: 1.5rem;
+  }
+
+  .settingItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .settingInfo {
+    margin-right: 0;
+  }
+
+  .select {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .actionBtn,
+  .dangerBtn {
+    width: 100%;
+  }
+
+  .storageInfo {
+    width: 100%;
+  }
+}
+
+/* 额外的视觉增强 - Vibrant & Block-based */
+.section {
+  position: relative;
+  overflow: hidden;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), var(--color-primary));
+  background-size: 200% 100%;
+  animation: gradient-shift 3s ease infinite;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 设置项悬停光效 */
+.settingItem {
+  position: relative;
+  overflow: hidden;
+}
+
+.settingItem::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(225, 29, 72, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.settingItem:hover::after {
+  left: 100%;
+}
+
+/* 切换开关动画增强 */
+.toggle input:checked + .toggleSlider {
+  box-shadow: 0 0 10px rgba(225, 29, 72, 0.5);
+}
+
+.toggleSlider::before {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle input:checked + .toggleSlider::before {
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
+}
+
+/* 存储条动画 */
+.storageUsed {
+  position: relative;
+  overflow: hidden;
+}
+
+.storageUsed::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: storage-shimmer 2s infinite;
+}
+
+@keyframes storage-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 按钮焦点效果 */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(225, 29, 72, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+  }
+}
+
+.actionBtn:focus {
+  animation: pulse-ring 1.5s infinite;
+}
+
+/* 危险按钮焦点效果 */
+@keyframes pulse-danger {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.dangerBtn:focus {
+  animation: pulse-danger 1.5s infinite;
+}
+
+/* 标题渐变文字效果 */
+.title {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 区块标题装饰 */
+.sectionTitle::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 1.5rem;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-secondary));
+  margin-right: 0.75rem;
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+}
+

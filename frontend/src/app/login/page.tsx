@@ -16,7 +16,7 @@ export default function LoginPage() {
   const { toasts, removeToast, success, error } = useToast();
   
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '', // 用户名或邮箱
     password: '',
     remember: false,
   });
@@ -27,10 +27,14 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
+      // 判断是邮箱还是用户名
+      const isEmail = formData.identifier.includes('@');
+      
       const response = await authApi.login({
-        email: formData.email,
+        identifier: formData.identifier,
         password: formData.password,
         remember: formData.remember,
+        login_type: isEmail ? 'email' : 'username',
       });
       
       // 保存 token 和用户信息
@@ -42,11 +46,11 @@ export default function LoginPage() {
       
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
-        router.push('/');
+        router.push('/dashboard');
       }, 1000);
     } catch (err: any) {
       console.error('Login error:', err);
-      error(err.message || '登录失败，请检查邮箱和密码');
+      error(err.message || '登录失败，请检查用户名/邮箱和密码');
     } finally {
       setIsLoading(false);
     }
@@ -77,22 +81,22 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>
-                邮箱地址
+              <label htmlFor="identifier" className={styles.label}>
+                用户名或邮箱
               </label>
               <div className={styles.inputWrapper}>
                 <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
                 </svg>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  id="identifier"
+                  name="identifier"
+                  value={formData.identifier}
                   onChange={handleChange}
                   className={styles.input}
-                  placeholder="your@email.com"
+                  placeholder="用户名或邮箱"
                   required
                 />
               </div>
