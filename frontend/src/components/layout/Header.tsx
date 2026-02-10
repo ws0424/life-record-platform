@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './Header.module.css';
 
 const navItems = [
@@ -21,10 +21,33 @@ export function Header() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    if (showUserMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const handleLogout = () => {
+    setShowUserMenu(false);
     logout();
     router.push('/login');
+  };
+
+  const handleMenuItemClick = () => {
+    setShowUserMenu(false);
   };
 
   return (
@@ -63,7 +86,7 @@ export function Header() {
                 <span>创建</span>
               </Link>
               
-              <div className={styles.userMenu}>
+              <div className={styles.userMenu} ref={menuRef}>
                 <button
                   className={styles.userBtn}
                   onClick={() => setShowUserMenu(!showUserMenu)}
@@ -83,14 +106,22 @@ export function Header() {
                 
                 {showUserMenu && (
                   <div className={styles.dropdown}>
-                    <Link href="/dashboard" className={styles.dropdownItem}>
+                    <Link 
+                      href="/dashboard" 
+                      className={styles.dropdownItem}
+                      onClick={handleMenuItemClick}
+                    >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
                       </svg>
                       个人中心
                     </Link>
-                    <Link href="/settings" className={styles.dropdownItem}>
+                    <Link 
+                      href="/settings" 
+                      className={styles.dropdownItem}
+                      onClick={handleMenuItemClick}
+                    >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <circle cx="12" cy="12" r="3" />
                         <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
