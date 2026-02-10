@@ -40,6 +40,13 @@
   overflow: hidden;
   transition: all var(--transition-base);
   cursor: pointer;
+  position: relative;
+}
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .cardImage {
