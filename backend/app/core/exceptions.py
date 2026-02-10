@@ -13,17 +13,34 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     # 记录异常日志
     logger.error(f"HTTP Exception: {exc.status_code} - {exc.detail}")
     
+    # 对于认证和授权错误，直接使用 HTTP 状态码作为业务码
+    if exc.status_code in [401, 403]:
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,  # HTTP 状态码始终返回 200
+            content={
+                "code": exc.status_code,
+                "data": None,
+                "msg": "error",
+                "errMsg": str(exc.detail)
+            }
+        )
+    
     # 根据 detail 判断业务错误码
     error_code_map = {
         "发送过于频繁，请60秒后再试": 429,
         "该邮箱已被注册": 409,
         "该邮箱未注册": 404,
         "邮箱或密码错误": 401,
+        "用户名或密码错误": 401,
         "账户已被禁用": 403,
         "两次输入的密码不一致": 400,
         "密码必须包含字母和数字": 400,
         "验证码错误或已过期": 422,
         "该用户名已被使用": 409,
+        "无效的认证凭证": 401,
+        "无效的 token 类型": 401,
+        "用户不存在": 401,
+        "当前密码错误": 401,
     }
     
     detail = str(exc.detail)

@@ -21,16 +21,14 @@ async def get_current_user(
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的认证凭证",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="无效的认证凭证"
         )
     
     # 检查 token 类型
     if payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的 token 类型",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="无效的 token 类型"
         )
     
     # 获取用户 ID
@@ -38,8 +36,7 @@ async def get_current_user(
     if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的认证凭证",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="无效的认证凭证"
         )
     
     # 查询用户
@@ -47,8 +44,7 @@ async def get_current_user(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="用户不存在",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="用户不存在"
         )
     
     # 检查用户是否激活
