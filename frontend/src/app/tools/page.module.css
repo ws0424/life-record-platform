@@ -1,19 +1,11 @@
-/* ===== UI/UX Pro Max Design System ===== */
-/* 配色: Teal (#0D9488) + Orange (#F97316) */
-/* 字体: Plus Jakarta Sans */
-/* 风格: Micro-interactions */
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+/* ===== 与 Albums 页面保持一致的主题色 ===== */
+/* 配色: Rose (#E11D48) + Pink (#FB7185) */
+/* 风格: Micro-interactions + Vibrant & Block-based */
 
 .page {
   min-height: 100vh;
-  padding: 64px 16px;
-  background: #F0FDFA;
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-[data-theme="dark"] .page {
-  background: #0F172A;
+  padding: var(--spacing-3xl) var(--spacing-md);
+  background: var(--bg-primary);
 }
 
 .container {
@@ -23,61 +15,45 @@
 
 .header {
   text-align: center;
-  margin-bottom: 64px;
+  margin-bottom: var(--spacing-3xl);
 }
 
 .title {
   font-size: clamp(36px, 5vw, 48px);
-  font-weight: 700;
-  color: #134E4A;
-  margin-bottom: 16px;
-  background: linear-gradient(135deg, #0D9488 0%, #14B8A6 50%, #F97316 100%);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-[data-theme="dark"] .title {
-  color: #F0FDFA;
 }
 
 .subtitle {
-  font-size: 20px;
-  color: #134E4A;
-  font-weight: 500;
-  opacity: 0.8;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-[data-theme="dark"] .subtitle {
-  color: #99F6E4;
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
 }
 
 /* ===== Bento Grid Layout ===== */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  gap: var(--spacing-xl);
 }
 
 /* ===== 卡片样式 - Micro-interactions ===== */
 .toolCard {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
   transition: all 200ms ease;
-  border: 1px solid rgba(13, 148, 136, 0.1);
+  border: 2px solid var(--border-primary);
   position: relative;
   overflow: hidden;
   cursor: pointer;
-}
-
-[data-theme="dark"] .toolCard {
-  background: #1E293B;
-  border-color: rgba(20, 184, 166, 0.2);
 }
 
 /* 顶部渐变边框 - 快速滑入动画 (100ms) */
@@ -87,11 +63,11 @@
   top: 0;
   left: -100%;
   right: 100%;
-  height: 3px;
+  height: 4px;
   background: linear-gradient(90deg, 
-    #0D9488 0%, 
-    #14B8A6 50%, 
-    #F97316 100%);
+    var(--color-primary) 0%, 
+    var(--color-secondary) 50%, 
+    var(--color-cta) 100%);
   transition: all 100ms ease-out;
   z-index: 2;
 }
@@ -101,15 +77,15 @@
   right: 0;
 }
 
-/* 背景渐变效果 - Teal 主题 */
+/* 背景渐变效果 - Rose/Pink 主题 */
 .toolCard::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, 
-    rgba(13, 148, 136, 0.05) 0%, 
-    rgba(20, 184, 166, 0.05) 50%,
-    rgba(249, 115, 22, 0.05) 100%);
+    rgba(225, 29, 72, 0.03) 0%, 
+    rgba(251, 113, 133, 0.03) 50%,
+    rgba(37, 99, 235, 0.03) 100%);
   opacity: 0;
   transition: opacity 150ms ease;
   z-index: 0;
@@ -121,14 +97,9 @@
 
 /* 悬停效果 - 微交互 (快速响应) */
 .toolCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-  border-color: #0D9488;
-}
-
-[data-theme="dark"] .toolCard:hover {
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
-  border-color: #14B8A6;
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
 }
 
 .toolLink {
@@ -143,15 +114,15 @@
 
 /* 图标样式 - 微交互优化 */
 .toolIcon {
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
+  width: 68px;
+  height: 68px;
+  border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 100ms ease-out;
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: all 150ms ease-out;
   position: relative;
 }
 
@@ -160,68 +131,52 @@
   content: '';
   position: absolute;
   inset: -3px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: inherit;
   opacity: 0;
-  filter: blur(8px);
-  transition: opacity 100ms ease;
+  filter: blur(10px);
+  transition: opacity 150ms ease;
 }
 
 .toolCard:hover .toolIcon::before {
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
 /* 微交互: 轻微放大 + 轻微旋转 */
 .toolCard:hover .toolIcon {
-  transform: scale(1.05) rotate(-2deg);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  transform: scale(1.08) rotate(-3deg);
+  box-shadow: var(--shadow-lg);
 }
 
 .toolIcon svg {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   stroke-width: 2.5;
   color: white;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* 标题样式 - Plus Jakarta Sans */
+/* 标题样式 */
 .toolTitle {
-  font-size: 20px;
-  font-weight: 600;
-  color: #134E4A;
-  margin-bottom: 8px;
-  line-height: 1.3;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  line-height: var(--line-height-tight);
   transition: color 150ms ease;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-[data-theme="dark"] .toolTitle {
-  color: #F0FDFA;
 }
 
 .toolCard:hover .toolTitle {
-  color: #0D9488;
-}
-
-[data-theme="dark"] .toolCard:hover .toolTitle {
-  color: #14B8A6;
+  color: var(--color-primary);
 }
 
 /* 描述样式 */
 .toolDescription {
-  font-size: 14px;
-  color: #134E4A;
-  opacity: 0.7;
-  line-height: 1.6;
-  margin-bottom: 20px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--spacing-lg);
   flex: 1;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-[data-theme="dark"] .toolDescription {
-  color: #99F6E4;
-  opacity: 0.8;
 }
 
 /* 底部区域 */
@@ -229,86 +184,61 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 16px;
-  border-top: 1px solid rgba(13, 148, 136, 0.15);
+  padding-top: var(--spacing-md);
+  border-top: 2px solid var(--border-primary);
   transition: border-color 150ms ease;
 }
 
-[data-theme="dark"] .toolFooter {
-  border-top-color: rgba(20, 184, 166, 0.2);
-}
-
 .toolCard:hover .toolFooter {
-  border-color: #0D9488;
+  border-color: var(--color-primary);
 }
 
-[data-theme="dark"] .toolCard:hover .toolFooter {
-  border-color: #14B8A6;
-}
-
-/* 分类标签 - Badge 样式 (Teal 主题) */
+/* 分类标签 - Badge 样式 (Rose/Pink 主题) */
 .category {
-  font-size: 12px;
-  color: #0D9488;
-  font-weight: 600;
-  padding: 4px 12px;
-  background: rgba(13, 148, 136, 0.1);
-  border-radius: 999px;
-  border: 1px solid rgba(13, 148, 136, 0.2);
-  transition: all 100ms ease;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-}
-
-[data-theme="dark"] .category {
-  color: #14B8A6;
-  background: rgba(20, 184, 166, 0.15);
-  border-color: rgba(20, 184, 166, 0.3);
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  padding: 6px 14px;
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-primary);
+  transition: all 150ms ease;
 }
 
 /* 微交互: 快速填充动画 */
 .toolCard:hover .category {
-  background: #0D9488;
+  background: var(--color-primary);
   color: white;
-  border-color: #0D9488;
-  transform: translateY(-1px);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
-[data-theme="dark"] .toolCard:hover .category {
-  background: #14B8A6;
-  border-color: #14B8A6;
-}
-
-/* 箭头按钮 - Orange CTA */
+/* 箭头按钮 - CTA Blue */
 .arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: rgba(249, 115, 22, 0.1);
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  transition: all 100ms ease;
-}
-
-[data-theme="dark"] .arrow {
-  background: rgba(249, 115, 22, 0.15);
-  border-color: rgba(249, 115, 22, 0.3);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-primary);
+  transition: all 150ms ease;
 }
 
 .arrow svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   stroke-width: 2.5;
-  color: #F97316;
-  transition: all 100ms ease;
+  color: var(--text-secondary);
+  transition: all 150ms ease;
 }
 
-/* 微交互: 快速填充 + 右移 */
+/* 微交互: 渐变填充 + 右移 */
 .toolCard:hover .arrow {
-  background: #F97316;
-  border-color: #F97316;
-  transform: scale(1.05);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-color: var(--color-primary);
+  transform: scale(1.08);
 }
 
 .toolCard:hover .arrow svg {
