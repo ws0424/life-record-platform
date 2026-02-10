@@ -828,3 +828,56 @@ async def change_password(
     result = await auth_service.change_password(str(current_user.id), password_data)
     return result
 
+
+@router.get(
+    "/verify-token",
+    response_model=MessageResponse,
+    summary="验证 Token 是否有效",
+    description="验证当前 Token 是否有效且未过期",
+    response_description="返回验证结果"
+)
+async def verify_token(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    ## 验证 Token
+    
+    验证当前 Access Token 是否有效且未过期。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": null,
+        "msg": "Token 有效",
+        "errMsg": null
+    }
+    ```
+    
+    ### Token 过期响应
+    ```json
+    {
+        "code": 401,
+        "data": null,
+        "msg": "error",
+        "errMsg": "无效的认证凭证"
+    }
+    ```
+    
+    ### 使用场景
+    - 页面加载时验证登录状态
+    - 定期检查 Token 是否过期
+    - 自动退出登录
+    """
+    from app.schemas import ApiResponse
+    return ApiResponse(
+        code=200,
+        data=None,
+        msg="Token 有效",
+        errMsg=None
+    )
