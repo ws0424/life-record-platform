@@ -1,0 +1,443 @@
+/* ===== 热搜榜页面样式 ===== */
+/* 参考 momoyu.cc 的卡片设计 */
+
+.page {
+  min-height: 100vh;
+  padding: var(--spacing-3xl) var(--spacing-md);
+  background: var(--bg-primary);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ===== Header ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.headerContent {
+  flex: 1;
+}
+
+.title {
+  font-size: clamp(32px, 5vw, 42px);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.refreshBtn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.refreshIcon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
+
+.refreshIcon.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== Platform Tabs ===== */
+.platformTabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-xs);
+  scrollbar-width: thin;
+}
+
+.platformTabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.platformTabs::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: var(--radius-full);
+}
+
+.platformTab {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.platformTab:hover {
+  border-color: var(--color-primary);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.platformTab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.platformIcon {
+  font-size: 18px;
+  font-weight: var(--font-weight-bold);
+}
+
+.platformName {
+  font-size: var(--font-size-sm);
+}
+
+/* ===== Trending Grid ===== */
+.trendingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+/* ===== Trending Card ===== */
+.trendingCard {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.trendingCard:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.cardLink {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===== Rank ===== */
+.rank {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+/* Top 3 排名渐变色 */
+.rank1 {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.rank2 {
+  background: linear-gradient(135deg, #C0C0C0 0%, #A8A8A8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(192, 192, 192, 0.3);
+}
+
+.rank3 {
+  background: linear-gradient(135deg, #CD7F32 0%, #B87333 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(205, 127, 50, 0.3);
+}
+
+/* ===== Card Content ===== */
+.cardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--spacing-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--transition-normal);
+}
+
+.trendingCard:hover .cardTitle {
+  color: var(--color-primary);
+}
+
+/* ===== Tag ===== */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: var(--spacing-xs);
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-sm);
+  vertical-align: middle;
+}
+
+.tag热 {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+  color: white;
+}
+
+.tag新 {
+  background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+  color: white;
+}
+
+.tag爆 {
+  background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%);
+  color: white;
+}
+
+/* ===== Card Meta ===== */
+.cardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.category {
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.hotValue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-medium);
+}
+
+.hotValue svg {
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
+  color: var(--color-primary);
+}
+
+/* ===== 响应式设计 ===== */
+
+/* 大屏 (>1440px): 4 列 */
+@media (min-width: 1440px) {
+  .trendingGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* 桌面 (1024px-1440px): 3 列 */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .trendingGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 平板 (768px-1024px): 2 列 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .trendingGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  
+  .platformTabs {
+    gap: var(--spacing-xs);
+  }
+  
+  .platformTab {
+    padding: var(--spacing-xs) var(--spacing-md);
+  }
+}
+
+/* 手机 (<768px): 1 列 */
+@media (max-width: 767px) {
+  .page {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .subtitle {
+    font-size: var(--font-size-base);
+  }
+
+  .refreshBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .platformTabs {
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .platformTab {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 12px;
+  }
+
+  .platformIcon {
+    font-size: 16px;
+  }
+
+  .trendingGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .cardLink {
+    padding: var(--spacing-md);
+  }
+
+  .rank {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-base);
+  }
+
+  .cardTitle {
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* ===== 无障碍: 减少动画 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .trendingCard,
+  .platformTab,
+  .refreshBtn,
+  .refreshIcon {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .trendingCard:hover {
+    transform: none;
+  }
+}
+
+/* ===== 焦点状态 (键盘导航) ===== */
+.cardLink:focus,
+.platformTab:focus,
+.refreshBtn:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ===== 加载动画 ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== 暗色模式优化 ===== */
+[data-theme="dark"] .trendingCard {
+  background: var(--bg-secondary);
+  border-color: var(--border-primary);
+}
+
+[data-theme="dark"] .trendingCard:hover {
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .rank {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .category {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+

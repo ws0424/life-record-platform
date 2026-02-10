@@ -11,6 +11,7 @@ const navItems = [
   { label: '相册', href: '/albums' },
   { label: '旅游路线', href: '/travel' },
   { label: '小工具', href: '/tools' },
+  { label: '热搜榜', href: '/trending' },
 ];
 
 export function Header() {
