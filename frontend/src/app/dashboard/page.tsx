@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from '@/components/ui/Toast';
 import styles from './page.module.css';
 
 // Tab 类型
@@ -14,6 +16,7 @@ export default function DashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [isLoading, setIsLoading] = useState(true);
+  const { toasts, removeToast, success, error } = useToast();
 
   useEffect(() => {
     // 检查登录状态
@@ -43,6 +46,7 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className={styles.container}>
         {/* 侧边栏 */}
         <motion.aside
@@ -87,8 +91,8 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {activeTab === 'profile' && <ProfileSection user={user} />}
-          {activeTab === 'security' && <SecuritySection user={user} />}
+          {activeTab === 'profile' && <ProfileSection user={user} success={success} error={error} />}
+          {activeTab === 'security' && <SecuritySection user={user} success={success} error={error} />}
           {activeTab === 'activity' && <ActivitySection />}
           {activeTab === 'devices' && <DevicesSection />}
           {activeTab === 'bindings' && <BindingsSection />}
@@ -99,7 +103,7 @@ export default function DashboardPage() {
 }
 
 // 个人信息组件
-function ProfileSection({ user }: { user: any }) {
+function ProfileSection({ user, success, error }: { user: any; success: (msg: string) => void; error: (msg: string) => void }) {
   const { setUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,14 +112,10 @@ function ProfileSection({ user }: { user: any }) {
     bio: user?.bio || '',
     avatar: user?.avatar || '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
     
     try {
       const { updateProfile } = await import('@/lib/api/auth');
@@ -123,11 +123,11 @@ function ProfileSection({ user }: { user: any }) {
       
       // 更新本地用户信息
       setUser(updatedUser);
-      setSuccess('个人信息更新成功！');
+      success('个人信息更新成功！');
       setIsEditing(false);
     } catch (err: any) {
       console.error('Update profile error:', err);
-      setError(err.message || '更新失败，请重试');
+      error(err.message || '更新失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -144,18 +144,6 @@ function ProfileSection({ user }: { user: any }) {
           {isEditing ? '取消' : '编辑'}
         </button>
       </div>
-
-      {error && (
-        <div className={styles.errorMessage}>
-          {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className={styles.successMessage}>
-          {success}
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formGroup}>
@@ -213,7 +201,7 @@ function ProfileSection({ user }: { user: any }) {
 }
 
 // 安全设置组件
-function SecuritySection({ user }: { user: any }) {
+function SecuritySection({ user, success, error }: { user: any; success: (msg: string) => void; error: (msg: string) => void }) {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -221,14 +209,10 @@ function SecuritySection({ user }: { user: any }) {
     newPassword: '',
     confirmPassword: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
     
     try {
       const { changePassword } = await import('@/lib/api/auth');
@@ -238,7 +222,7 @@ function SecuritySection({ user }: { user: any }) {
         confirm_password: passwordData.confirmPassword,
       });
       
-      setSuccess('密码修改成功！');
+      success('密码修改成功！');
       setPasswordData({
         currentPassword: '',
         newPassword: '',
@@ -247,7 +231,7 @@ function SecuritySection({ user }: { user: any }) {
       setShowPasswordForm(false);
     } catch (err: any) {
       console.error('Change password error:', err);
-      setError(err.message || '密码修改失败，请重试');
+      error(err.message || '密码修改失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -256,18 +240,6 @@ function SecuritySection({ user }: { user: any }) {
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>安全设置</h2>
-
-      {error && (
-        <div className={styles.errorMessage}>
-          {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className={styles.successMessage}>
-          {success}
-        </div>
-      )}
 
       <div className={styles.securityCard}>
         <div className={styles.securityItem}>
