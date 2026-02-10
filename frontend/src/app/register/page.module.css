@@ -26,6 +26,43 @@
   border: 1px solid var(--color-border);
 }
 
+/* ===== Tab 切换 ===== */
+.tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+  padding: 4px;
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+}
+
+.tab {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tab.active {
+  background: white;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .tab.active {
+  background: var(--color-surface);
+}
+
 .formHeader {
   text-align: center;
   margin-bottom: var(--spacing-2xl);
@@ -98,23 +135,70 @@
   color: var(--color-text-tertiary);
 }
 
-.inputError {
-  border-color: var(--color-error);
+/* ===== 验证码输入 ===== */
+.codeWrapper {
+  display: flex;
+  gap: var(--spacing-sm);
 }
 
-.inputError:focus {
-  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.1);
+.codeWrapper .inputWrapper {
+  flex: 1;
 }
 
-.errorText {
+.codeBtn {
+  flex-shrink: 0;
+  padding: 0 var(--spacing-lg);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.codeBtn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.codeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  color: var(--color-text-tertiary);
+}
+
+/* ===== 提示文字 ===== */
+.hint {
   font-size: var(--font-size-xs);
-  color: var(--color-error);
-  margin-top: calc(var(--spacing-xs) * -0.5);
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+}
+
+.loginLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  margin-left: var(--spacing-xs);
+  transition: color var(--transition-fast);
+}
+
+.loginLink:hover {
+  color: var(--color-secondary);
+}
+
+.formOptions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .checkbox {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-sm);
   cursor: pointer;
 }
@@ -122,27 +206,24 @@
 .checkbox input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  margin-top: 2px;
   cursor: pointer;
   accent-color: var(--color-primary);
-  flex-shrink: 0;
 }
 
 .checkboxLabel {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   user-select: none;
-  line-height: var(--line-height-relaxed);
 }
 
-.link {
+.forgotLink {
+  font-size: var(--font-size-sm);
   color: var(--color-primary);
   text-decoration: none;
-  margin: 0 var(--spacing-xs);
   transition: color var(--transition-fast);
 }
 
-.link:hover {
+.forgotLink:hover {
   color: var(--color-secondary);
 }
 
@@ -256,7 +337,7 @@
   color: var(--color-text-secondary);
 }
 
-.loginLink {
+.registerLink {
   color: var(--color-primary);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
@@ -264,7 +345,7 @@
   transition: color var(--transition-fast);
 }
 
-.loginLink:hover {
+.registerLink:hover {
   color: var(--color-secondary);
 }
 

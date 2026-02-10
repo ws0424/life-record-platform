@@ -8,71 +8,107 @@ import styles from './page.module.css';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  
+  // 注册表单
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
+    code: '',
+    username: '',
     password: '',
     confirmPassword: '',
-    agree: false,
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // 发送验证码
+  const handleSendCode = async () => {
+    if (!formData.email) {
+      alert('请输入邮箱地址');
+      return;
+    }
+
+    // 验证邮箱格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert('请输入正确的邮箱格式');
+      return;
+    }
+
+    if (countdown > 0) {
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // TODO: 调用发送验证码 API
+    // const response = await fetch('/api/auth/send-code', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ email: formData.email, type: 'register' })
+    // });
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      setCountdown(60);
+      alert('验证码已发送到您的邮箱');
+      
+      // 倒计时
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, 1000);
+  };
+
+  // 注册提交
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 验证
-    const newErrors: Record<string, string> = {};
-    
-    if (formData.username.length < 3) {
-      newErrors.username = '用户名至少需要3个字符';
-    }
-    
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = '请输入有效的邮箱地址';
-    }
-    
-    if (formData.password.length < 6) {
-      newErrors.password = '密码至少需要6个字符';
-    }
-    
+    // 验证密码
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = '两次密码输入不一致';
-    }
-    
-    if (!formData.agree) {
-      newErrors.agree = '请同意服务条款和隐私政策';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      alert('两次输入的密码不一致');
       return;
     }
-    
+
+    if (formData.password.length < 6) {
+      alert('密码长度至少6位');
+      return;
+    }
+
+    // 验证密码强度（包含字母和数字）
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      alert('密码必须包含字母和数字');
+      return;
+    }
+
     setIsLoading(true);
     
     // TODO: 实现注册逻辑
+    // const response = await fetch('/api/auth/register', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(formData)
+    // });
+    
     setTimeout(() => {
       setIsLoading(false);
-      router.push('/login');
+      alert('注册成功！');
+      router.push('/');
     }, 1500);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: value,
     }));
-    
-    // 清除错误
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
   };
 
   return (
@@ -86,35 +122,10 @@ export default function RegisterPage() {
         >
           <div className={styles.formHeader}>
             <h1 className={styles.title}>创建账户</h1>
-            <p className={styles.subtitle}>开始记录你的精彩生活</p>
+            <p className={styles.subtitle}>加入我们，开始记录美好生活</p>
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="username" className={styles.label}>
-                用户名
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors.username ? styles.inputError : ''}`}
-                  placeholder="选择一个用户名"
-                  required
-                />
-              </div>
-              {errors.username && (
-                <span className={styles.errorText}>{errors.username}</span>
-              )}
-            </div>
-
             <div className={styles.formGroup}>
               <label htmlFor="email" className={styles.label}>
                 邮箱地址
@@ -130,14 +141,69 @@ export default function RegisterPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+                  className={styles.input}
                   placeholder="your@email.com"
                   required
                 />
               </div>
-              {errors.email && (
-                <span className={styles.errorText}>{errors.email}</span>
-              )}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="code" className={styles.label}>
+                验证码
+              </label>
+              <div className={styles.codeWrapper}>
+                <div className={styles.inputWrapper}>
+                  <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
+                  </svg>
+                  <input
+                    type="text"
+                    id="code"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleChange}
+                    className={styles.input}
+                    placeholder="请输入6位验证码"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  className={styles.codeBtn}
+                  onClick={handleSendCode}
+                  disabled={countdown > 0 || isLoading}
+                >
+                  {countdown > 0 ? `${countdown}秒后重试` : '发送验证码'}
+                </button>
+              </div>
+              <p className={styles.hint}>验证码将发送到您的邮箱，有效期5分钟</p>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="username" className={styles.label}>
+                用户名
+              </label>
+              <div className={styles.inputWrapper}>
+                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className={styles.input}
+                  placeholder="请输入用户名（2-20个字符）"
+                  minLength={2}
+                  maxLength={20}
+                  required
+                />
+              </div>
             </div>
 
             <div className={styles.formGroup}>
@@ -155,14 +221,13 @@ export default function RegisterPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
-                  placeholder="至少6个字符"
+                  className={styles.input}
+                  placeholder="至少6位，包含字母和数字"
+                  minLength={6}
+                  maxLength={20}
                   required
                 />
               </div>
-              {errors.password && (
-                <span className={styles.errorText}>{errors.password}</span>
-              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -180,34 +245,11 @@ export default function RegisterPage() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`${styles.input} ${errors.confirmPassword ? styles.inputError : ''}`}
-                  placeholder="再次输入密码"
+                  className={styles.input}
+                  placeholder="请再次输入密码"
                   required
                 />
               </div>
-              {errors.confirmPassword && (
-                <span className={styles.errorText}>{errors.confirmPassword}</span>
-              )}
-            </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.checkbox}>
-                <input
-                  type="checkbox"
-                  name="agree"
-                  checked={formData.agree}
-                  onChange={handleChange}
-                />
-                <span className={styles.checkboxLabel}>
-                  我同意
-                  <Link href="/terms" className={styles.link}>服务条款</Link>
-                  和
-                  <Link href="/privacy" className={styles.link}>隐私政策</Link>
-                </span>
-              </label>
-              {errors.agree && (
-                <span className={styles.errorText}>{errors.agree}</span>
-              )}
             </div>
 
             <button
@@ -218,7 +260,7 @@ export default function RegisterPage() {
               {isLoading ? (
                 <span className={styles.spinner} />
               ) : (
-                '创建账户'
+                '注册'
               )}
             </button>
           </form>
@@ -261,19 +303,18 @@ export default function RegisterPage() {
           <div className={styles.illustrationContent}>
             <svg viewBox="0 0 400 400" className={styles.illustrationSvg}>
               <defs>
-                <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" style={{ stopColor: '#1890ff', stopOpacity: 1 }} />
-                  <stop offset="100%" style={{ stopColor: '#722ed1', stopOpacity: 1 }} />
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style={{ stopColor: '#E11D48', stopOpacity: 1 }} />
+                  <stop offset="100%" style={{ stopColor: '#FB7185', stopOpacity: 1 }} />
                 </linearGradient>
               </defs>
-              <circle cx="200" cy="200" r="150" fill="url(#grad2)" opacity="0.1" />
-              <circle cx="200" cy="200" r="100" fill="url(#grad2)" opacity="0.2" />
-              <circle cx="200" cy="200" r="50" fill="url(#grad2)" opacity="0.3" />
-              <path d="M200 150 L250 200 L200 250 L150 200 Z" fill="url(#grad2)" opacity="0.4" />
+              <circle cx="200" cy="200" r="150" fill="url(#grad1)" opacity="0.1" />
+              <circle cx="200" cy="200" r="100" fill="url(#grad1)" opacity="0.2" />
+              <circle cx="200" cy="200" r="50" fill="url(#grad1)" opacity="0.3" />
             </svg>
-            <h2 className={styles.illustrationTitle}>加入我们的社区</h2>
+            <h2 className={styles.illustrationTitle}>开启记录之旅</h2>
             <p className={styles.illustrationText}>
-              与数千名用户一起，分享生活的美好时刻
+              记录生活点滴，分享精彩瞬间，与志同道合的朋友一起成长
             </p>
           </div>
         </motion.div>
@@ -281,4 +322,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
