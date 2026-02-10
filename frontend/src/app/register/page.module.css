@@ -178,6 +178,18 @@
   margin-top: 4px;
 }
 
+.loginHint {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.loginHint p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
 .loginLink {
   color: var(--color-primary);
   text-decoration: none;

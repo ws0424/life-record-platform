@@ -125,6 +125,15 @@ export default function LoginPage() {
                 '登录'
               )}
             </button>
+
+            <div className={styles.registerHint}>
+              <p>
+                还没有账户？
+                <Link href="/register" className={styles.registerLink}>
+                  立即注册
+                </Link>
+              </p>
+            </div>
           </form>
         </motion.div>
 

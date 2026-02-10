@@ -98,42 +98,6 @@
   color: var(--color-text-tertiary);
 }
 
-/* ===== 验证码输入 ===== */
-.codeWrapper {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.codeWrapper .inputWrapper {
-  flex: 1;
-}
-
-.codeBtn {
-  flex-shrink: 0;
-  padding: 0 var(--spacing-lg);
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-  white-space: nowrap;
-}
-
-.codeBtn:hover:not(:disabled) {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
-}
-
-.codeBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  color: var(--color-text-tertiary);
-}
-
 .formOptions {
   display: flex;
   align-items: center;
@@ -197,6 +161,30 @@
 .submitBtn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.registerHint {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.registerHint p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.registerLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  margin-left: var(--spacing-xs);
+  transition: color var(--transition-fast);
+}
+
+.registerLink:hover {
+  color: var(--color-secondary);
 }
 
 .spinner {
