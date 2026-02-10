@@ -30,6 +30,20 @@ export interface ResetPasswordData {
   confirm_password: string;
 }
 
+// 更新个人信息请求数据
+export interface UpdateProfileData {
+  username?: string;
+  bio?: string;
+  avatar?: string;
+}
+
+// 修改密码请求数据
+export interface ChangePasswordData {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
 // 用户信息
 export interface User {
   id: string;
@@ -90,6 +104,18 @@ export const logout = async (): Promise<void> => {
 // 获取当前用户信息
 export const getCurrentUser = async (): Promise<User> => {
   const response = await apiClient.get('/auth/me');
+  return response.data;
+};
+
+// 更新个人信息
+export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
+  const response = await apiClient.put('/auth/profile', data);
+  return response.data;
+};
+
+// 修改密码
+export const changePassword = async (data: ChangePasswordData): Promise<void> => {
+  const response = await apiClient.post('/auth/change-password', data);
   return response.data;
 };
 

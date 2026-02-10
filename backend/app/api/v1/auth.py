@@ -8,9 +8,15 @@ from app.schemas import (
     SendCodeRequest,
     SendCodeResponse,
     MessageResponse,
-    ResetPasswordRequest
+    ResetPasswordRequest,
+    UserInfoResponse,
+    UpdateProfileRequest,
+    UpdateProfileResponse,
+    ChangePasswordRequest
 )
 from app.services.auth_service import AuthService
+from app.utils.dependencies import get_current_user
+from app.models.user import User
 from datetime import datetime
 import logging
 
@@ -499,6 +505,7 @@ async def logout():
 
 @router.get(
     "/me",
+    response_model=UserInfoResponse,
     summary="获取当前用户信息",
     description="获取当前登录用户的详细信息",
     response_description="返回用户信息",
@@ -528,7 +535,9 @@ async def logout():
         }
     }
 )
-async def get_current_user():
+async def get_current_user_info(
+    current_user: User = Depends(get_current_user)
+):
     """
     ## 获取当前用户信息
     
@@ -563,13 +572,13 @@ async def get_current_user():
     - 获取用户个人资料
     - 验证 Token 是否有效
     - 刷新用户信息
-    
-    **状态**: ⏳ 功能开发中
     """
-    # TODO: 实现获取当前用户逻辑
-    raise HTTPException(
-        status_code=status.HTTP_200_OK,
-        detail="功能开发中"
+    from app.schemas import UserResponse, ApiResponse
+    return ApiResponse(
+        code=200,
+        data=UserResponse.from_orm(current_user),
+        msg="success",
+        errMsg=None
     )
 
 
@@ -692,5 +701,130 @@ async def reset_password(
     """
     auth_service = AuthService(db)
     result = await auth_service.reset_password(reset_data)
+    return result
+
+
+@router.put(
+    "/profile",
+    response_model=UpdateProfileResponse,
+    summary="更新个人信息",
+    description="更新当前用户的个人信息",
+    response_description="返回更新后的用户信息"
+)
+async def update_profile(
+    update_data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 更新个人信息
+    
+    更新当前登录用户的个人信息（用户名、个人简介、头像）。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 请求参数
+    - **username**: 用户名，2-20个字符（可选）
+    - **bio**: 个人简介，最多500字符（可选）
+    - **avatar**: 头像 URL（可选）
+    
+    ### 验证规则
+    - 用户名不能与其他用户重复
+    - 邮箱不可修改
+    
+    ### 示例请求
+    ```json
+    {
+        "username": "新用户名",
+        "bio": "这是我的新简介",
+        "avatar": "https://example.com/new-avatar.jpg"
+    }
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "username": "新用户名",
+            "email": "user@example.com",
+            "avatar": "https://example.com/new-avatar.jpg",
+            "bio": "这是我的新简介",
+            "is_active": true,
+            "is_verified": true,
+            "created_at": "2026-02-10T10:00:00Z",
+            "updated_at": "2026-02-10T16:30:00Z"
+        },
+        "msg": "个人信息更新成功",
+        "errMsg": null
+    }
+    ```
+    """
+    auth_service = AuthService(db)
+    result = await auth_service.update_profile(str(current_user.id), update_data)
+    return result
+
+
+@router.post(
+    "/change-password",
+    response_model=MessageResponse,
+    summary="修改密码",
+    description="修改当前用户的密码",
+    response_description="返回修改成功消息"
+)
+async def change_password(
+    password_data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 修改密码
+    
+    修改当前登录用户的密码，需要提供当前密码进行验证。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 请求参数
+    - **current_password**: 当前密码（必填）
+    - **new_password**: 新密码，6-20位，必须包含字母和数字（必填）
+    - **confirm_password**: 确认新密码（必填）
+    
+    ### 验证规则
+    - 当前密码必须正确
+    - 新密码必须包含字母和数字
+    - 两次密码必须一致
+    
+    ### 示例请求
+    ```json
+    {
+        "current_password": "oldpass123",
+        "new_password": "newpass123",
+        "confirm_password": "newpass123"
+    }
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": null,
+        "msg": "密码修改成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 安全提示
+    - 密码修改后，建议重新登录
+    - 如非本人操作，请立即联系客服
+    """
+    auth_service = AuthService(db)
+    result = await auth_service.change_password(str(current_user.id), password_data)
     return result
 

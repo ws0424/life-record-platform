@@ -576,6 +576,27 @@
   }
 }
 
+/* 消息提示 */
+.errorMessage {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.successMessage {
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-md);
+  color: var(--color-success);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
 /* 额外的视觉增强 - Vibrant & Block-based */
 .userCard::before {
   content: '';

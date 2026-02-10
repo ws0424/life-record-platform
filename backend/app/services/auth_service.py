@@ -11,7 +11,9 @@ from app.schemas import (
     SendCodeData,
     ApiResponse,
     ResetPasswordRequest,
-    MessageResponse
+    MessageResponse,
+    UpdateProfileRequest,
+    ChangePasswordRequest
 )
 from app.utils.security import verify_password, get_password_hash, create_access_token, create_refresh_token
 from app.utils.verification import generate_code, save_code, verify_code, check_code_rate_limit
@@ -285,5 +287,128 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_200_OK,
                 detail=f"密码重置失败: {str(e)}"
+            )
+    
+    async def update_profile(self, user_id: str, update_data: UpdateProfileRequest) -> ApiResponse[UserResponse]:
+        """更新个人信息"""
+        try:
+            logger.info(f"🔄 开始更新个人信息 - 用户ID: {user_id}")
+            
+            # 查找用户
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user:
+                logger.warning(f"❌ 用户不存在 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="用户不存在"
+                )
+            
+            # 如果更新用户名，检查是否重复
+            if update_data.username and update_data.username != user.username:
+                existing_user = self.db.query(User).filter(
+                    User.username == update_data.username,
+                    User.id != user_id
+                ).first()
+                if existing_user:
+                    logger.warning(f"❌ 用户名已存在 - 用户名: {update_data.username}")
+                    raise HTTPException(
+                        status_code=status.HTTP_200_OK,
+                        detail="该用户名已被使用"
+                    )
+                user.username = update_data.username
+                logger.info(f"✅ 更新用户名: {update_data.username}")
+            
+            # 更新个人简介
+            if update_data.bio is not None:
+                user.bio = update_data.bio
+                logger.info(f"✅ 更新个人简介")
+            
+            # 更新头像
+            if update_data.avatar is not None:
+                user.avatar = update_data.avatar
+                logger.info(f"✅ 更新头像")
+            
+            # 更新时间
+            user.updated_at = datetime.utcnow()
+            
+            self.db.commit()
+            self.db.refresh(user)
+            
+            logger.info(f"✅ 个人信息更新成功 - 用户ID: {user_id}")
+            
+            return ApiResponse(
+                code=200,
+                data=UserResponse.from_orm(user),
+                msg="个人信息更新成功",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 个人信息更新失败 - 用户ID: {user_id}, 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_200_OK,
+                detail=f"个人信息更新失败: {str(e)}"
+            )
+    
+    async def change_password(self, user_id: str, password_data: ChangePasswordRequest) -> MessageResponse:
+        """修改密码"""
+        try:
+            logger.info(f"🔄 开始修改密码 - 用户ID: {user_id}")
+            
+            # 验证两次密码是否一致
+            if password_data.new_password != password_data.confirm_password:
+                logger.warning(f"❌ 密码不一致 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="两次输入的密码不一致"
+                )
+            
+            # 验证密码强度（包含字母和数字）
+            if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$', password_data.new_password):
+                logger.warning(f"❌ 密码强度不足 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="密码必须包含字母和数字，长度至少6位"
+                )
+            
+            # 查找用户
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user:
+                logger.warning(f"❌ 用户不存在 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="用户不存在"
+                )
+            
+            # 验证当前密码
+            if not verify_password(password_data.current_password, user.password_hash):
+                logger.warning(f"❌ 当前密码错误 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="当前密码错误"
+                )
+            
+            # 更新密码
+            logger.info(f"🔐 更新密码 - 用户ID: {user_id}")
+            user.password_hash = get_password_hash(password_data.new_password)
+            user.updated_at = datetime.utcnow()
+            
+            self.db.commit()
+            logger.info(f"✅ 密码修改成功 - 用户ID: {user_id}")
+            
+            return MessageResponse(
+                code=200,
+                data=None,
+                msg="密码修改成功",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 密码修改失败 - 用户ID: {user_id}, 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_200_OK,
+                detail=f"密码修改失败: {str(e)}"
             )
 

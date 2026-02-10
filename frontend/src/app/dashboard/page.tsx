@@ -100,18 +100,37 @@ export default function DashboardPage() {
 
 // 个人信息组件
 function ProfileSection({ user }: { user: any }) {
+  const { setUser } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: user?.username || '',
     bio: user?.bio || '',
     avatar: user?.avatar || '',
   });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 调用更新用户信息 API
-    console.log('Update profile:', formData);
-    setIsEditing(false);
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const { updateProfile } = await import('@/lib/api/auth');
+      const updatedUser = await updateProfile(formData);
+      
+      // 更新本地用户信息
+      setUser(updatedUser);
+      setSuccess('个人信息更新成功！');
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error('Update profile error:', err);
+      setError(err.message || '更新失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -125,6 +144,18 @@ function ProfileSection({ user }: { user: any }) {
           {isEditing ? '取消' : '编辑'}
         </button>
       </div>
+
+      {error && (
+        <div className={styles.errorMessage}>
+          {error}
+        </div>
+      )}
+      
+      {success && (
+        <div className={styles.successMessage}>
+          {success}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formGroup}>
@@ -172,8 +203,8 @@ function ProfileSection({ user }: { user: any }) {
         </div>
 
         {isEditing && (
-          <button type="submit" className={styles.submitBtn}>
-            保存修改
+          <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+            {isLoading ? '保存中...' : '保存修改'}
           </button>
         )}
       </form>
@@ -184,21 +215,59 @@ function ProfileSection({ user }: { user: any }) {
 // 安全设置组件
 function SecuritySection({ user }: { user: any }) {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 调用修改密码 API
-    console.log('Change password:', passwordData);
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const { changePassword } = await import('@/lib/api/auth');
+      await changePassword({
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword,
+        confirm_password: passwordData.confirmPassword,
+      });
+      
+      setSuccess('密码修改成功！');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+      setShowPasswordForm(false);
+    } catch (err: any) {
+      console.error('Change password error:', err);
+      setError(err.message || '密码修改失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>安全设置</h2>
+
+      {error && (
+        <div className={styles.errorMessage}>
+          {error}
+        </div>
+      )}
+      
+      {success && (
+        <div className={styles.successMessage}>
+          {success}
+        </div>
+      )}
 
       <div className={styles.securityCard}>
         <div className={styles.securityItem}>
@@ -235,7 +304,9 @@ function SecuritySection({ user }: { user: any }) {
                 value={passwordData.newPassword}
                 onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                 required
+                minLength={6}
               />
+              <p className={styles.hint}>密码必须包含字母和数字，长度至少6位</p>
             </div>
 
             <div className={styles.formGroup}>
@@ -249,8 +320,8 @@ function SecuritySection({ user }: { user: any }) {
               />
             </div>
 
-            <button type="submit" className={styles.submitBtn}>
-              确认修改
+            <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+              {isLoading ? '修改中...' : '确认修改'}
             </button>
           </form>
         )}

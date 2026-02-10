@@ -136,6 +136,38 @@ class UserResponse(BaseModel):
         }
 
 
+class UpdateProfileRequest(BaseModel):
+    """更新个人信息请求模型"""
+    username: Optional[str] = Field(None, min_length=2, max_length=20, description="用户名，2-20个字符", example="张三")
+    bio: Optional[str] = Field(None, max_length=500, description="个人简介，最多500字符", example="这是我的个人简介")
+    avatar: Optional[str] = Field(None, max_length=500, description="头像 URL", example="https://example.com/avatar.jpg")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "username": "张三",
+                "bio": "这是我的个人简介",
+                "avatar": "https://example.com/avatar.jpg"
+            }
+        }
+
+
+class ChangePasswordRequest(BaseModel):
+    """修改密码请求模型"""
+    current_password: str = Field(..., min_length=6, max_length=20, description="当前密码", example="oldpass123")
+    new_password: str = Field(..., min_length=6, max_length=20, description="新密码，6-20位，必须包含字母和数字", example="newpass123")
+    confirm_password: str = Field(..., min_length=6, max_length=20, description="确认新密码", example="newpass123")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "current_password": "oldpass123",
+                "new_password": "newpass123",
+                "confirm_password": "newpass123"
+            }
+        }
+
+
 class TokenData(BaseModel):
     """Token 数据模型"""
     access_token: str = Field(..., description="访问令牌，有效期 1 小时", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
@@ -157,3 +189,4 @@ TokenResponse = ApiResponse[TokenData]
 SendCodeResponse = ApiResponse[SendCodeData]
 UserInfoResponse = ApiResponse[UserResponse]
 MessageResponse = ApiResponse[None]
+UpdateProfileResponse = ApiResponse[UserResponse]

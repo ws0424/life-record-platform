@@ -10,7 +10,10 @@ from app.schemas.auth import (
     SendCodeData,
     ResetPasswordRequest,
     MessageResponse,
-    UserInfoResponse
+    UserInfoResponse,
+    UpdateProfileRequest,
+    UpdateProfileResponse,
+    ChangePasswordRequest
 )
 
 __all__ = [
@@ -25,5 +28,8 @@ __all__ = [
     "SendCodeData",
     "ResetPasswordRequest",
     "MessageResponse",
-    "UserInfoResponse"
+    "UserInfoResponse",
+    "UpdateProfileRequest",
+    "UpdateProfileResponse",
+    "ChangePasswordRequest"
 ]
