@@ -17,9 +17,11 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   setAuth: (user: User, token: string) => void;
   setUser: (user: User | null) => void;
   logout: () => void;
+  initialize: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,9 +30,10 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isInitialized: false,
       setAuth: (user, token) => {
         localStorage.setItem('access_token', token);
-        set({ user, token, isAuthenticated: true });
+        set({ user, token, isAuthenticated: true, isInitialized: true });
       },
       setUser: (user) => set({ user, isAuthenticated: !!user }),
       logout: () => {
@@ -38,9 +41,21 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('refresh_token');
         set({ user: null, token: null, isAuthenticated: false });
       },
+      initialize: () => {
+        // 从 localStorage 恢复 token
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('access_token');
+          if (token) {
+            set({ token, isAuthenticated: true, isInitialized: true });
+          } else {
+            set({ isInitialized: true });
+          }
+        }
+      },
     }),
     {
       name: 'auth-storage',
+      partialState: true,
     }
   )
 );

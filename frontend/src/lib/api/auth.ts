@@ -136,8 +136,8 @@ export const resetPassword = async (data: ResetPasswordData): Promise<void> => {
 // 验证 Token 是否有效
 export const verifyToken = async (): Promise<boolean> => {
   try {
-    const response = await apiClient.get('/auth/verify-token');
-    return response.data.code === 200;
+    await apiClient.get('/auth/verify-token');
+    return true;
   } catch (error) {
     return false;
   }
