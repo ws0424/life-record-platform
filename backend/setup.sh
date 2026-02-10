@@ -8,21 +8,33 @@ echo ""
 echo "📌 检查 Python 版本..."
 python3 --version
 
-# 创建虚拟环境（可选）
+# 检查虚拟环境
 echo ""
-echo "📦 是否创建虚拟环境？(y/n)"
-read -r create_venv
-if [ "$create_venv" = "y" ]; then
-    echo "创建虚拟环境..."
-    python3 -m venv venv
-    echo "激活虚拟环境..."
+if [ -d "venv" ]; then
+    echo "✅ 虚拟环境已存在: backend/venv"
+    echo "📦 激活虚拟环境..."
     source venv/bin/activate
+    echo "✅ 虚拟环境已激活"
+else
+    echo "📦 虚拟环境不存在，是否创建？(y/n)"
+    read -r create_venv
+    if [ "$create_venv" = "y" ]; then
+        echo "创建虚拟环境..."
+        python3 -m venv venv
+        echo "激活虚拟环境..."
+        source venv/bin/activate
+        echo "✅ 虚拟环境已创建并激活"
+    fi
 fi
 
 # 安装依赖
 echo ""
 echo "📥 安装依赖包..."
-pip3 install -r requirements.txt
+if [ -d "venv" ] && [ -n "$VIRTUAL_ENV" ]; then
+    pip install -r requirements.txt
+else
+    pip3 install -r requirements.txt
+fi
 
 # 创建 .env 文件
 echo ""
@@ -61,6 +73,12 @@ echo ""
 echo "📖 下一步："
 echo "   1. 编辑 .env 文件配置数据库和邮件服务"
 echo "   2. 启动 PostgreSQL 和 Redis"
-echo "   3. 运行: python3 main.py"
+echo "   3. 激活虚拟环境: source venv/bin/activate"
+echo "   4. 运行服务: python main.py"
+echo ""
+echo "💡 提示："
+echo "   - 虚拟环境位置: backend/venv"
+echo "   - 激活命令: source venv/bin/activate"
+echo "   - 退出命令: deactivate"
 echo ""
 
