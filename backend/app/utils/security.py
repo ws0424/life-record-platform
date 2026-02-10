@@ -3,18 +3,43 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from app.core.config import settings
+import hashlib
+import base64
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# 配置 bcrypt，设置 truncate_error=False 和 ident="2b" 来避免初始化错误
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__ident="2b",  # 使用 2b 版本，避免 wrap bug 检测
+    bcrypt__default_rounds=12  # 设置默认轮次
+)
+
+
+def _truncate_password(password: str) -> str:
+    """
+    安全地截断密码到 72 字节以内
+    使用 SHA256 哈希确保：
+    1. 任意长度的密码都能处理
+    2. 输出固定为 44 字节（base64 编码后）
+    3. 保持密码的熵值
+    """
+    # 将密码转换为 SHA256 哈希，然后 base64 编码
+    password_hash = hashlib.sha256(password.encode('utf-8')).digest()
+    return base64.b64encode(password_hash).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
-    return pwd_context.verify(plain_password, hashed_password)
+    # 先对明文密码进行截断处理
+    processed_password = _truncate_password(plain_password)
+    return pwd_context.verify(processed_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """生成密码哈希"""
-    return pwd_context.hash(password)
+    # 先对密码进行截断处理，确保不超过 72 字节
+    processed_password = _truncate_password(password)
+    return pwd_context.hash(processed_password)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, Any, Generic, TypeVar
 from datetime import datetime
+from uuid import UUID
 
 # 泛型类型变量
 T = TypeVar('T')
@@ -35,8 +36,7 @@ class UserCreate(BaseModel):
     email: EmailStr = Field(..., description="邮箱地址", example="user@example.com")
     code: str = Field(..., min_length=6, max_length=6, description="6位数字验证码", example="123456")
     username: str = Field(..., min_length=2, max_length=20, description="用户名，2-20个字符", example="张三")
-    password: str = Field(..., min_length=6, max_length=20, description="密码，6-20位，必须包含字母和数字", example="test123")
-    confirm_password: str = Field(..., min_length=6, max_length=20, description="确认密码，必须与密码一致", example="test123")
+    password: str = Field(..., min_length=6, max_length=1024, description="密码，至少6位，必须包含字母和数字", example="test123")
     
     class Config:
         json_schema_extra = {
@@ -44,8 +44,7 @@ class UserCreate(BaseModel):
                 "email": "user@example.com",
                 "code": "123456",
                 "username": "张三",
-                "password": "test123",
-                "confirm_password": "test123"
+                "password": "test123"
             }
         }
 
@@ -109,6 +108,14 @@ class UserResponse(BaseModel):
     is_verified: bool = Field(..., description="邮箱是否已验证", example=True)
     created_at: datetime = Field(..., description="创建时间", example="2026-02-10T10:00:00Z")
     updated_at: datetime = Field(..., description="更新时间", example="2026-02-10T10:00:00Z")
+    
+    @field_validator('id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """将 UUID 对象转换为字符串"""
+        if isinstance(v, UUID):
+            return str(v)
+        return v
     
     class Config:
         from_attributes = True
