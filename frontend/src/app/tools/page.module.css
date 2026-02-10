@@ -1,7 +1,19 @@
+/* ===== UI/UX Pro Max Design System ===== */
+/* 配色: Teal (#0D9488) + Orange (#F97316) */
+/* 字体: Plus Jakarta Sans */
+/* 风格: Micro-interactions */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
 .page {
   min-height: 100vh;
-  padding: var(--spacing-3xl) var(--spacing-md);
-  background: var(--bg-primary);
+  padding: 64px 16px;
+  background: #F0FDFA;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+[data-theme="dark"] .page {
+  background: #0F172A;
 }
 
 .container {
@@ -11,59 +23,76 @@
 
 .header {
   text-align: center;
-  margin-bottom: var(--spacing-3xl);
+  margin-bottom: 64px;
 }
 
 .title {
   font-size: clamp(36px, 5vw, 48px);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-md);
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 50%, var(--cta-color) 100%);
+  font-weight: 700;
+  color: #134E4A;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #0D9488 0%, #14B8A6 50%, #F97316 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: -0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+[data-theme="dark"] .title {
+  color: #F0FDFA;
 }
 
 .subtitle {
-  font-size: var(--font-size-xl);
-  color: var(--text-secondary);
-  font-weight: var(--font-weight-medium);
+  font-size: 20px;
+  color: #134E4A;
+  font-weight: 500;
+  opacity: 0.8;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+[data-theme="dark"] .subtitle {
+  color: #99F6E4;
+}
+
+/* ===== Bento Grid Layout ===== */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-2xl);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
-/* ===== 卡片样式 - Vibrant & Block-based ===== */
+/* ===== 卡片样式 - Micro-interactions ===== */
 .toolCard {
-  background: var(--bg-card);
-  border-radius: var(--radius-2xl);
-  padding: var(--spacing-2xl);
-  box-shadow: var(--shadow-md);
-  transition: all var(--transition-normal);
-  border: 2px solid var(--border-primary);
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 200ms ease;
+  border: 1px solid rgba(13, 148, 136, 0.1);
   position: relative;
   overflow: hidden;
   cursor: pointer;
 }
 
-/* 顶部渐变边框 - 带动画效果 */
+[data-theme="dark"] .toolCard {
+  background: #1E293B;
+  border-color: rgba(20, 184, 166, 0.2);
+}
+
+/* 顶部渐变边框 - 快速滑入动画 (100ms) */
 .toolCard::before {
   content: '';
   position: absolute;
   top: 0;
   left: -100%;
   right: 100%;
-  height: 4px;
+  height: 3px;
   background: linear-gradient(90deg, 
-    var(--primary-color) 0%, 
-    var(--secondary-color) 50%, 
-    var(--cta-color) 100%);
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    #0D9488 0%, 
+    #14B8A6 50%, 
+    #F97316 100%);
+  transition: all 100ms ease-out;
   z-index: 2;
 }
 
@@ -72,17 +101,17 @@
   right: 0;
 }
 
-/* 背景渐变效果 */
+/* 背景渐变效果 - Teal 主题 */
 .toolCard::after {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(135deg, 
-    rgba(225, 29, 72, 0.03) 0%, 
-    rgba(251, 113, 133, 0.03) 50%,
-    rgba(37, 99, 235, 0.03) 100%);
+    rgba(13, 148, 136, 0.05) 0%, 
+    rgba(20, 184, 166, 0.05) 50%,
+    rgba(249, 115, 22, 0.05) 100%);
   opacity: 0;
-  transition: opacity var(--transition-normal);
+  transition: opacity 150ms ease;
   z-index: 0;
 }
 
@@ -90,11 +119,16 @@
   opacity: 1;
 }
 
-/* 悬停效果 - Bold Hover */
+/* 悬停效果 - 微交互 (快速响应) */
 .toolCard:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: var(--shadow-2xl);
-  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  border-color: #0D9488;
+}
+
+[data-theme="dark"] .toolCard:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+  border-color: #14B8A6;
 }
 
 .toolLink {
@@ -107,70 +141,87 @@
   z-index: 1;
 }
 
-/* 图标样式 - 增强视觉效果 */
+/* 图标样式 - 微交互优化 */
 .toolIcon {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-xl);
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: var(--spacing-xl);
-  box-shadow: var(--shadow-lg);
-  transition: all var(--transition-bounce);
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 100ms ease-out;
   position: relative;
 }
 
-/* 图标发光效果 */
+/* 图标轻微发光效果 */
 .toolIcon::before {
   content: '';
   position: absolute;
-  inset: -4px;
-  border-radius: var(--radius-xl);
+  inset: -3px;
+  border-radius: 12px;
   background: inherit;
   opacity: 0;
-  filter: blur(12px);
-  transition: opacity var(--transition-normal);
+  filter: blur(8px);
+  transition: opacity 100ms ease;
 }
 
 .toolCard:hover .toolIcon::before {
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
+/* 微交互: 轻微放大 + 轻微旋转 */
 .toolCard:hover .toolIcon {
-  transform: scale(1.15) rotate(-5deg);
-  box-shadow: var(--shadow-xl);
+  transform: scale(1.05) rotate(-2deg);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
 
 .toolIcon svg {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   stroke-width: 2.5;
   color: white;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* 标题样式 */
+/* 标题样式 - Plus Jakarta Sans */
 .toolTitle {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-primary);
-  margin-bottom: var(--spacing-sm);
-  line-height: var(--line-height-tight);
-  transition: color var(--transition-normal);
+  font-size: 20px;
+  font-weight: 600;
+  color: #134E4A;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  transition: color 150ms ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+[data-theme="dark"] .toolTitle {
+  color: #F0FDFA;
 }
 
 .toolCard:hover .toolTitle {
-  color: var(--primary-color);
+  color: #0D9488;
+}
+
+[data-theme="dark"] .toolCard:hover .toolTitle {
+  color: #14B8A6;
 }
 
 /* 描述样式 */
 .toolDescription {
-  font-size: var(--font-size-base);
-  color: var(--text-secondary);
-  line-height: var(--line-height-relaxed);
-  margin-bottom: var(--spacing-xl);
+  font-size: 14px;
+  color: #134E4A;
+  opacity: 0.7;
+  line-height: 1.6;
+  margin-bottom: 20px;
   flex: 1;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+[data-theme="dark"] .toolDescription {
+  color: #99F6E4;
+  opacity: 0.8;
 }
 
 /* 底部区域 */
@@ -178,123 +229,223 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: var(--spacing-lg);
-  border-top: 2px solid var(--border-primary);
-  transition: border-color var(--transition-normal);
+  padding-top: 16px;
+  border-top: 1px solid rgba(13, 148, 136, 0.15);
+  transition: border-color 150ms ease;
+}
+
+[data-theme="dark"] .toolFooter {
+  border-top-color: rgba(20, 184, 166, 0.2);
 }
 
 .toolCard:hover .toolFooter {
-  border-color: var(--primary-color);
+  border-color: #0D9488;
 }
 
-/* 分类标签 - Badge 样式 */
+[data-theme="dark"] .toolCard:hover .toolFooter {
+  border-color: #14B8A6;
+}
+
+/* 分类标签 - Badge 样式 (Teal 主题) */
 .category {
-  font-size: var(--font-size-sm);
-  color: var(--primary-color);
-  font-weight: var(--font-weight-semibold);
-  padding: 6px 14px;
-  background: var(--primary-light);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--primary-color);
-  transition: all var(--transition-normal);
+  font-size: 12px;
+  color: #0D9488;
+  font-weight: 600;
+  padding: 4px 12px;
+  background: rgba(13, 148, 136, 0.1);
+  border-radius: 999px;
+  border: 1px solid rgba(13, 148, 136, 0.2);
+  transition: all 100ms ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
+[data-theme="dark"] .category {
+  color: #14B8A6;
+  background: rgba(20, 184, 166, 0.15);
+  border-color: rgba(20, 184, 166, 0.3);
+}
+
+/* 微交互: 快速填充动画 */
 .toolCard:hover .category {
-  background: var(--primary-color);
+  background: #0D9488;
   color: white;
-  transform: translateY(-2px);
+  border-color: #0D9488;
+  transform: translateY(-1px);
 }
 
-/* 箭头按钮 */
+[data-theme="dark"] .toolCard:hover .category {
+  background: #14B8A6;
+  border-color: #14B8A6;
+}
+
+/* 箭头按钮 - Orange CTA */
 .arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-full);
-  background: var(--bg-tertiary);
-  border: 2px solid var(--border-primary);
-  transition: all var(--transition-bounce);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  transition: all 100ms ease;
+}
+
+[data-theme="dark"] .arrow {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.3);
 }
 
 .arrow svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   stroke-width: 2.5;
-  color: var(--text-secondary);
-  transition: all var(--transition-normal);
+  color: #F97316;
+  transition: all 100ms ease;
 }
 
+/* 微交互: 快速填充 + 右移 */
 .toolCard:hover .arrow {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  border-color: var(--primary-color);
-  transform: scale(1.1);
+  background: #F97316;
+  border-color: #F97316;
+  transform: scale(1.05);
 }
 
 .toolCard:hover .arrow svg {
   color: white;
-  transform: translateX(3px);
+  transform: translateX(2px);
 }
 
-/* 响应式 */
-@media (max-width: 1024px) {
+/* ===== 响应式设计 ===== */
+/* 1440px: 4 列 */
+@media (min-width: 1440px) {
   .grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-xl);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+/* 1024px: 3 列 */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 768px: 2 列 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+/* 375px: 1 列 */
+@media (max-width: 767px) {
   .page {
-    padding: var(--spacing-2xl) var(--spacing-md);
+    padding: 48px 16px;
+  }
+
+  .header {
+    margin-bottom: 48px;
   }
 
   .title {
-    font-size: var(--font-size-3xl);
+    font-size: 32px;
   }
 
   .subtitle {
-    font-size: var(--font-size-lg);
+    font-size: 16px;
   }
 
   .grid {
     grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    gap: 16px;
   }
   
   .toolCard {
-    padding: var(--spacing-xl);
+    padding: 20px;
   }
   
   .toolIcon {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
   }
   
   .toolIcon svg {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .toolTitle {
+    font-size: 18px;
+  }
+  
+  .toolDescription {
+    font-size: 13px;
   }
 }
 
-/* 动画关键帧 */
-@keyframes borderSlide {
-  0% {
-    left: -100%;
-    right: 100%;
+/* ===== 无障碍: 减少动画 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .toolCard,
+  .toolIcon,
+  .toolTitle,
+  .category,
+  .arrow,
+  .toolCard::before,
+  .toolCard::after {
+    transition: none !important;
+    animation: none !important;
   }
-  100% {
-    left: 0;
-    right: 0;
+  
+  .toolCard:hover {
+    transform: none;
+  }
+  
+  .toolCard:hover .toolIcon {
+    transform: none;
   }
 }
 
-/* 为不同卡片添加延迟效果 */
-.toolCard:nth-child(1) { animation-delay: 0s; }
-.toolCard:nth-child(2) { animation-delay: 0.1s; }
-.toolCard:nth-child(3) { animation-delay: 0.2s; }
-.toolCard:nth-child(4) { animation-delay: 0.3s; }
-.toolCard:nth-child(5) { animation-delay: 0.4s; }
-.toolCard:nth-child(6) { animation-delay: 0.5s; }
+/* ===== 焦点状态 (键盘导航) ===== */
+.toolLink:focus {
+  outline: 2px solid #0D9488;
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+[data-theme="dark"] .toolLink:focus {
+  outline-color: #14B8A6;
+}
+
+.toolLink:focus-visible {
+  outline: 2px solid #0D9488;
+  outline-offset: 4px;
+}
+
+/* ===== 加载动画 (可选) ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 为不同卡片添加交错延迟 */
+.toolCard:nth-child(1) { animation-delay: 0ms; }
+.toolCard:nth-child(2) { animation-delay: 50ms; }
+.toolCard:nth-child(3) { animation-delay: 100ms; }
+.toolCard:nth-child(4) { animation-delay: 150ms; }
+.toolCard:nth-child(5) { animation-delay: 200ms; }
+.toolCard:nth-child(6) { animation-delay: 250ms; }
+.toolCard:nth-child(7) { animation-delay: 300ms; }
+.toolCard:nth-child(8) { animation-delay: 350ms; }
+.toolCard:nth-child(9) { animation-delay: 400ms; }
+.toolCard:nth-child(10) { animation-delay: 450ms; }
+.toolCard:nth-child(11) { animation-delay: 500ms; }
+.toolCard:nth-child(12) { animation-delay: 550ms; }
 
