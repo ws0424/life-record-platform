@@ -9,7 +9,9 @@ from app.schemas import (
     SendCodeResponse,
     TokenData,
     SendCodeData,
-    ApiResponse
+    ApiResponse,
+    ResetPasswordRequest,
+    MessageResponse
 )
 from app.utils.security import verify_password, get_password_hash, create_access_token, create_refresh_token
 from app.utils.verification import generate_code, save_code, verify_code, check_code_rate_limit
@@ -17,6 +19,9 @@ from app.services.email_service import send_verification_email
 from datetime import datetime, timedelta
 from app.core.config import settings
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AuthService:
@@ -198,5 +203,75 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_200_OK,
                 detail=f"登录失败: {str(e)}"
+            )
+    
+    async def reset_password(self, reset_data: ResetPasswordRequest) -> MessageResponse:
+        """重置密码"""
+        try:
+            logger.info(f"🔄 开始重置密码流程 - 邮箱: {reset_data.email}")
+            
+            # 验证两次密码是否一致
+            if reset_data.new_password != reset_data.confirm_password:
+                logger.warning(f"❌ 密码不一致 - 邮箱: {reset_data.email}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="两次输入的密码不一致"
+                )
+            
+            # 验证密码强度（包含字母和数字）
+            if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$', reset_data.new_password):
+                logger.warning(f"❌ 密码强度不足 - 邮箱: {reset_data.email}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="密码必须包含字母和数字，长度至少6位"
+                )
+            
+            # 验证验证码
+            logger.info(f"🔍 验证验证码 - 邮箱: {reset_data.email}, 验证码: {reset_data.code}")
+            if not verify_code(reset_data.email, reset_data.code, "reset"):
+                logger.warning(f"❌ 验证码错误或已过期 - 邮箱: {reset_data.email}, 验证码: {reset_data.code}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="验证码错误或已过期"
+                )
+            logger.info(f"✅ 验证码验证通过 - 邮箱: {reset_data.email}")
+            
+            # 查找用户
+            logger.info(f"🔍 查找用户 - 邮箱: {reset_data.email}")
+            user = self.db.query(User).filter(User.email == reset_data.email).first()
+            if not user:
+                logger.warning(f"❌ 用户不存在 - 邮箱: {reset_data.email}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="该邮箱未注册"
+                )
+            logger.info(f"✅ 找到用户 - ID: {user.id}, 用户名: {user.username}")
+            
+            # 更新密码
+            logger.info(f"🔐 更新密码 - 用户ID: {user.id}")
+            old_password_hash = user.password_hash
+            user.password_hash = get_password_hash(reset_data.new_password)
+            user.updated_at = datetime.utcnow()
+            
+            self.db.commit()
+            logger.info(f"✅ 密码更新成功 - 用户ID: {user.id}, 邮箱: {reset_data.email}")
+            logger.info(f"📊 密码哈希已更改: {old_password_hash[:20]}... -> {user.password_hash[:20]}...")
+            
+            # 返回统一格式
+            return MessageResponse(
+                code=200,
+                data=None,
+                msg="密码重置成功",
+                errMsg=None
+            )
+        except HTTPException:
+            # 重新抛出 HTTPException，让异常处理器处理
+            raise
+        except Exception as e:
+            # 捕获所有其他异常，返回统一格式
+            logger.error(f"❌ 密码重置失败 - 邮箱: {reset_data.email}, 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_200_OK,
+                detail=f"密码重置失败: {str(e)}"
             )
 

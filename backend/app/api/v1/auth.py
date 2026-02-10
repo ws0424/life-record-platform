@@ -7,10 +7,14 @@ from app.schemas import (
     TokenResponse,
     SendCodeRequest,
     SendCodeResponse,
-    MessageResponse
+    MessageResponse,
+    ResetPasswordRequest
 )
 from app.services.auth_service import AuthService
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -554,4 +558,126 @@ async def get_current_user():
         status_code=status.HTTP_200_OK,
         detail="功能开发中"
     )
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="重置密码",
+    description="使用邮箱验证码重置密码",
+    response_description="返回重置成功消息",
+    responses={
+        200: {
+            "description": "统一响应格式",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "重置成功",
+                            "value": {
+                                "code": 200,
+                                "data": None,
+                                "msg": "密码重置成功",
+                                "errMsg": None
+                            }
+                        },
+                        "code_error": {
+                            "summary": "验证码错误",
+                            "value": {
+                                "code": 422,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "验证码错误或已过期"
+                            }
+                        },
+                        "password_mismatch": {
+                            "summary": "密码不一致",
+                            "value": {
+                                "code": 422,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "两次输入的密码不一致"
+                            }
+                        },
+                        "email_not_found": {
+                            "summary": "邮箱未注册",
+                            "value": {
+                                "code": 404,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "该邮箱未注册"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+)
+async def reset_password(
+    reset_data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    ## 重置密码
+    
+    使用邮箱验证码重置账户密码。
+    
+    ### 重置流程
+    1. 调用 `/api/auth/send-code` 发送验证码（type: reset）
+    2. 用户收到邮件验证码
+    3. 填写新密码和验证码并提交
+    4. 验证通过后更新密码
+    5. 返回成功消息
+    
+    ### 请求参数
+    - **email**: 邮箱地址（必填）
+    - **code**: 6 位数字验证码（必填）
+    - **new_password**: 新密码，6-20 位，必须包含字母和数字（必填）
+    - **confirm_password**: 确认新密码，必须与新密码一致（必填）
+    
+    ### 验证规则
+    - 验证码必须正确且未过期
+    - 邮箱必须已注册
+    - 新密码必须包含字母和数字
+    - 两次密码必须一致
+    
+    ### 示例请求
+    ```json
+    {
+        "email": "user@example.com",
+        "code": "123456",
+        "new_password": "newpass123",
+        "confirm_password": "newpass123"
+    }
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": null,
+        "msg": "密码重置成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 错误响应示例
+    ```json
+    {
+        "code": 422,
+        "data": null,
+        "msg": "error",
+        "errMsg": "验证码错误或已过期"
+    }
+    ```
+    
+    ### 安全提示
+    - 验证码一次性使用，验证后自动删除
+    - 密码重置后建议立即登录
+    - 如非本人操作，请立即联系客服
+    """
+    auth_service = AuthService(db)
+    result = await auth_service.reset_password(reset_data)
+    return result
 
