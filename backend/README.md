@@ -80,8 +80,13 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### 5. 访问 API 文档
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+应用启动后，可以通过以下地址访问完整的 API 文档：
+
+- **Swagger UI**: http://localhost:8000/docs（推荐，可交互测试）
+- **ReDoc**: http://localhost:8000/redoc（美观的文档展示）
+- **OpenAPI JSON**: http://localhost:8000/openapi.json（导出规范）
+
+详细的 Swagger 文档使用说明请查看 [SWAGGER_DOCS.md](SWAGGER_DOCS.md)
 
 ## API 端点
 
@@ -95,7 +100,9 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 | POST | `/api/auth/logout` | 用户登出 |
 | GET | `/api/auth/me` | 获取当前用户信息 |
 
-详细 API 文档请参考 [AUTH_API_DOCS.md](../AUTH_API_DOCS.md)
+详细 API 文档请参考：
+- [AUTH_API_DOCS.md](../AUTH_API_DOCS.md) - 完整的 API 接口文档
+- [SWAGGER_DOCS.md](SWAGGER_DOCS.md) - Swagger 文档使用指南
 
 ## 项目结构
 
