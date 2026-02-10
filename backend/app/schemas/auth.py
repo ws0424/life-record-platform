@@ -1,6 +1,27 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Any, Generic, TypeVar
 from datetime import datetime
+
+# 泛型类型变量
+T = TypeVar('T')
+
+
+class ApiResponse(BaseModel, Generic[T]):
+    """统一 API 响应模型"""
+    code: int = Field(..., description="业务状态码", example=200)
+    data: Optional[T] = Field(None, description="响应数据")
+    msg: str = Field(..., description="响应消息", example="success")
+    errMsg: Optional[str] = Field(None, description="错误详情", example=None)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "code": 200,
+                "data": {},
+                "msg": "success",
+                "errMsg": None
+            }
+        }
 
 
 class UserBase(BaseModel):
@@ -106,76 +127,24 @@ class UserResponse(BaseModel):
         }
 
 
-class TokenResponse(BaseModel):
-    """Token 响应模型"""
+class TokenData(BaseModel):
+    """Token 数据模型"""
     access_token: str = Field(..., description="访问令牌，有效期 1 小时", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     refresh_token: str = Field(..., description="刷新令牌，用于刷新 Access Token", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
     token_type: str = Field(default="Bearer", description="令牌类型", example="Bearer")
     expires_in: int = Field(..., description="Access Token 过期时间（秒）", example=3600)
     user: UserResponse = Field(..., description="用户信息")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "token_type": "Bearer",
-                "expires_in": 3600,
-                "user": {
-                    "id": "550e8400-e29b-41d4-a716-446655440000",
-                    "username": "张三",
-                    "email": "user@example.com",
-                    "avatar": "https://example.com/avatar.jpg",
-                    "bio": "这是我的个人简介",
-                    "is_active": True,
-                    "is_verified": True,
-                    "created_at": "2026-02-10T10:00:00Z",
-                    "updated_at": "2026-02-10T10:00:00Z"
-                }
-            }
-        }
 
 
-class RefreshTokenResponse(BaseModel):
-    """刷新 Token 响应模型"""
-    access_token: str = Field(..., description="新的访问令牌", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-    token_type: str = Field(default="Bearer", description="令牌类型", example="Bearer")
-    expires_in: int = Field(..., description="过期时间（秒）", example=3600)
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "token_type": "Bearer",
-                "expires_in": 3600
-            }
-        }
-
-
-class MessageResponse(BaseModel):
-    """消息响应模型"""
-    message: str = Field(..., description="响应消息", example="操作成功")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "操作成功"
-            }
-        }
-
-
-class SendCodeResponse(BaseModel):
-    """发送验证码响应模型"""
+class SendCodeData(BaseModel):
+    """发送验证码数据模型"""
     email: str = Field(..., description="邮箱地址", example="user@example.com")
     expires_in: int = Field(..., description="验证码有效期（秒）", example=300)
     sent_at: datetime = Field(..., description="发送时间", example="2026-02-10T10:00:00Z")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "email": "user@example.com",
-                "expires_in": 300,
-                "sent_at": "2026-02-10T10:00:00Z"
-            }
-        }
 
+
+# 响应类型别名
+TokenResponse = ApiResponse[TokenData]
+SendCodeResponse = ApiResponse[SendCodeData]
+UserInfoResponse = ApiResponse[UserResponse]
+MessageResponse = ApiResponse[None]

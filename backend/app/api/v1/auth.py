@@ -23,33 +23,41 @@ router = APIRouter()
     response_description="返回验证码发送信息",
     responses={
         200: {
-            "description": "验证码发送成功",
+            "description": "统一响应格式",
             "content": {
                 "application/json": {
-                    "example": {
-                        "email": "user@example.com",
-                        "expires_in": 300,
-                        "sent_at": "2026-02-10T10:00:00Z"
-                    }
-                }
-            }
-        },
-        409: {
-            "description": "邮箱已被注册（注册类型）",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "该邮箱已被注册"
-                    }
-                }
-            }
-        },
-        429: {
-            "description": "请求过于频繁",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "发送过于频繁，请60秒后再试"
+                    "examples": {
+                        "success": {
+                            "summary": "成功",
+                            "value": {
+                                "code": 200,
+                                "data": {
+                                    "email": "user@example.com",
+                                    "expires_in": 300,
+                                    "sent_at": "2026-02-10T10:00:00Z"
+                                },
+                                "msg": "验证码发送成功",
+                                "errMsg": None
+                            }
+                        },
+                        "rate_limit": {
+                            "summary": "请求过于频繁",
+                            "value": {
+                                "code": 429,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "发送过于频繁，请60秒后再试"
+                            }
+                        },
+                        "email_exists": {
+                            "summary": "邮箱已注册",
+                            "value": {
+                                "code": 409,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "该邮箱已被注册"
+                            }
+                        }
                     }
                 }
             }
@@ -89,12 +97,27 @@ async def send_verification_code(
     }
     ```
     
-    ### 示例响应
+    ### 成功响应示例
     ```json
     {
-        "email": "user@example.com",
-        "expires_in": 300,
-        "sent_at": "2026-02-10T10:00:00Z"
+        "code": 200,
+        "data": {
+            "email": "user@example.com",
+            "expires_in": 300,
+            "sent_at": "2026-02-10T10:00:00Z"
+        },
+        "msg": "验证码发送成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 错误响应示例
+    ```json
+    {
+        "code": 429,
+        "data": null,
+        "msg": "error",
+        "errMsg": "发送过于频繁，请60秒后再试"
     }
     ```
     """
@@ -106,61 +129,58 @@ async def send_verification_code(
 @router.post(
     "/register",
     response_model=TokenResponse,
-    status_code=status.HTTP_201_CREATED,
     summary="用户注册",
     description="使用邮箱验证码注册新账户",
     response_description="返回 JWT Token 和用户信息",
     responses={
-        201: {
-            "description": "注册成功",
+        200: {
+            "description": "统一响应格式",
             "content": {
                 "application/json": {
-                    "example": {
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "token_type": "Bearer",
-                        "expires_in": 3600,
-                        "user": {
-                            "id": "uuid",
-                            "username": "张三",
-                            "email": "user@example.com",
-                            "avatar": None,
-                            "bio": None,
-                            "is_active": True,
-                            "is_verified": True,
-                            "created_at": "2026-02-10T10:00:00Z",
-                            "updated_at": "2026-02-10T10:00:00Z"
+                    "examples": {
+                        "success": {
+                            "summary": "注册成功",
+                            "value": {
+                                "code": 200,
+                                "data": {
+                                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                    "token_type": "Bearer",
+                                    "expires_in": 3600,
+                                    "user": {
+                                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                                        "username": "张三",
+                                        "email": "user@example.com",
+                                        "avatar": None,
+                                        "bio": None,
+                                        "is_active": True,
+                                        "is_verified": True,
+                                        "created_at": "2026-02-10T10:00:00Z",
+                                        "updated_at": "2026-02-10T10:00:00Z"
+                                    }
+                                },
+                                "msg": "注册成功",
+                                "errMsg": None
+                            }
+                        },
+                        "code_error": {
+                            "summary": "验证码错误",
+                            "value": {
+                                "code": 422,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "验证码错误或已过期"
+                            }
+                        },
+                        "email_exists": {
+                            "summary": "邮箱已注册",
+                            "value": {
+                                "code": 409,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "该邮箱已被注册"
+                            }
                         }
-                    }
-                }
-            }
-        },
-        400: {
-            "description": "请求参数错误",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "两次输入的密码不一致"
-                    }
-                }
-            }
-        },
-        409: {
-            "description": "邮箱或用户名已被使用",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "该邮箱已被注册"
-                    }
-                }
-            }
-        },
-        422: {
-            "description": "验证码错误或已过期",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "验证码错误或已过期"
                     }
                 }
             }
@@ -208,29 +228,44 @@ async def register(
     }
     ```
     
-    ### 示例响应
+    ### 成功响应示例
     ```json
     {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "user": {
-            "id": "uuid",
-            "username": "张三",
-            "email": "user@example.com",
-            "avatar": null,
-            "bio": null,
-            "is_active": true,
-            "is_verified": true,
-            "created_at": "2026-02-10T10:00:00Z",
-            "updated_at": "2026-02-10T10:00:00Z"
-        }
+        "code": 200,
+        "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "user": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "username": "张三",
+                "email": "user@example.com",
+                "avatar": null,
+                "bio": null,
+                "is_active": true,
+                "is_verified": true,
+                "created_at": "2026-02-10T10:00:00Z",
+                "updated_at": "2026-02-10T10:00:00Z"
+            }
+        },
+        "msg": "注册成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 错误响应示例
+    ```json
+    {
+        "code": 422,
+        "data": null,
+        "msg": "error",
+        "errMsg": "验证码错误或已过期"
     }
     ```
     
     ### Token 使用
-    注册成功后，将 `access_token` 存储在客户端，后续请求需要在请求头中携带：
+    注册成功后，从 `data.access_token` 获取令牌并存储在客户端，后续请求需要在请求头中携带：
     ```
     Authorization: Bearer {access_token}
     ```
@@ -248,45 +283,53 @@ async def register(
     response_description="返回 JWT Token 和用户信息",
     responses={
         200: {
-            "description": "登录成功",
+            "description": "统一响应格式",
             "content": {
                 "application/json": {
-                    "example": {
-                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "token_type": "Bearer",
-                        "expires_in": 3600,
-                        "user": {
-                            "id": "uuid",
-                            "username": "张三",
-                            "email": "user@example.com",
-                            "avatar": "https://example.com/avatar.jpg",
-                            "bio": "这是我的个人简介",
-                            "is_active": True,
-                            "is_verified": True,
-                            "created_at": "2026-02-10T10:00:00Z",
-                            "updated_at": "2026-02-10T10:00:00Z"
+                    "examples": {
+                        "success": {
+                            "summary": "登录成功",
+                            "value": {
+                                "code": 200,
+                                "data": {
+                                    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                    "token_type": "Bearer",
+                                    "expires_in": 3600,
+                                    "user": {
+                                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                                        "username": "张三",
+                                        "email": "user@example.com",
+                                        "avatar": "https://example.com/avatar.jpg",
+                                        "bio": "这是我的个人简介",
+                                        "is_active": True,
+                                        "is_verified": True,
+                                        "created_at": "2026-02-10T10:00:00Z",
+                                        "updated_at": "2026-02-10T10:00:00Z"
+                                    }
+                                },
+                                "msg": "登录成功",
+                                "errMsg": None
+                            }
+                        },
+                        "auth_error": {
+                            "summary": "认证失败",
+                            "value": {
+                                "code": 401,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "邮箱或密码错误"
+                            }
+                        },
+                        "account_disabled": {
+                            "summary": "账户被禁用",
+                            "value": {
+                                "code": 403,
+                                "data": None,
+                                "msg": "error",
+                                "errMsg": "账户已被禁用"
+                            }
                         }
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "邮箱或密码错误",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "邮箱或密码错误"
-                    }
-                }
-            }
-        },
-        403: {
-            "description": "账户已被禁用",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "账户已被禁用"
                     }
                 }
             }
@@ -327,29 +370,44 @@ async def login(
     }
     ```
     
-    ### 示例响应
+    ### 成功响应示例
     ```json
     {
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-        "token_type": "Bearer",
-        "expires_in": 3600,
-        "user": {
-            "id": "uuid",
-            "username": "张三",
-            "email": "user@example.com",
-            "avatar": "https://example.com/avatar.jpg",
-            "bio": "这是我的个人简介",
-            "is_active": true,
-            "is_verified": true,
-            "created_at": "2026-02-10T10:00:00Z",
-            "updated_at": "2026-02-10T10:00:00Z"
-        }
+        "code": 200,
+        "data": {
+            "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "user": {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "username": "张三",
+                "email": "user@example.com",
+                "avatar": "https://example.com/avatar.jpg",
+                "bio": "这是我的个人简介",
+                "is_active": true,
+                "is_verified": true,
+                "created_at": "2026-02-10T10:00:00Z",
+                "updated_at": "2026-02-10T10:00:00Z"
+            }
+        },
+        "msg": "登录成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 错误响应示例
+    ```json
+    {
+        "code": 401,
+        "data": null,
+        "msg": "error",
+        "errMsg": "邮箱或密码错误"
     }
     ```
     
     ### Token 使用
-    登录成功后，将 `access_token` 存储在客户端，后续请求需要在请求头中携带：
+    登录成功后，从 `data.access_token` 获取令牌并存储在客户端，后续请求需要在请求头中携带：
     ```
     Authorization: Bearer {access_token}
     ```
@@ -372,11 +430,14 @@ async def login(
     response_description="返回登出成功消息",
     responses={
         200: {
-            "description": "登出成功",
+            "description": "统一响应格式",
             "content": {
                 "application/json": {
                     "example": {
-                        "message": "登出成功"
+                        "code": 200,
+                        "data": None,
+                        "msg": "登出成功",
+                        "errMsg": None
                     }
                 }
             }
@@ -399,10 +460,13 @@ async def logout():
     Authorization: Bearer {access_token}
     ```
     
-    ### 示例响应
+    ### 成功响应示例
     ```json
     {
-        "message": "登出成功"
+        "code": 200,
+        "data": null,
+        "msg": "登出成功",
+        "errMsg": null
     }
     ```
     
@@ -412,7 +476,8 @@ async def logout():
     
     **状态**: ⏳ 功能开发中
     """
-    return MessageResponse(message="登出成功")
+    from app.schemas import ApiResponse
+    return ApiResponse(code=200, data=None, msg="登出成功", errMsg=None)
 
 
 @router.get(
@@ -422,29 +487,24 @@ async def logout():
     response_description="返回用户信息",
     responses={
         200: {
-            "description": "获取成功",
+            "description": "统一响应格式",
             "content": {
                 "application/json": {
                     "example": {
-                        "id": "uuid",
-                        "username": "张三",
-                        "email": "user@example.com",
-                        "avatar": "https://example.com/avatar.jpg",
-                        "bio": "这是我的个人简介",
-                        "is_active": True,
-                        "is_verified": True,
-                        "created_at": "2026-02-10T10:00:00Z",
-                        "updated_at": "2026-02-10T10:00:00Z"
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "未授权（Token 无效或过期）",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "未授权"
+                        "code": 200,
+                        "data": {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "username": "张三",
+                            "email": "user@example.com",
+                            "avatar": "https://example.com/avatar.jpg",
+                            "bio": "这是我的个人简介",
+                            "is_active": True,
+                            "is_verified": True,
+                            "created_at": "2026-02-10T10:00:00Z",
+                            "updated_at": "2026-02-10T10:00:00Z"
+                        },
+                        "msg": "success",
+                        "errMsg": None
                     }
                 }
             }
@@ -462,18 +522,23 @@ async def get_current_user():
     Authorization: Bearer {access_token}
     ```
     
-    ### 示例响应
+    ### 成功响应示例
     ```json
     {
-        "id": "uuid",
-        "username": "张三",
-        "email": "user@example.com",
-        "avatar": "https://example.com/avatar.jpg",
-        "bio": "这是我的个人简介",
-        "is_active": true,
-        "is_verified": true,
-        "created_at": "2026-02-10T10:00:00Z",
-        "updated_at": "2026-02-10T10:00:00Z"
+        "code": 200,
+        "data": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "username": "张三",
+            "email": "user@example.com",
+            "avatar": "https://example.com/avatar.jpg",
+            "bio": "这是我的个人简介",
+            "is_active": true,
+            "is_verified": true,
+            "created_at": "2026-02-10T10:00:00Z",
+            "updated_at": "2026-02-10T10:00:00Z"
+        },
+        "msg": "success",
+        "errMsg": null
     }
     ```
     
@@ -486,7 +551,7 @@ async def get_current_user():
     """
     # TODO: 实现获取当前用户逻辑
     raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        status_code=status.HTTP_200_OK,
         detail="功能开发中"
     )
 

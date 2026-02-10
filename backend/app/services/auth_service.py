@@ -1,7 +1,16 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.models.user import User
-from app.schemas import UserCreate, UserLogin, TokenResponse, UserResponse, SendCodeResponse
+from app.schemas import (
+    UserCreate, 
+    UserLogin, 
+    TokenResponse, 
+    UserResponse, 
+    SendCodeResponse,
+    TokenData,
+    SendCodeData,
+    ApiResponse
+)
 from app.utils.security import verify_password, get_password_hash, create_access_token, create_refresh_token
 from app.utils.verification import generate_code, save_code, verify_code, check_code_rate_limit
 from app.services.email_service import send_verification_email
@@ -19,7 +28,7 @@ class AuthService:
         # 检查频率限制
         if not check_code_rate_limit(email):
             raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                status_code=status.HTTP_200_OK,
                 detail="发送过于频繁，请60秒后再试"
             )
         
@@ -28,7 +37,7 @@ class AuthService:
             existing_user = self.db.query(User).filter(User.email == email).first()
             if existing_user:
                 raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
+                    status_code=status.HTTP_200_OK,
                     detail="该邮箱已被注册"
                 )
         
@@ -37,7 +46,7 @@ class AuthService:
             user = self.db.query(User).filter(User.email == email).first()
             if not user:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
+                    status_code=status.HTTP_200_OK,
                     detail="该邮箱未注册"
                 )
         
@@ -50,14 +59,20 @@ class AuthService:
             await send_verification_email(email, code, code_type)
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status_code=status.HTTP_200_OK,
                 detail=f"邮件发送失败: {str(e)}"
             )
         
+        # 返回统一格式
         return SendCodeResponse(
-            email=email,
-            expires_in=settings.CODE_EXPIRE_MINUTES * 60,
-            sent_at=datetime.utcnow()
+            code=200,
+            data=SendCodeData(
+                email=email,
+                expires_in=settings.CODE_EXPIRE_MINUTES * 60,
+                sent_at=datetime.utcnow()
+            ),
+            msg="验证码发送成功",
+            errMsg=None
         )
     
     async def register_user(self, user_data: UserCreate) -> TokenResponse:
@@ -65,21 +80,21 @@ class AuthService:
         # 验证密码一致性
         if user_data.password != user_data.confirm_password:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_200_OK,
                 detail="两次输入的密码不一致"
             )
         
         # 验证密码强度（包含字母和数字）
         if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,20}$', user_data.password):
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_200_OK,
                 detail="密码必须包含字母和数字"
             )
         
         # 验证验证码
         if not verify_code(user_data.email, user_data.code, "register"):
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_200_OK,
                 detail="验证码错误或已过期"
             )
         
@@ -87,7 +102,7 @@ class AuthService:
         existing_user = self.db.query(User).filter(User.email == user_data.email).first()
         if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
+                status_code=status.HTTP_200_OK,
                 detail="该邮箱已被注册"
             )
         
@@ -95,7 +110,7 @@ class AuthService:
         existing_username = self.db.query(User).filter(User.username == user_data.username).first()
         if existing_username:
             raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
+                status_code=status.HTTP_200_OK,
                 detail="该用户名已被使用"
             )
         
@@ -116,12 +131,18 @@ class AuthService:
         access_token = create_access_token(data={"sub": str(new_user.id)})
         refresh_token = create_refresh_token(data={"sub": str(new_user.id)}, remember=False)
         
+        # 返回统一格式
         return TokenResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="Bearer",
-            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            user=UserResponse.from_orm(new_user)
+            code=200,
+            data=TokenData(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type="Bearer",
+                expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                user=UserResponse.from_orm(new_user)
+            ),
+            msg="注册成功",
+            errMsg=None
         )
     
     async def login_user(self, login_data: UserLogin) -> TokenResponse:
@@ -130,21 +151,21 @@ class AuthService:
         user = self.db.query(User).filter(User.email == login_data.email).first()
         if not user:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_200_OK,
                 detail="邮箱或密码错误"
             )
         
         # 验证密码
         if not verify_password(login_data.password, user.password_hash):
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_200_OK,
                 detail="邮箱或密码错误"
             )
         
         # 检查账户是否激活
         if not user.is_active:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_200_OK,
                 detail="账户已被禁用"
             )
         
@@ -152,11 +173,17 @@ class AuthService:
         access_token = create_access_token(data={"sub": str(user.id)})
         refresh_token = create_refresh_token(data={"sub": str(user.id)}, remember=login_data.remember)
         
+        # 返回统一格式
         return TokenResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="Bearer",
-            expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-            user=UserResponse.from_orm(user)
+            code=200,
+            data=TokenData(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_type="Bearer",
+                expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+                user=UserResponse.from_orm(user)
+            ),
+            msg="登录成功",
+            errMsg=None
         )
 

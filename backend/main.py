@@ -1,7 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.database import engine, Base
+from app.core.exceptions import (
+    http_exception_handler,
+    validation_exception_handler,
+    general_exception_handler
+)
 from app.api.v1 import auth
 
 # 创建数据库表
@@ -15,6 +22,35 @@ app = FastAPI(
 ## 生活记录平台 API 文档
 
 基于 FastAPI 的用户认证系统后端服务。
+
+### 统一响应格式
+
+所有 API 响应都遵循统一格式：
+
+```json
+{
+    "code": 200,           // 业务状态码
+    "data": {},            // 响应数据
+    "msg": "success",      // 响应消息
+    "errMsg": null         // 错误详情（成功时为 null）
+}
+```
+
+**注意**: HTTP 状态码始终为 200，业务状态通过 `code` 字段判断。
+
+### 业务状态码
+
+| 状态码 | 说明 |
+|--------|------|
+| 200 | 成功 |
+| 400 | 请求参数错误 |
+| 401 | 未授权（邮箱或密码错误） |
+| 403 | 禁止访问（账户被禁用） |
+| 404 | 资源不存在 |
+| 409 | 资源冲突（邮箱已注册） |
+| 422 | 验证码错误或已过期 |
+| 429 | 请求过于频繁 |
+| 500 | 服务器错误 |
 
 ### 功能特性
 
@@ -53,19 +89,6 @@ app = FastAPI(
 * Access Token 有效期：1 小时
 * Refresh Token 有效期：7 天（记住我）/ 1 天（不记住）
 
-### 错误码
-
-| 错误码 | 说明 |
-|--------|------|
-| 200 | 成功 |
-| 400 | 请求参数错误 |
-| 401 | 未授权 |
-| 404 | 资源不存在 |
-| 409 | 资源冲突（邮箱已注册） |
-| 422 | 验证码错误或已过期 |
-| 429 | 请求过于频繁 |
-| 500 | 服务器错误 |
-
 ### 联系方式
 
 * 项目地址: [GitHub](https://github.com/ws0424/life-record-platform)
@@ -79,7 +102,7 @@ app = FastAPI(
     openapi_tags=[
         {
             "name": "认证",
-            "description": "用户认证相关接口，包括注册、登录、验证码等功能。",
+            "description": "用户认证相关接口，包括注册、登录、验证码等功能。所有响应遵循统一格式 {code, data, msg, errMsg}。",
         },
         {
             "name": "系统",
@@ -95,6 +118,11 @@ app = FastAPI(
         "url": "https://opensource.org/licenses/MIT",
     }
 )
+
+# 注册异常处理器
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # CORS 配置
 app.add_middleware(
