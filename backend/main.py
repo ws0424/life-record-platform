@@ -10,16 +10,27 @@ from app.core.exceptions import (
     general_exception_handler
 )
 from app.api.v1 import auth
+import logging
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # 创建数据库表（需要先启动 PostgreSQL）
 # 如果数据库未启动，可以注释掉这行，服务仍可启动
 try:
     Base.metadata.create_all(bind=engine)
-    print("✅ 数据库表创建成功")
+    logger.info("✅ 数据库表创建成功")
 except Exception as e:
-    print(f"⚠️  数据库连接失败: {e}")
-    print("💡 提示: 请先启动 PostgreSQL 数据库")
-    print("   docker run -d --name postgres -e POSTGRES_PASSWORD=postgres123 -e POSTGRES_DB=utils_web -p 5432:5432 postgres:15")
+    logger.error(f"⚠️  数据库连接失败: {e}")
+    logger.info("💡 提示: 请先启动 PostgreSQL 数据库")
+    logger.info("   docker run -d --name postgres -e POSTGRES_PASSWORD=postgres123 -e POSTGRES_DB=utils_web -p 5432:5432 postgres:15")
 
 # Swagger 文档配置
 app = FastAPI(

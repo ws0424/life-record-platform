@@ -1,49 +1,93 @@
 import apiClient from './client';
 
+// 登录请求数据
 export interface LoginData {
   email: string;
   password: string;
+  remember?: boolean;
 }
 
+// 注册请求数据
 export interface RegisterData {
-  username: string;
   email: string;
+  code: string;
+  username: string;
   password: string;
 }
 
+// 发送验证码请求数据
+export interface SendCodeData {
+  email: string;
+  type: 'register' | 'reset';
+}
+
+// 重置密码请求数据
+export interface ResetPasswordData {
+  email: string;
+  code: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+// 用户信息
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  avatar: string | null;
+  bio: string | null;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 认证响应数据
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
-  user: {
-    id: string;
-    username: string;
-    email: string;
-    avatar_url?: string;
-  };
+  expires_in: number;
+  user: User;
 }
 
-// 登录
-export const login = async (data: LoginData): Promise<AuthResponse> => {
-  const response = await apiClient.post('/auth/login', data);
+// 验证码响应数据
+export interface SendCodeResponse {
+  email: string;
+  expires_in: number;
+  sent_at: string;
+}
+
+// 发送验证码
+export const sendCode = async (data: SendCodeData): Promise<SendCodeResponse> => {
+  const response = await apiClient.post('/auth/send-code', data);
   return response.data;
 };
 
-// 注册
+// 用户注册
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
   const response = await apiClient.post('/auth/register', data);
   return response.data;
 };
 
-// 登出
+// 用户登录
+export const login = async (data: LoginData): Promise<AuthResponse> => {
+  const response = await apiClient.post('/auth/login', data);
+  return response.data;
+};
+
+// 用户登出
 export const logout = async (): Promise<void> => {
-  await apiClient.post('/auth/logout');
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
+  try {
+    await apiClient.post('/auth/logout');
+  } finally {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  }
 };
 
 // 获取当前用户信息
-export const getCurrentUser = async () => {
+export const getCurrentUser = async (): Promise<User> => {
   const response = await apiClient.get('/auth/me');
   return response.data;
 };
@@ -53,6 +97,12 @@ export const refreshToken = async (refreshToken: string): Promise<AuthResponse> 
   const response = await apiClient.post('/auth/refresh', {
     refresh_token: refreshToken,
   });
+  return response.data;
+};
+
+// 重置密码
+export const resetPassword = async (data: ResetPasswordData): Promise<void> => {
+  const response = await apiClient.post('/auth/reset-password', data);
   return response.data;
 };
 

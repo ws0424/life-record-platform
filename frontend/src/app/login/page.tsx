@@ -5,9 +5,16 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
+import * as authApi from '@/lib/api/auth';
+import { useAuthStore } from '@/lib/store/authStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from '@/components/ui/Toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { setAuth } = useAuthStore();
+  const { toasts, removeToast, success, error } = useToast();
+  
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,17 +26,30 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     
-    // TODO: 实现登录逻辑
-    // const response = await fetch('/api/auth/login', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData)
-    // });
-    
-    setTimeout(() => {
+    try {
+      const response = await authApi.login({
+        email: formData.email,
+        password: formData.password,
+        remember: formData.remember,
+      });
+      
+      // 保存 token 和用户信息
+      localStorage.setItem('access_token', response.access_token);
+      localStorage.setItem('refresh_token', response.refresh_token);
+      setAuth(response.user, response.access_token);
+      
+      success('登录成功！');
+      
+      // 延迟跳转，让用户看到成功提示
+      setTimeout(() => {
+        router.push('/');
+      }, 1000);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      error(err.message || '登录失败，请检查邮箱和密码');
+    } finally {
       setIsLoading(false);
-      router.push('/');
-    }, 1500);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +62,7 @@ export default function LoginPage() {
 
   return (
     <div className={styles.page}>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className={styles.container}>
         <motion.div
           className={styles.formCard}

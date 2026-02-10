@@ -1,7 +1,15 @@
 import axios from 'axios';
 
+// 后端统一响应格式
+export interface ApiResponse<T = any> {
+  code: number;
+  data: T;
+  msg: string;
+  errMsg: string | null;
+}
+
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -28,7 +36,19 @@ apiClient.interceptors.request.use(
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response) => {
-    return response;
+    // 后端返回统一格式 {code, data, msg, errMsg}
+    const apiResponse: ApiResponse = response.data;
+    
+    // 如果业务状态码不是 200，抛出错误
+    if (apiResponse.code !== 200) {
+      const error: any = new Error(apiResponse.errMsg || apiResponse.msg);
+      error.code = apiResponse.code;
+      error.response = response;
+      return Promise.reject(error);
+    }
+    
+    // 返回 data 部分
+    return { ...response, data: apiResponse.data };
   },
   async (error) => {
     const originalRequest = error.config;
@@ -46,7 +66,7 @@ apiClient.interceptors.response.use(
             { refresh_token: refreshToken }
           );
 
-          const { access_token } = response.data;
+          const { access_token } = response.data.data;
           localStorage.setItem('access_token', access_token);
 
           // 重新发送原始请求
@@ -62,6 +82,13 @@ apiClient.interceptors.response.use(
         }
         return Promise.reject(refreshError);
       }
+    }
+
+    // 处理后端返回的错误信息
+    if (error.response?.data?.errMsg) {
+      error.message = error.response.data.errMsg;
+    } else if (error.response?.data?.msg) {
+      error.message = error.response.data.msg;
     }
 
     return Promise.reject(error);

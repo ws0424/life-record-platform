@@ -13,8 +13,15 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   },
 
-  // CSS 配置
-  cssModules: true,
+  // 开发环境代理配置
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:8000/api/:path*',
+      },
+    ];
+  },
 
   // Webpack 配置
   webpack: (config) => {

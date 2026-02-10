@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     
     # 安全配置
     PASSWORD_MIN_LENGTH: int = 6
-    PASSWORD_MAX_LENGTH: int = 20
+    PASSWORD_MAX_LENGTH: int = 50  # bcrypt 限制 72 字节，设置为 50 字符更安全
     CODE_EXPIRE_MINUTES: int = 5
     LOGIN_FAIL_LOCK_MINUTES: int = 30
     MAX_LOGIN_ATTEMPTS: int = 5

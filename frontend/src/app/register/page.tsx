@@ -5,9 +5,16 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
+import * as authApi from '@/lib/api/auth';
+import { useAuthStore } from '@/lib/store/authStore';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from '@/components/ui/Toast';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { setAuth } = useAuthStore();
+  const { toasts, removeToast, success, error, info } = useToast();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   
@@ -23,14 +30,14 @@ export default function RegisterPage() {
   // 发送验证码
   const handleSendCode = async () => {
     if (!formData.email) {
-      alert('请输入邮箱地址');
+      error('请输入邮箱地址');
       return;
     }
 
     // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      alert('请输入正确的邮箱格式');
+      error('请输入正确的邮箱格式');
       return;
     }
 
@@ -40,17 +47,14 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     
-    // TODO: 调用发送验证码 API
-    // const response = await fetch('/api/auth/send-code', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email: formData.email, type: 'register' })
-    // });
-    
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await authApi.sendCode({
+        email: formData.email,
+        type: 'register',
+      });
+      
+      success('验证码已发送到您的邮箱');
       setCountdown(60);
-      alert('验证码已发送到您的邮箱');
       
       // 倒计时
       const timer = setInterval(() => {
@@ -62,7 +66,12 @@ export default function RegisterPage() {
           return prev - 1;
         });
       }, 1000);
-    }, 1000);
+    } catch (err: any) {
+      console.error('Send code error:', err);
+      error(err.message || '验证码发送失败');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 注册提交
@@ -71,36 +80,54 @@ export default function RegisterPage() {
     
     // 验证密码
     if (formData.password !== formData.confirmPassword) {
-      alert('两次输入的密码不一致');
+      error('两次输入的密码不一致');
       return;
     }
 
     if (formData.password.length < 6) {
-      alert('密码长度至少6位');
+      error('密码长度至少6位');
       return;
     }
 
     // 验证密码强度（包含字母和数字）
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)/;
     if (!passwordRegex.test(formData.password)) {
-      alert('密码必须包含字母和数字');
+      error('密码必须包含字母和数字');
+      return;
+    }
+
+    if (formData.username.length < 2 || formData.username.length > 20) {
+      error('用户名长度必须在2-20个字符之间');
       return;
     }
 
     setIsLoading(true);
     
-    // TODO: 实现注册逻辑
-    // const response = await fetch('/api/auth/register', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(formData)
-    // });
-    
-    setTimeout(() => {
+    try {
+      const response = await authApi.register({
+        email: formData.email,
+        code: formData.code,
+        username: formData.username,
+        password: formData.password,
+      });
+      
+      // 保存 token 和用户信息
+      localStorage.setItem('access_token', response.access_token);
+      localStorage.setItem('refresh_token', response.refresh_token);
+      setAuth(response.user, response.access_token);
+      
+      success('注册成功！');
+      
+      // 延迟跳转
+      setTimeout(() => {
+        router.push('/');
+      }, 1000);
+    } catch (err: any) {
+      console.error('Register error:', err);
+      error(err.message || '注册失败，请检查信息是否正确');
+    } finally {
       setIsLoading(false);
-      alert('注册成功！');
-      router.push('/');
-    }, 1500);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,6 +140,7 @@ export default function RegisterPage() {
 
   return (
     <div className={styles.page}>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className={styles.container}>
         <motion.div
           className={styles.formCard}

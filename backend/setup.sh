@@ -46,6 +46,37 @@ else
     echo "✅ .env 文件已存在"
 fi
 
+# 配置 Docker 国内镜像源
+echo ""
+echo "🐳 配置 Docker 国内镜像源..."
+if command -v docker &> /dev/null; then
+    echo "✅ Docker 已安装"
+    
+    # 检查是否已配置镜像源
+    if [ -f ~/.docker/daemon.json ]; then
+        echo "📝 Docker 配置文件已存在"
+    else
+        echo "📝 创建 Docker 配置文件..."
+        mkdir -p ~/.docker
+        cat > ~/.docker/daemon.json <<EOF
+{
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://hub-mirror.c.163.com",
+    "https://mirror.baidubce.com"
+  ]
+}
+EOF
+        echo "✅ Docker 镜像源配置完成"
+        echo "⚠️  请重启 Docker 服务使配置生效"
+        echo "   macOS: 重启 Docker Desktop"
+        echo "   Linux: sudo systemctl restart docker"
+    fi
+else
+    echo "⚠️  Docker 未安装"
+    echo "   请先安装 Docker: https://docs.docker.com/get-docker/"
+fi
+
 # 检查 PostgreSQL
 echo ""
 echo "🔍 检查 PostgreSQL..."
@@ -72,13 +103,15 @@ echo "✅ 初始化完成！"
 echo ""
 echo "📖 下一步："
 echo "   1. 编辑 .env 文件配置数据库和邮件服务"
-echo "   2. 启动 PostgreSQL 和 Redis"
-echo "   3. 激活虚拟环境: source venv/bin/activate"
-echo "   4. 运行服务: python main.py"
+echo "   2. 如果配置了 Docker 镜像源，请重启 Docker"
+echo "   3. 启动 PostgreSQL 和 Redis"
+echo "   4. 激活虚拟环境: source venv/bin/activate"
+echo "   5. 运行服务: python main.py"
 echo ""
 echo "💡 提示："
 echo "   - 虚拟环境位置: backend/venv"
 echo "   - 激活命令: source venv/bin/activate"
 echo "   - 退出命令: deactivate"
+echo "   - Docker 镜像源配置: ~/.docker/daemon.json"
 echo ""
 

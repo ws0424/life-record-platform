@@ -2,10 +2,17 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     """处理 HTTP 异常，返回统一格式"""
+    # 记录异常日志
+    logger.error(f"HTTP Exception: {exc.status_code} - {exc.detail}")
+    
     # 根据 detail 判断业务错误码
     error_code_map = {
         "发送过于频繁，请60秒后再试": 429,
@@ -25,6 +32,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     # 如果包含特定关键词，设置对应的业务码
     if "邮件发送失败" in detail:
         business_code = 500
+        logger.error(f"邮件发送失败: {detail}")
     
     return JSONResponse(
         status_code=status.HTTP_200_OK,  # HTTP 状态码始终返回 200
@@ -47,19 +55,26 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         msg = error["msg"]
         error_messages.append(f"{field}: {msg}")
     
+    error_detail = "; ".join(error_messages)
+    logger.warning(f"Validation Error: {error_detail}")
+    
     return JSONResponse(
         status_code=status.HTTP_200_OK,  # HTTP 状态码始终返回 200
         content={
             "code": 400,
             "data": None,
             "msg": "参数验证失败",
-            "errMsg": "; ".join(error_messages)
+            "errMsg": error_detail
         }
     )
 
 
 async def general_exception_handler(request: Request, exc: Exception):
     """处理未捕获的异常，返回统一格式"""
+    # 记录详细的异常信息
+    logger.error(f"Unhandled Exception: {type(exc).__name__}: {str(exc)}")
+    logger.error(f"Traceback: {traceback.format_exc()}")
+    
     return JSONResponse(
         status_code=status.HTTP_200_OK,  # HTTP 状态码始终返回 200
         content={
