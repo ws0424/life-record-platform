@@ -95,8 +95,7 @@
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-2xl);
   overflow-x: auto;
-  padding-bottom: var(--spacing-sm);
-  padding-top: var(--spacing-xs);
+  padding: var(--spacing-sm) 0;
   scrollbar-width: thin;
 }
 
