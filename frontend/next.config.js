@@ -26,6 +26,12 @@ const nextConfig = {
     ];
   },
 
+  // 禁用 X-Powered-By 头
+  poweredByHeader: false,
+
+  // 跳过末尾斜杠重定向
+  skipTrailingSlashRedirect: true,
+
   // Webpack 配置
   webpack: (config) => {
     return config;

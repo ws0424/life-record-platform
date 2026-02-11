@@ -23,7 +23,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/",
+    "",
     response_model=ApiResponse[ContentResponse],
     summary="创建内容",
     description="创建新的内容（日常记录、相册、旅游路线）"
@@ -88,7 +88,7 @@ async def delete_content(
 
 
 @router.get(
-    "/",
+    "",
     response_model=ApiResponse[ContentListResponse],
     summary="获取内容列表",
     description="获取内容列表，支持筛选和分页"
