@@ -181,11 +181,13 @@ class SecurityService:
                 errMsg="设备不存在"
             )
         
+        # 从 Redis 删除该设备的 Token，使其立即失效
+        from app.utils.security import remove_token
+        remove_token(user_id, device_id)
+        
         # 删除设备记录，强制下线
         self.db.delete(device)
         self.db.commit()
-        
-        # TODO: 可以在这里添加 Token 黑名单逻辑，使该设备的 Token 立即失效
         
         return ApiResponse(
             code=200,

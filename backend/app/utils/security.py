@@ -76,3 +76,43 @@ def decode_token(token: str) -> Optional[dict]:
     except JWTError:
         return None
 
+
+def store_token(user_id: str, device_id: str, token: str, expire_seconds: int = None):
+    """存储 Token 到 Redis"""
+    from app.core.redis import get_redis
+    redis_client = get_redis()
+    
+    # 使用 user_id:device_id 作为 key
+    token_key = f"user_token:{user_id}:{device_id}"
+    
+    # 设置过期时间（默认为 access token 过期时间）
+    if expire_seconds is None:
+        expire_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    
+    # 存储 token
+    redis_client.setex(token_key, expire_seconds, token)
+
+
+def get_stored_token(user_id: str, device_id: str) -> Optional[str]:
+    """从 Redis 获取存储的 Token"""
+    from app.core.redis import get_redis
+    redis_client = get_redis()
+    
+    token_key = f"user_token:{user_id}:{device_id}"
+    return redis_client.get(token_key)
+
+
+def remove_token(user_id: str, device_id: str):
+    """从 Redis 删除 Token（强制下线）"""
+    from app.core.redis import get_redis
+    redis_client = get_redis()
+    
+    token_key = f"user_token:{user_id}:{device_id}"
+    redis_client.delete(token_key)
+
+
+def is_token_valid(user_id: str, device_id: str, token: str) -> bool:
+    """验证 Token 是否有效（检查 Redis 中是否存在且匹配）"""
+    stored_token = get_stored_token(user_id, device_id)
+    return stored_token is not None and stored_token == token
+

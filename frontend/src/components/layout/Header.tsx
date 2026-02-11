@@ -40,6 +40,25 @@ export function Header() {
     };
   }, [showUserMenu]);
 
+  // 监听 token 变化，如果 token 被清除则更新认证状态
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('access_token');
+      if (!token && isAuthenticated) {
+        // token 被清除但状态还是已认证，更新状态
+        logout();
+      }
+    };
+
+    // 初始检查
+    checkAuth();
+
+    // 定期检查（每秒检查一次）
+    const interval = setInterval(checkAuth, 1000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, logout]);
+
   const handleLogout = () => {
     setShowUserMenu(false);
     logout();
@@ -142,18 +161,9 @@ export function Header() {
               </div>
             </>
           ) : (
-            <>
-          <Link href="/create" className={styles.createBtn}>
-            <svg className={styles.createIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>创建</span>
-          </Link>
-          <Link href="/login" className={styles.loginBtn}>
-            登录
-          </Link>
-            </>
+            <Link href="/login" className={styles.loginBtn}>
+              登录
+            </Link>
           )}
         </div>
       </div>

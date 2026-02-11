@@ -107,6 +107,7 @@ apiClient.interceptors.response.use(
 /**
  * 处理未授权错误
  * - 清除本地存储的 token
+ * - 清除 Zustand store 的认证状态
  * - 如果不在首页，跳转到登录页
  */
 function handleUnauthorized() {
@@ -115,6 +116,12 @@ function handleUnauthorized() {
   // 清除 token
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
+  
+  // 清除 Zustand store 的认证状态
+  // 使用动态导入避免循环依赖
+  import('@/lib/store/authStore').then(({ useAuthStore }) => {
+    useAuthStore.getState().logout();
+  });
 
   // 获取当前路径
   const currentPath = window.location.pathname;

@@ -483,6 +483,16 @@ async def login(
             ip_address=ip_address,
             location=None
         )
+        
+        # 将 Token 存储到 Redis
+        from app.utils.security import store_token
+        from app.core.config import settings
+        store_token(
+            user_id=str(result.data.user.id),
+            device_id=device_id,
+            token=result.data.access_token,
+            expire_seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        )
     
     return result
 
@@ -578,6 +588,7 @@ async def logout():
     }
 )
 async def get_current_user_info(
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -754,6 +765,7 @@ async def reset_password(
     response_description="返回更新后的用户信息"
 )
 async def update_profile(
+    request: Request,
     update_data: UpdateProfileRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -819,6 +831,7 @@ async def update_profile(
     response_description="返回修改成功消息"
 )
 async def change_password(
+    request: Request,
     password_data: ChangePasswordRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -879,6 +892,7 @@ async def change_password(
     response_description="返回验证结果"
 )
 async def verify_token(
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -911,6 +925,16 @@ async def verify_token(
     }
     ```
     
+    ### Token 被强制下线响应
+    ```json
+    {
+        "code": 401,
+        "data": null,
+        "msg": "error",
+        "errMsg": "Token 已失效，请重新登录"
+    }
+    ```
+    
     ### 使用场景
     - 页面加载时验证登录状态
     - 定期检查 Token 是否过期
@@ -933,6 +957,7 @@ async def verify_token(
     response_description="返回安全设置信息"
 )
 async def get_security_settings(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -975,6 +1000,7 @@ async def get_security_settings(
     response_description="返回登录日志列表"
 )
 async def get_login_logs(
+    request: Request,
     page: int = 1,
     pageSize: int = 20,
     current_user: User = Depends(get_current_user),
@@ -1087,6 +1113,7 @@ async def get_login_devices(
     response_description="返回移除结果"
 )
 async def remove_login_device(
+    request: Request,
     device_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -1131,6 +1158,7 @@ async def remove_login_device(
     response_description="返回下线结果"
 )
 async def force_logout_device(
+    request: Request,
     device_id: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -1176,6 +1204,7 @@ async def force_logout_device(
     response_description="返回更新后的用户信息"
 )
 async def change_email(
+    request: Request,
     email_data: ChangeEmailRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

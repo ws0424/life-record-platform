@@ -1,15 +1,17 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
-from app.utils.security import decode_token
+from app.utils.security import decode_token, is_token_valid
+from app.services.security_service import SecurityService
 from typing import Optional
 
 security = HTTPBearer()
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
@@ -37,6 +39,18 @@ async def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效的认证凭证"
+        )
+    
+    # 获取当前设备 ID
+    user_agent = request.headers.get("user-agent", "")
+    ip_address = request.client.host if request.client else ""
+    device_id = SecurityService.generate_device_id(user_agent, ip_address)
+    
+    # 检查 Token 是否有效（Redis 中是否存在且匹配）
+    if not is_token_valid(user_id, device_id, token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token 已失效，请重新登录"
         )
     
     # 查询用户
