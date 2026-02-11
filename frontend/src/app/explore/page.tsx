@@ -1,36 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Tabs, Input, Card, Tag, Avatar, Empty, Spin, Badge } from 'antd';
+import { SearchOutlined, EyeOutlined, HeartOutlined, MessageOutlined, StarFilled, UserOutlined } from '@ant-design/icons';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import { exploreContents } from '@/lib/api/content';
+import type { ContentListItem } from '@/lib/api/content';
+import { formatDate } from '@/lib/utils/date';
 import styles from './page.module.css';
+
+const { Search } = Input;
+const { Meta } = Card;
 
 type Category = 'all' | 'daily' | 'album' | 'travel' | 'popular';
 
 export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [contents, setContents] = useState<ContentListItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
-  const categories = [
-    { id: 'all' as Category, label: '全部', icon: '🌟' },
-    { id: 'daily' as Category, label: '日常', icon: '📝' },
-    { id: 'album' as Category, label: '相册', icon: '📷' },
-    { id: 'travel' as Category, label: '旅行', icon: '✈️' },
-    { id: 'popular' as Category, label: '热门', icon: '🔥' },
-  ];
+  // 获取内容列表
+  useEffect(() => {
+    fetchContents();
+  }, [activeCategory, searchQuery, page]);
+
+  const fetchContents = async () => {
+    try {
+      setLoading(true);
+      const response = await exploreContents({
+        page,
+        page_size: pageSize,
+        category: activeCategory,
+        keyword: searchQuery || undefined,
+      });
+      setContents(response.items);
+    } catch (error) {
+      console.error('获取内容失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 使用 debounce 优化搜索
   const debouncedSearch = useDebounce((value: string) => {
     setSearchQuery(value);
+    setPage(1); // 重置页码
   }, 300);
 
-  const filteredPosts = mockPosts.filter(post => {
-    const matchesCategory = activeCategory === 'all' || post.category === activeCategory;
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         post.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const tabItems = [
+    { key: 'all', label: '全部', icon: '🌟' },
+    { key: 'daily', label: '日常', icon: '📝' },
+    { key: 'album', label: '相册', icon: '📷' },
+    { key: 'travel', label: '旅行', icon: '✈️' },
+    { key: 'popular', label: '热门', icon: '🔥' },
+  ];
 
   return (
     <div className={styles.page}>
@@ -46,243 +74,202 @@ export default function ExplorePage() {
         </motion.div>
 
         <motion.div
-          className={styles.searchBar}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
+          style={{ marginBottom: 24 }}
         >
-          <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
-          <input
-            type="text"
-            className={styles.searchInput}
+          <Search
             placeholder="搜索内容、标签或用户..."
+            allowClear
+            enterButton
+            size="large"
+            prefix={<SearchOutlined />}
             onChange={(e) => debouncedSearch(e.target.value)}
+            style={{ maxWidth: 600 }}
           />
         </motion.div>
 
         <motion.div
-          className={styles.categories}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              className={`${styles.categoryBtn} ${activeCategory === category.id ? styles.categoryBtnActive : ''}`}
-              onClick={() => setActiveCategory(category.id)}
-            >
-              <span className={styles.categoryIcon}>{category.icon}</span>
-              <span className={styles.categoryLabel}>{category.label}</span>
-            </button>
-          ))}
+          <Tabs
+            activeKey={activeCategory}
+            onChange={(key) => {
+              setActiveCategory(key as Category);
+              setPage(1);
+            }}
+            size="large"
+            items={tabItems.map(item => ({
+              key: item.key,
+              label: (
+                <span>
+                  <span style={{ marginRight: 6 }}>{item.icon}</span>
+                  {item.label}
+                </span>
+              ),
+            }))}
+          />
         </motion.div>
 
-        <div className={styles.grid}>
-          {filteredPosts.map((post, index) => (
-            <motion.article
-              key={post.id}
-              className={styles.card}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              whileHover={{ y: -8, boxShadow: 'var(--shadow-lg)' }}
-            >
-              <Link href={`/posts/${post.id}`} className={styles.cardLink}>
-                <div className={styles.cardImage}>
-                  <div className={styles.imagePlaceholder}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                  </div>
-                  {post.featured && (
-                    <div className={styles.featuredBadge}>
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                      精选
-                    </div>
-                  )}
-                </div>
-                <div className={styles.cardContent}>
-                  <div className={styles.cardHeader}>
-                    <div className={styles.author}>
-                      <div className={styles.avatar}>
-                        {post.author.charAt(0)}
-                      </div>
-                      <div className={styles.authorInfo}>
-                        <span className={styles.authorName}>{post.author}</span>
-                        <span className={styles.date}>{post.date}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <h2 className={styles.cardTitle}>{post.title}</h2>
-                  <p className={styles.cardDescription}>{post.description}</p>
-                  <div className={styles.cardTags}>
-                    {post.tags.map((tag) => (
-                      <span key={tag} className={styles.tag}>
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                  <div className={styles.cardFooter}>
-                    <div className={styles.stats}>
-                      <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                        </svg>
-                        {post.likes}
-                      </span>
-                      <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
-                        {post.comments}
-                      </span>
-                      <span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        {post.views}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </motion.article>
-          ))}
-        </div>
-
-        {filteredPosts.length === 0 && (
-          <motion.div
-            className={styles.empty}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <Spin size="large" tip="加载中..." />
+          </div>
+        ) : contents.length === 0 ? (
+          <Empty
+            description="没有找到相关内容"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <h3>没有找到相关内容</h3>
-            <p>试试其他关键词或分类</p>
-          </motion.div>
+            <p style={{ color: 'var(--text-secondary)' }}>试试其他关键词或分类</p>
+          </Empty>
+        ) : (
+          <div className={styles.grid}>
+            {contents.map((content, index) => (
+              <motion.div
+                key={content.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+              >
+                <Link href={`/daily/${content.id}`} style={{ textDecoration: 'none' }}>
+                  <Badge.Ribbon
+                    text={
+                      <span>
+                        <StarFilled style={{ marginRight: 4 }} />
+                        精选
+                      </span>
+                    }
+                    color="var(--color-primary)"
+                    style={{ display: content.is_featured ? 'block' : 'none' }}
+                  >
+                    <Card
+                      hoverable
+                      cover={
+                        content.images && content.images.length > 0 ? (
+                          <div style={{ height: 200, overflow: 'hidden' }}>
+                            <img
+                              alt={content.title}
+                              src={content.images[0]}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </div>
+                        ) : (
+                          <div style={{
+                            height: 200,
+                            background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                          </div>
+                        )
+                      }
+                      style={{ height: '100%' }}
+                    >
+                      <div style={{ marginBottom: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                          {content.user ? (
+                            <>
+                              <Avatar size="small" style={{
+                                background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                              }}>
+                                {content.user.username.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>
+                                  {content.user.username}
+                                </div>
+                                <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                                  {formatDate(content.created_at)}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <Avatar size="small" icon={<UserOutlined />} />
+                          )}
+                        </div>
+                      </div>
+
+                      <Meta
+                        title={
+                          <div style={{
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            marginBottom: 8,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {content.title}
+                          </div>
+                        }
+                        description={
+                          <div>
+                            <p style={{
+                              color: 'var(--text-secondary)',
+                              marginBottom: 12,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: 1.6,
+                            }}>
+                              {content.description || content.title}
+                            </p>
+
+                            {content.tags && content.tags.length > 0 && (
+                              <div style={{ marginBottom: 12 }}>
+                                {content.tags.slice(0, 3).map((tag) => (
+                                  <Tag key={tag} style={{ marginBottom: 4 }}>
+                                    #{tag}
+                                  </Tag>
+                                ))}
+                              </div>
+                            )}
+
+                            <div style={{
+                              display: 'flex',
+                              gap: 16,
+                              fontSize: 13,
+                              color: 'var(--text-tertiary)',
+                              paddingTop: 12,
+                              borderTop: '1px solid var(--border-secondary)',
+                            }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <HeartOutlined />
+                                {content.like_count}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <MessageOutlined />
+                                {content.comment_count}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <EyeOutlined />
+                                {content.view_count}
+                              </span>
+                            </div>
+                          </div>
+                        }
+                      />
+                    </Card>
+                  </Badge.Ribbon>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
 }
-
-const mockPosts = [
-  {
-    id: 1,
-    title: '春日京都赏樱之旅',
-    description: '在樱花盛开的季节，漫步在京都的古街小巷，感受日本传统文化的魅力',
-    author: '旅行达人',
-    date: '2024-03-15',
-    category: 'travel' as Category,
-    tags: ['旅行', '日本', '樱花'],
-    likes: 456,
-    comments: 89,
-    views: 2341,
-    featured: true,
-  },
-  {
-    id: 2,
-    title: '今天的美食记录',
-    description: '尝试了一家新开的餐厅，味道超级棒！分享给大家',
-    author: '美食家',
-    date: '2024-03-14',
-    category: 'daily' as Category,
-    tags: ['美食', '生活', '分享'],
-    likes: 234,
-    comments: 45,
-    views: 1567,
-    featured: false,
-  },
-  {
-    id: 3,
-    title: '夏日海边写真集',
-    description: '阳光、沙滩、海浪，记录这个美好的夏天',
-    author: '摄影师',
-    date: '2024-03-13',
-    category: 'album' as Category,
-    tags: ['摄影', '海边', '夏天'],
-    likes: 678,
-    comments: 123,
-    views: 3456,
-    featured: true,
-  },
-  {
-    id: 4,
-    title: '川藏线自驾攻略',
-    description: '15天川藏线自驾游完整攻略，包含路线、住宿、注意事项',
-    author: '自驾游侠',
-    date: '2024-03-12',
-    category: 'travel' as Category,
-    tags: ['自驾', '西藏', '攻略'],
-    likes: 892,
-    comments: 234,
-    views: 5678,
-    featured: true,
-  },
-  {
-    id: 5,
-    title: '周末的悠闲时光',
-    description: '在家煮咖啡、看书、听音乐，享受难得的放松时刻',
-    author: '文艺青年',
-    date: '2024-03-11',
-    category: 'daily' as Category,
-    tags: ['生活', '周末', '放松'],
-    likes: 345,
-    comments: 67,
-    views: 1890,
-    featured: false,
-  },
-  {
-    id: 6,
-    title: '城市夜景摄影作品',
-    description: '用镜头记录城市的夜晚，霓虹灯下的另一种美',
-    author: '夜景猎人',
-    date: '2024-03-10',
-    category: 'album' as Category,
-    tags: ['摄影', '夜景', '城市'],
-    likes: 567,
-    comments: 98,
-    views: 2789,
-    featured: false,
-  },
-  {
-    id: 7,
-    title: '新疆伊犁环线游记',
-    description: '薰衣草、草原、雪山、湖泊，新疆最美的季节',
-    author: '风景猎人',
-    date: '2024-03-09',
-    category: 'travel' as Category,
-    tags: ['新疆', '草原', '自然'],
-    likes: 723,
-    comments: 156,
-    views: 4123,
-    featured: true,
-  },
-  {
-    id: 8,
-    title: '今天的心情很好',
-    description: '阳光明媚，心情也跟着好起来了，分享一下今天的快乐',
-    author: '快乐小子',
-    date: '2024-03-08',
-    category: 'daily' as Category,
-    tags: ['心情', '阳光', '快乐'],
-    likes: 189,
-    comments: 34,
-    views: 987,
-    featured: false,
-  },
-];
 
