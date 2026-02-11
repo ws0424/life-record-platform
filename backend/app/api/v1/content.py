@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.core.database import get_db
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, get_optional_current_user
 from app.models.user import User
 from app.models.content import ContentType
 from app.schemas.content import (
@@ -148,16 +148,16 @@ async def get_my_contents(
     "/daily/list",
     response_model=ApiResponse[ContentListResponse],
     summary="获取日常记录列表",
-    description="获取所有日常记录"
+    description="获取所有日常记录（允许未登录访问）"
 )
 async def list_daily_contents(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     keyword: Optional[str] = Query(None, description="搜索关键词"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取日常记录列表"""
+    """获取日常记录列表（允许未登录访问）"""
     service = ContentService(db)
     return service.list_contents(
         page=page,
@@ -174,16 +174,16 @@ async def list_daily_contents(
     "/albums/list",
     response_model=ApiResponse[ContentListResponse],
     summary="获取相册列表",
-    description="获取所有相册"
+    description="获取所有相册（允许未登录访问）"
 )
 async def list_albums(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     keyword: Optional[str] = Query(None, description="搜索关键词"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取相册列表"""
+    """获取相册列表（允许未登录访问）"""
     service = ContentService(db)
     return service.list_contents(
         page=page,
@@ -200,16 +200,16 @@ async def list_albums(
     "/travel/list",
     response_model=ApiResponse[ContentListResponse],
     summary="获取旅游路线列表",
-    description="获取所有旅游路线"
+    description="获取所有旅游路线（允许未登录访问）"
 )
 async def list_travel_routes(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     keyword: Optional[str] = Query(None, description="搜索关键词"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取旅游路线列表"""
+    """获取旅游路线列表（允许未登录访问）"""
     service = ContentService(db)
     return service.list_contents(
         page=page,
@@ -226,7 +226,7 @@ async def list_travel_routes(
     "/explore/list",
     response_model=ApiResponse[ContentListResponse],
     summary="探索内容",
-    description="获取探索页面的内容列表，支持分类和搜索"
+    description="获取探索页面的内容列表，支持分类和搜索（允许未登录访问）"
 )
 async def explore_contents(
     page: int = Query(1, ge=1, description="页码"),
@@ -234,10 +234,10 @@ async def explore_contents(
     category: Optional[str] = Query(None, description="分类：all/daily/album/travel/popular"),
     keyword: Optional[str] = Query(None, description="搜索关键词"),
     tag: Optional[str] = Query(None, description="标签筛选"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """探索内容"""
+    """探索内容（允许未登录访问）"""
     service = ContentService(db)
     
     # 处理分类

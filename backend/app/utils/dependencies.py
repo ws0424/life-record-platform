@@ -82,3 +82,46 @@ async def get_current_active_user(
         )
     return current_user
 
+
+async def get_optional_current_user(
+    request: Request,
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """获取当前用户（可选，允许未登录）"""
+    try:
+        # 尝试从 Authorization header 获取 token
+        auth_header = request.headers.get("authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return None
+        
+        token = auth_header.replace("Bearer ", "")
+        
+        # 解码 token
+        payload = decode_token(token)
+        if payload is None:
+            return None
+        
+        # 检查 token 类型
+        if payload.get("type") != "access":
+            return None
+        
+        # 获取用户 ID
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+        
+        # 获取当前设备 ID
+        user_agent = request.headers.get("user-agent", "")
+        ip_address = request.client.host if request.client else ""
+        device_id = SecurityService.generate_device_id(user_agent, ip_address)
+        
+        # 检查 Token 是否有效
+        if not is_token_valid(user_id, device_id, token):
+            return None
+        
+        # 查询用户
+        user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+        return user
+    except Exception:
+        return None
+
