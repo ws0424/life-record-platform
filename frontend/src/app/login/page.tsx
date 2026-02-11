@@ -44,9 +44,13 @@ export default function LoginPage() {
       
       success('登录成功！');
       
+      // 获取 redirect 参数
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(redirect);
       }, 1000);
     } catch (err: any) {
       console.error('Login error:', err);

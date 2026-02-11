@@ -1,68 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from '@/components/ui/Toast';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ProfileSection } from './components/ProfileSection';
 import { SecuritySection } from './components/SecuritySection';
 import { ActivitySection } from './components/ActivitySection';
 import { DevicesSection } from './components/DevicesSection';
 import { BindingsSection } from './components/BindingsSection';
-import { ProfileSkeleton } from './components/Skeleton';
 import styles from './page.module.css';
 
 type TabType = 'profile' | 'security' | 'activity' | 'devices' | 'bindings';
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+function DashboardContent() {
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
-  const [isLoading, setIsLoading] = useState(true);
   const { toasts, removeToast, success, error } = useToast();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    setIsLoading(false);
-  }, [isAuthenticated, router]);
-
-  if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <motion.aside
-            className={styles.sidebar}
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className={styles.userCard}>
-              <div className={styles.avatar}>
-                <div className={styles.avatarPlaceholder}>
-                  {user?.username?.charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <h2 className={styles.username}>{user?.username}</h2>
-              <p className={styles.email}>{user?.email}</p>
-            </div>
-          </motion.aside>
-          <motion.main
-            className={styles.main}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <ProfileSkeleton />
-          </motion.main>
-        </div>
-      </div>
-    );
-  }
 
   const tabs = [
     { id: 'profile', label: '个人信息', icon: '👤' },
@@ -127,5 +83,13 @@ export default function DashboardPage() {
         </motion.main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }
