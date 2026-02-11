@@ -2,9 +2,23 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/authStore';
 import styles from './page.module.css';
 
 export default function AlbumsPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  const handleCreateClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      if (confirm('需要登录后才能创建相册，是否前往登录？')) {
+        router.push('/login?redirect=' + encodeURIComponent('/create?type=album'));
+      }
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -16,13 +30,19 @@ export default function AlbumsPage() {
         >
           <h1 className={styles.title}>我的相册</h1>
           <p className={styles.subtitle}>珍藏生活中的美好瞬间</p>
-          <Link href="/create?type=album" className={styles.createBtn}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            创建相册
-          </Link>
+          {isAuthenticated && (
+            <Link 
+              href="/create?type=album" 
+              className={styles.createBtn}
+              onClick={handleCreateClick}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              创建相册
+            </Link>
+          )}
         </motion.div>
 
         <div className={styles.grid}>

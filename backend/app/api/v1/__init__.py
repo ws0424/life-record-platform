@@ -1,4 +1,4 @@
-from app.api.v1 import auth
+from app.api.v1 import auth, content, upload
 
-__all__ = ["auth"]
+__all__ = ["auth", "content", "upload"]
 

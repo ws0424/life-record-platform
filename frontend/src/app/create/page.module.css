@@ -2,7 +2,7 @@
 .page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem 1rem;
+  padding: var(--spacing-xl, 32px) var(--spacing-md, 16px);
 }
 
 .container {
@@ -13,86 +13,27 @@
 /* 头部 */
 .header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: var(--spacing-3xl, 48px);
 }
 
 .title {
   font-size: 2.5rem;
   font-weight: 700;
   color: white;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--spacing-sm, 8px);
 }
 
 .subtitle {
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* 内容区 */
 .content {
   background: white;
-  border-radius: 20px;
-  padding: 2.5rem;
+  border-radius: var(--radius-xl, 20px);
+  padding: var(--spacing-2xl, 40px);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-/* 区块 */
-.section {
-  margin-bottom: 2.5rem;
-}
-
-.sectionTitle {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-}
-
-/* 类型选择 */
-.typeGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.typeCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.5rem;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-primary);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.typeCard:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-}
-
-.typeCard.active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  border-color: var(--color-primary);
-  color: white;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-}
-
-.typeIcon {
-  font-size: 2.5rem;
-}
-
-.typeLabel {
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.typeDescription {
-  font-size: 0.9rem;
-  opacity: 0.8;
 }
 
 /* 表单 */
@@ -397,6 +338,55 @@
   .submitBtn {
     width: 100%;
   }
+}
+
+/* 未登录警告提示 */
+.loginWarning {
+  padding: 16px;
+  margin-bottom: 24px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loginWarning svg {
+  flex-shrink: 0;
+  color: var(--color-warning);
+}
+
+.loginWarningText {
+  flex: 1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.loginWarningText strong {
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.loginWarningBtn {
+  padding: 6px 16px;
+  background: var(--color-warning);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.loginWarningBtn:hover {
+  background: var(--color-warning);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 
 /* 动画效果 */

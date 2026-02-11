@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     LOGIN_FAIL_LOCK_MINUTES: int = 30
     MAX_LOGIN_ATTEMPTS: int = 5
     
+    # MinIO 配置
+    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin123"
+    MINIO_BUCKET: str = "utils-web"
+    MINIO_SECURE: bool = False
+    MINIO_PUBLIC_URL: str = "http://localhost:9000"
+    
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]

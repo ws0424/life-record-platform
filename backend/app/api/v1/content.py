@@ -11,6 +11,10 @@ from app.schemas.content import (
     ContentUpdate,
     ContentResponse,
     ContentListResponse,
+    CommentCreate,
+    CommentResponse,
+    LikeResponse,
+    SaveResponse,
 )
 from app.schemas import ApiResponse, MessageResponse
 from app.services.content_service import ContentService
@@ -29,35 +33,7 @@ async def create_content(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    ## 创建内容
-    
-    创建新的内容，支持三种类型：
-    - daily: 日常记录
-    - album: 相册
-    - travel: 旅游路线
-    
-    ### 请求参数
-    - **type**: 内容类型（必填）
-    - **title**: 标题，1-100字符（必填）
-    - **content**: 内容，1-5000字符（必填）
-    - **tags**: 标签列表（可选）
-    - **images**: 图片URL列表（可选）
-    - **location**: 位置，最多200字符（可选，旅游路线专用）
-    - **is_public**: 是否公开，默认true（可选）
-    
-    ### 示例请求
-    ```json
-    {
-        "type": "daily",
-        "title": "今天的美好时光",
-        "content": "今天天气真好，去公园散步了...",
-        "tags": ["生活", "日常"],
-        "images": ["https://example.com/image1.jpg"],
-        "is_public": true
-    }
-    ```
-    """
+    """创建内容"""
     service = ContentService(db)
     return service.create_content(str(current_user.id), content_data)
 
@@ -73,18 +49,7 @@ async def get_content(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    ## 获取内容详情
-    
-    获取指定ID的内容详细信息。
-    
-    ### 权限说明
-    - 公开内容：所有人可见
-    - 私密内容：仅作者可见
-    
-    ### 路径参数
-    - **content_id**: 内容ID
-    """
+    """获取内容详情"""
     service = ContentService(db)
     return service.get_content(content_id, str(current_user.id))
 
@@ -101,20 +66,7 @@ async def update_content(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    ## 更新内容
-    
-    更新指定ID的内容信息。
-    
-    ### 权限说明
-    - 仅作者可以更新自己的内容
-    
-    ### 路径参数
-    - **content_id**: 内容ID
-    
-    ### 请求参数
-    所有字段均为可选，只更新提供的字段。
-    """
+    """更新内容"""
     service = ContentService(db)
     return service.update_content(content_id, str(current_user.id), content_data)
 
@@ -130,24 +82,14 @@ async def delete_content(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    ## 删除内容
-    
-    删除指定ID的内容。
-    
-    ### 权限说明
-    - 仅作者可以删除自己的内容
-    
-    ### 路径参数
-    - **content_id**: 内容ID
-    """
+    """删除内容"""
     service = ContentService(db)
     return service.delete_content(content_id, str(current_user.id))
 
 
 @router.get(
     "/",
-    response_model=ApiResponse[dict],
+    response_model=ApiResponse[ContentListResponse],
     summary="获取内容列表",
     description="获取内容列表，支持筛选和分页"
 )
@@ -158,33 +100,12 @@ async def list_contents(
     user_id: Optional[str] = Query(None, description="用户ID"),
     is_public: Optional[bool] = Query(None, description="是否公开"),
     keyword: Optional[str] = Query(None, description="搜索关键词"),
+    tag: Optional[str] = Query(None, description="标签筛选"),
+    is_featured: Optional[bool] = Query(None, description="是否精选"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    ## 获取内容列表
-    
-    获取内容列表，支持多种筛选条件和分页。
-    
-    ### 查询参数
-    - **page**: 页码，默认1
-    - **page_size**: 每页数量，默认20，最大100
-    - **type**: 内容类型筛选（daily/album/travel）
-    - **user_id**: 用户ID筛选
-    - **is_public**: 是否公开筛选
-    - **keyword**: 搜索关键词（标题和内容）
-    
-    ### 响应数据
-    ```json
-    {
-        "items": [...],
-        "total": 100,
-        "page": 1,
-        "page_size": 20,
-        "total_pages": 5
-    }
-    ```
-    """
+    """获取内容列表"""
     service = ContentService(db)
     return service.list_contents(
         page=page,
@@ -193,12 +114,14 @@ async def list_contents(
         user_id=user_id,
         is_public=is_public,
         keyword=keyword,
+        tag=tag,
+        is_featured=is_featured,
     )
 
 
 @router.get(
     "/my/contents",
-    response_model=ApiResponse[dict],
+    response_model=ApiResponse[ContentListResponse],
     summary="获取我的内容",
     description="获取当前用户的所有内容"
 )
@@ -209,16 +132,7 @@ async def get_my_contents(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    ## 获取我的内容
-    
-    获取当前登录用户的所有内容（包括私密内容）。
-    
-    ### 查询参数
-    - **page**: 页码，默认1
-    - **page_size**: 每页数量，默认20，最大100
-    - **type**: 内容类型筛选（daily/album/travel）
-    """
+    """获取我的内容"""
     service = ContentService(db)
     return service.list_contents(
         page=page,
@@ -226,4 +140,198 @@ async def get_my_contents(
         content_type=type,
         user_id=str(current_user.id),
     )
+
+
+# ==================== 日常记录相关接口 ====================
+
+@router.get(
+    "/daily/list",
+    response_model=ApiResponse[ContentListResponse],
+    summary="获取日常记录列表",
+    description="获取所有日常记录"
+)
+async def list_daily_contents(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    keyword: Optional[str] = Query(None, description="搜索关键词"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取日常记录列表"""
+    service = ContentService(db)
+    return service.list_contents(
+        page=page,
+        page_size=page_size,
+        content_type=ContentType.DAILY,
+        is_public=True,
+        keyword=keyword,
+    )
+
+
+# ==================== 相册相关接口 ====================
+
+@router.get(
+    "/albums/list",
+    response_model=ApiResponse[ContentListResponse],
+    summary="获取相册列表",
+    description="获取所有相册"
+)
+async def list_albums(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    keyword: Optional[str] = Query(None, description="搜索关键词"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取相册列表"""
+    service = ContentService(db)
+    return service.list_contents(
+        page=page,
+        page_size=page_size,
+        content_type=ContentType.ALBUM,
+        is_public=True,
+        keyword=keyword,
+    )
+
+
+# ==================== 旅游路线相关接口 ====================
+
+@router.get(
+    "/travel/list",
+    response_model=ApiResponse[ContentListResponse],
+    summary="获取旅游路线列表",
+    description="获取所有旅游路线"
+)
+async def list_travel_routes(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    keyword: Optional[str] = Query(None, description="搜索关键词"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取旅游路线列表"""
+    service = ContentService(db)
+    return service.list_contents(
+        page=page,
+        page_size=page_size,
+        content_type=ContentType.TRAVEL,
+        is_public=True,
+        keyword=keyword,
+    )
+
+
+# ==================== 探索页面相关接口 ====================
+
+@router.get(
+    "/explore/list",
+    response_model=ApiResponse[ContentListResponse],
+    summary="探索内容",
+    description="获取探索页面的内容列表，支持分类和搜索"
+)
+async def explore_contents(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    category: Optional[str] = Query(None, description="分类：all/daily/album/travel/popular"),
+    keyword: Optional[str] = Query(None, description="搜索关键词"),
+    tag: Optional[str] = Query(None, description="标签筛选"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """探索内容"""
+    service = ContentService(db)
+    
+    # 处理分类
+    content_type = None
+    is_featured = None
+    if category == "daily":
+        content_type = ContentType.DAILY
+    elif category == "album":
+        content_type = ContentType.ALBUM
+    elif category == "travel":
+        content_type = ContentType.TRAVEL
+    elif category == "popular":
+        is_featured = True
+    
+    return service.list_contents(
+        page=page,
+        page_size=page_size,
+        content_type=content_type,
+        is_public=True,
+        keyword=keyword,
+        tag=tag,
+        is_featured=is_featured,
+    )
+
+
+# ==================== 点赞相关接口 ====================
+
+@router.post(
+    "/{content_id}/like",
+    response_model=ApiResponse[LikeResponse],
+    summary="切换点赞",
+    description="点赞或取消点赞内容"
+)
+async def toggle_like(
+    content_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """切换点赞"""
+    service = ContentService(db)
+    return service.toggle_like(content_id, str(current_user.id))
+
+
+# ==================== 收藏相关接口 ====================
+
+@router.post(
+    "/{content_id}/save",
+    response_model=ApiResponse[SaveResponse],
+    summary="切换收藏",
+    description="收藏或取消收藏内容"
+)
+async def toggle_save(
+    content_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """切换收藏"""
+    service = ContentService(db)
+    return service.toggle_save(content_id, str(current_user.id))
+
+
+# ==================== 评论相关接口 ====================
+
+@router.post(
+    "/{content_id}/comments",
+    response_model=ApiResponse[CommentResponse],
+    summary="创建评论",
+    description="为内容添加评论"
+)
+async def create_comment(
+    content_id: str,
+    comment_data: CommentCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """创建评论"""
+    service = ContentService(db)
+    return service.create_comment(content_id, str(current_user.id), comment_data)
+
+
+@router.get(
+    "/{content_id}/comments",
+    response_model=ApiResponse[dict],
+    summary="获取评论列表",
+    description="获取内容的评论列表"
+)
+async def get_comments(
+    content_id: str,
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取评论列表"""
+    service = ContentService(db)
+    return service.get_comments(content_id, page, page_size)
 

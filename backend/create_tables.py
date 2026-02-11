@@ -1,9 +1,10 @@
 """
-创建登录日志和设备表
+创建数据库表
 """
 from app.core.database import engine, Base
 from app.models.user import User
 from app.models.login_log import LoginLog, LoginDevice
+from app.models.content import Content, ContentLike, ContentSave, Comment
 
 def create_tables():
     """创建所有表"""
@@ -14,6 +15,10 @@ def create_tables():
     print("  - users (用户表)")
     print("  - login_logs (登录日志表)")
     print("  - login_devices (登录设备表)")
+    print("  - contents (内容表)")
+    print("  - content_likes (内容点赞表)")
+    print("  - content_saves (内容收藏表)")
+    print("  - comments (评论表)")
 
 if __name__ == "__main__":
     create_tables()

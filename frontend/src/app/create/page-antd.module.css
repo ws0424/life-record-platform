@@ -1,0 +1,167 @@
+/* 创建页面样式 - 基于 UI/UX Pro Max 设计系统 */
+
+/* 设计系统变量 */
+:root {
+  --primary-color: #0EA5E9;
+  --secondary-color: #0284C7;
+  --cta-color: #10B981;
+  --bg-color: #F0F9FF;
+  --text-color: #0C4A6E;
+  --card-bg: #FFFFFF;
+  --border-radius: 8px;
+  --transition: 150ms ease;
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--bg-color);
+  padding: 32px 16px;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 头部 */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  font-family: 'Newsreader', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  color: var(--secondary-color);
+}
+
+/* 类型卡片 */
+.typeCard {
+  width: 140px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 2px solid transparent;
+}
+
+.typeCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+.typeCardActive {
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+
+.typeIcon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.typeLabel {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color);
+  margin-bottom: 4px;
+}
+
+.typeDescription {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.75rem;
+  color: var(--secondary-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .page {
+    padding: 16px 8px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .typeCard {
+    width: 120px;
+  }
+}
+
+/* Ant Design 组件自定义 */
+:global(.ant-form-item-label > label) {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+:global(.ant-input),
+:global(.ant-input-textarea) {
+  font-family: 'Roboto', sans-serif;
+  border-radius: var(--border-radius);
+  transition: all var(--transition);
+}
+
+:global(.ant-input:focus),
+:global(.ant-input-textarea:focus) {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+}
+
+:global(.ant-btn-primary) {
+  background-color: var(--cta-color);
+  border-color: var(--cta-color);
+  transition: all var(--transition);
+}
+
+:global(.ant-btn-primary:hover) {
+  background-color: #059669;
+  border-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+:global(.ant-upload-list-picture-card-container) {
+  cursor: pointer;
+}
+
+:global(.ant-upload-list-picture-card .ant-upload-list-item) {
+  border-radius: var(--border-radius);
+  transition: all var(--transition);
+}
+
+:global(.ant-upload-list-picture-card .ant-upload-list-item:hover) {
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+/* 可访问性 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 焦点状态 */
+:global(.ant-btn:focus-visible),
+:global(.ant-input:focus-visible),
+:global(.ant-select:focus-visible) {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+

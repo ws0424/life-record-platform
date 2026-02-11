@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from '@/components/ui/Toast';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ProfileSection } from './components/ProfileSection';
 import { SecuritySection } from './components/SecuritySection';
 import { ActivitySection } from './components/ActivitySection';
@@ -15,10 +15,11 @@ import styles from './page.module.css';
 
 type TabType = 'profile' | 'security' | 'activity' | 'devices' | 'bindings';
 
-function DashboardContent() {
-  const { user } = useAuthStore();
+export default function DashboardPage() {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
-  const { toasts, removeToast, success, error } = useToast();
+  const { toasts, removeToast, success, error, warning } = useToast();
 
   const tabs = [
     { id: 'profile', label: '个人信息', icon: '👤' },
@@ -27,6 +28,29 @@ function DashboardContent() {
     { id: 'devices', label: '登录设备', icon: '📱' },
     { id: 'bindings', label: '账号绑定', icon: '🔗' },
   ];
+
+  // 检查登录状态，未登录时跳转
+  useEffect(() => {
+    if (!isAuthenticated) {
+      warning('请先登录后再访问个人中心');
+      setTimeout(() => {
+        router.push('/login?redirect=' + encodeURIComponent('/dashboard'));
+      }, 1500);
+    }
+  }, [isAuthenticated, router, warning]);
+
+  // 未登录时显示加载状态
+  if (!isAuthenticated) {
+    return (
+      <div className={styles.page}>
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
+        <div className={styles.loadingContainer}>
+          <div className={styles.spinner} />
+          <p>正在跳转到登录页...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -83,13 +107,5 @@ function DashboardContent() {
         </motion.main>
       </div>
     </div>
-  );
-}
-
-export default function DashboardPage() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
   );
 }

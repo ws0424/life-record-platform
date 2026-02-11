@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 import styles from './page.module.css';
 
 type Category = 'all' | 'daily' | 'album' | 'travel' | 'popular';
@@ -18,6 +19,11 @@ export default function ExplorePage() {
     { id: 'travel' as Category, label: '旅行', icon: '✈️' },
     { id: 'popular' as Category, label: '热门', icon: '🔥' },
   ];
+
+  // 使用 debounce 优化搜索
+  const debouncedSearch = useDebounce((value: string) => {
+    setSearchQuery(value);
+  }, 300);
 
   const filteredPosts = mockPosts.filter(post => {
     const matchesCategory = activeCategory === 'all' || post.category === activeCategory;
@@ -53,8 +59,7 @@ export default function ExplorePage() {
             type="text"
             className={styles.searchInput}
             placeholder="搜索内容、标签或用户..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => debouncedSearch(e.target.value)}
           />
         </motion.div>
 

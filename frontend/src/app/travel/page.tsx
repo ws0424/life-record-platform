@@ -2,9 +2,23 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/authStore';
 import styles from './page.module.css';
 
 export default function TravelPage() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  const handleCreateClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      if (confirm('需要登录后才能创建旅游路线，是否前往登录？')) {
+        router.push('/login?redirect=' + encodeURIComponent('/create?type=travel'));
+      }
+    }
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -16,13 +30,19 @@ export default function TravelPage() {
         >
           <h1 className={styles.title}>旅游路线</h1>
           <p className={styles.subtitle}>发现世界的美好，分享你的旅行故事</p>
-          <Link href="/create?type=travel" className={styles.createBtn}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            创建路线
-          </Link>
+          {isAuthenticated && (
+            <Link 
+              href="/create?type=travel" 
+              className={styles.createBtn}
+              onClick={handleCreateClick}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              创建路线
+            </Link>
+          )}
         </motion.div>
 
         <div className={styles.grid}>

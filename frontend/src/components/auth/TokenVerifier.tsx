@@ -5,6 +5,21 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { verifyToken, getCurrentUser } from '@/lib/api/auth';
 
+// 公开页面列表（不需要登录即可访问）
+const PUBLIC_PATHS = [
+  '/login', 
+  '/register', 
+  '/forgot-password', 
+  '/',
+  '/daily',
+  '/albums',
+  '/travel',
+  '/tools',
+  '/trending',
+  '/explore',
+  '/create',
+];
+
 export function TokenVerifier() {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,9 +39,14 @@ export function TokenVerifier() {
         return;
       }
 
-      // 公开页面不需要验证
-      const publicPaths = ['/login', '/register', '/forgot-password', '/'];
-      if (publicPaths.includes(pathname)) {
+      // 检查是否是公开页面
+      const isPublicPath = PUBLIC_PATHS.includes(pathname) || 
+        pathname.startsWith('/daily/') ||
+        pathname.startsWith('/albums/') ||
+        pathname.startsWith('/travel/') ||
+        pathname.startsWith('/posts/');
+      
+      if (isPublicPath) {
         setIsChecking(false);
         return;
       }
@@ -37,9 +57,7 @@ export function TokenVerifier() {
       if (!token) {
         // 没有 token，跳转到登录页
         setIsChecking(false);
-        if (!publicPaths.includes(pathname)) {
-          router.push('/login');
-        }
+        router.push('/login?redirect=' + encodeURIComponent(pathname));
         return;
       }
 
@@ -50,7 +68,7 @@ export function TokenVerifier() {
         if (!isValid) {
           // Token 无效，退出登录
           logout();
-          router.push('/login');
+          router.push('/login?redirect=' + encodeURIComponent(pathname));
           setIsChecking(false);
           return;
         }
@@ -64,13 +82,13 @@ export function TokenVerifier() {
             console.error('获取用户信息失败:', error);
             // 获取用户信息失败，可能 token 已过期
             logout();
-            router.push('/login');
+            router.push('/login?redirect=' + encodeURIComponent(pathname));
           }
         }
       } catch (error) {
         console.error('Token 验证失败:', error);
         logout();
-        router.push('/login');
+        router.push('/login?redirect=' + encodeURIComponent(pathname));
       } finally {
         setIsChecking(false);
       }
@@ -79,8 +97,14 @@ export function TokenVerifier() {
     checkAuth();
   }, [pathname, isInitialized, isAuthenticated, user, setUser, setAuth, logout, router, initialize]);
 
-  // 显示加载状态（可选）
-  if (isChecking && pathname !== '/' && pathname !== '/login' && pathname !== '/register' && pathname !== '/forgot-password') {
+  // 显示加载状态（仅对需要认证的页面）
+  const isPublicPath = PUBLIC_PATHS.includes(pathname) || 
+    pathname.startsWith('/daily/') ||
+    pathname.startsWith('/albums/') ||
+    pathname.startsWith('/travel/') ||
+    pathname.startsWith('/posts/');
+  
+  if (isChecking && !isPublicPath) {
     return (
       <div style={{
         position: 'fixed',
