@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas import (
@@ -12,9 +12,13 @@ from app.schemas import (
     UserInfoResponse,
     UpdateProfileRequest,
     UpdateProfileResponse,
-    ChangePasswordRequest
+    ChangePasswordRequest,
+    LoginLogsResponse,
+    LoginDevicesResponse,
+    SecuritySettingsInfoResponse
 )
 from app.services.auth_service import AuthService
+from app.services.security_service import SecurityService
 from app.utils.dependencies import get_current_user
 from app.models.user import User
 from datetime import datetime
@@ -347,6 +351,7 @@ async def register(
     }
 )
 async def login(
+    request: Request,
     login_data: UserLogin,
     db: Session = Depends(get_db)
 ):
@@ -442,6 +447,42 @@ async def login(
     """
     auth_service = AuthService(db)
     result = await auth_service.login_user(login_data)
+    
+    # 记录登录日志和设备
+    if result.code == 200:
+        security_service = SecurityService(db)
+        user_agent = request.headers.get("user-agent", "")
+        ip_address = request.client.host if request.client else ""
+        
+        # 解析 User Agent
+        device_info = SecurityService.parse_user_agent(user_agent)
+        
+        # 创建登录日志
+        await security_service.create_login_log(
+            user_id=str(result.data.user.id),
+            ip_address=ip_address,
+            user_agent=user_agent,
+            device_type=device_info["device_type"],
+            browser=device_info["browser"],
+            os=device_info["os"],
+            location=None,  # 可以集成 IP 地理位置服务
+            login_type="password",
+            status="success"
+        )
+        
+        # 创建或更新设备
+        device_id = SecurityService.generate_device_id(user_agent, ip_address)
+        await security_service.create_or_update_device(
+            user_id=str(result.data.user.id),
+            device_id=device_id,
+            device_name=device_info["device_name"],
+            device_type=device_info["device_type"],
+            browser=device_info["browser"],
+            os=device_info["os"],
+            ip_address=ip_address,
+            location=None
+        )
+    
     return result
 
 
@@ -881,3 +922,201 @@ async def verify_token(
         msg="Token 有效",
         errMsg=None
     )
+
+
+@router.get(
+    "/security/settings",
+    response_model=SecuritySettingsInfoResponse,
+    summary="获取安全设置信息",
+    description="获取当前用户的安全设置概览",
+    response_description="返回安全设置信息"
+)
+async def get_security_settings(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 获取安全设置信息
+    
+    获取当前用户的安全设置概览，包括两步验证状态、活跃设备数量等。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": {
+            "two_factor_enabled": false,
+            "email_verified": true,
+            "last_password_change": null,
+            "active_devices_count": 3,
+            "recent_login_count": 15
+        },
+        "msg": "获取安全设置成功",
+        "errMsg": null
+    }
+    ```
+    """
+    security_service = SecurityService(db)
+    result = await security_service.get_security_settings(str(current_user.id))
+    return result
+
+
+@router.get(
+    "/security/login-logs",
+    response_model=LoginLogsResponse,
+    summary="获取登录日志",
+    description="获取当前用户的登录历史记录",
+    response_description="返回登录日志列表"
+)
+async def get_login_logs(
+    limit: int = 20,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 获取登录日志
+    
+    获取当前用户的登录历史记录，包括登录时间、IP地址、设备信息等。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 查询参数
+    - **limit**: 每页数量，默认 20
+    - **offset**: 偏移量，默认 0
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": [
+            {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "ip_address": "192.168.1.1",
+                "user_agent": "Mozilla/5.0...",
+                "device_type": "desktop",
+                "browser": "Chrome",
+                "os": "macOS",
+                "location": "北京",
+                "login_type": "password",
+                "status": "success",
+                "created_at": "2026-02-10T10:00:00Z"
+            }
+        ],
+        "msg": "获取登录日志成功",
+        "errMsg": null
+    }
+    ```
+    """
+    security_service = SecurityService(db)
+    result = await security_service.get_login_logs(str(current_user.id), limit, offset)
+    return result
+
+
+@router.get(
+    "/security/devices",
+    response_model=LoginDevicesResponse,
+    summary="获取登录设备列表",
+    description="获取当前用户的所有登录设备",
+    response_description="返回设备列表"
+)
+async def get_login_devices(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 获取登录设备列表
+    
+    获取当前用户的所有登录设备，包括设备名称、最后活跃时间等。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": [
+            {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "device_id": "abc123",
+                "device_name": "Chrome on macOS",
+                "device_type": "desktop",
+                "browser": "Chrome",
+                "os": "macOS",
+                "ip_address": "192.168.1.1",
+                "location": "北京",
+                "last_active": "2026-02-10T10:00:00Z",
+                "created_at": "2026-02-09T10:00:00Z",
+                "is_current": true
+            }
+        ],
+        "msg": "获取登录设备成功",
+        "errMsg": null
+    }
+    ```
+    """
+    security_service = SecurityService(db)
+    
+    # 获取当前设备 ID
+    user_agent = request.headers.get("user-agent", "")
+    ip_address = request.client.host if request.client else ""
+    current_device_id = SecurityService.generate_device_id(user_agent, ip_address)
+    
+    result = await security_service.get_login_devices(str(current_user.id), current_device_id)
+    return result
+
+
+@router.delete(
+    "/security/devices/{device_id}",
+    response_model=MessageResponse,
+    summary="移除登录设备",
+    description="移除指定的登录设备",
+    response_description="返回移除结果"
+)
+async def remove_login_device(
+    device_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 移除登录设备
+    
+    移除指定的登录设备，该设备将无法继续访问账户。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 路径参数
+    - **device_id**: 设备唯一标识
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": null,
+        "msg": "设备移除成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 注意事项
+    - 不能移除当前正在使用的设备
+    - 移除后该设备需要重新登录
+    """
+    security_service = SecurityService(db)
+    result = await security_service.remove_device(str(current_user.id), device_id)
+    return result

@@ -204,11 +204,26 @@ function ProfileSection({ user, success, error }: { user: any; success: (msg: st
 function SecuritySection({ user, success, error }: { user: any; success: (msg: string) => void; error: (msg: string) => void }) {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [securitySettings, setSecuritySettings] = useState<any>(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  // 加载安全设置信息
+  useEffect(() => {
+    const loadSecuritySettings = async () => {
+      try {
+        const { getSecuritySettings } = await import('@/lib/api/auth');
+        const settings = await getSecuritySettings();
+        setSecuritySettings(settings);
+      } catch (err: any) {
+        console.error('Load security settings error:', err);
+      }
+    };
+    loadSecuritySettings();
+  }, []);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,6 +255,19 @@ function SecuritySection({ user, success, error }: { user: any; success: (msg: s
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>安全设置</h2>
+
+      {securitySettings && (
+        <div className={styles.securityOverview}>
+          <div className={styles.overviewItem}>
+            <span className={styles.overviewLabel}>活跃设备</span>
+            <span className={styles.overviewValue}>{securitySettings.active_devices_count} 台</span>
+          </div>
+          <div className={styles.overviewItem}>
+            <span className={styles.overviewLabel}>最近30天登录</span>
+            <span className={styles.overviewValue}>{securitySettings.recent_login_count} 次</span>
+          </div>
+        </div>
+      )}
 
       <div className={styles.securityCard}>
         <div className={styles.securityItem}>
@@ -333,31 +361,60 @@ function SecuritySection({ user, success, error }: { user: any; success: (msg: s
 
 // 最新动态组件
 function ActivitySection() {
-  const activities = [
-    { id: 1, type: 'login', message: '登录账户', time: '2026-02-10 10:30:00', ip: '192.168.1.1' },
-    { id: 2, type: 'update', message: '更新个人信息', time: '2026-02-09 15:20:00', ip: '192.168.1.1' },
-    { id: 3, type: 'password', message: '修改密码', time: '2026-02-08 09:15:00', ip: '192.168.1.1' },
-  ];
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadActivities = async () => {
+      try {
+        const { getLoginLogs } = await import('@/lib/api/auth');
+        const logs = await getLoginLogs(10, 0);
+        setActivities(logs);
+      } catch (err: any) {
+        console.error('Load activities error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadActivities();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>最新动态</h2>
+        <div className={styles.loading}>加载中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>最新动态</h2>
       <div className={styles.activityList}>
-        {activities.map((activity) => (
-          <div key={activity.id} className={styles.activityItem}>
-            <div className={styles.activityIcon}>
-              {activity.type === 'login' && '🔑'}
-              {activity.type === 'update' && '✏️'}
-              {activity.type === 'password' && '🔒'}
+        {activities.length === 0 ? (
+          <p className={styles.emptyText}>暂无登录记录</p>
+        ) : (
+          activities.map((activity) => (
+            <div key={activity.id} className={styles.activityItem}>
+              <div className={styles.activityIcon}>
+                {activity.login_type === 'password' && '🔑'}
+                {activity.status === 'success' ? '✅' : '❌'}
+              </div>
+              <div className={styles.activityContent}>
+                <h4>
+                  {activity.status === 'success' ? '登录成功' : '登录失败'}
+                  {activity.browser && ` - ${activity.browser}`}
+                  {activity.os && ` on ${activity.os}`}
+                </h4>
+                <p className={styles.activityMeta}>
+                  {new Date(activity.created_at).toLocaleString('zh-CN')} · IP: {activity.ip_address}
+                  {activity.location && ` · ${activity.location}`}
+                </p>
+              </div>
             </div>
-            <div className={styles.activityContent}>
-              <h4>{activity.message}</h4>
-              <p className={styles.activityMeta}>
-                {activity.time} · IP: {activity.ip}
-              </p>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
@@ -365,33 +422,88 @@ function ActivitySection() {
 
 // 登录设备组件
 function DevicesSection() {
-  const devices = [
-    { id: 1, name: 'Chrome on macOS', location: '北京', lastActive: '刚刚', current: true },
-    { id: 2, name: 'Safari on iPhone', location: '上海', lastActive: '2小时前', current: false },
-    { id: 3, name: 'Edge on Windows', location: '深圳', lastActive: '1天前', current: false },
-  ];
+  const [devices, setDevices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { success, error } = useToast();
+
+  useEffect(() => {
+    loadDevices();
+  }, []);
+
+  const loadDevices = async () => {
+    try {
+      const { getLoginDevices } = await import('@/lib/api/auth');
+      const deviceList = await getLoginDevices();
+      setDevices(deviceList);
+    } catch (err: any) {
+      console.error('Load devices error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRemoveDevice = async (deviceId: string) => {
+    if (!confirm('确定要移除此设备吗？')) {
+      return;
+    }
+
+    try {
+      const { removeLoginDevice } = await import('@/lib/api/auth');
+      await removeLoginDevice(deviceId);
+      success('设备移除成功！');
+      // 重新加载设备列表
+      loadDevices();
+    } catch (err: any) {
+      console.error('Remove device error:', err);
+      error(err.message || '设备移除失败，请重试');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>登录设备</h2>
+        <div className={styles.loading}>加载中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.section}>
       <h2 className={styles.sectionTitle}>登录设备</h2>
       <div className={styles.deviceList}>
-        {devices.map((device) => (
-          <div key={device.id} className={styles.deviceItem}>
-            <div className={styles.deviceIcon}>📱</div>
-            <div className={styles.deviceInfo}>
-              <h4>
-                {device.name}
-                {device.current && <span className={styles.currentDevice}>当前设备</span>}
-              </h4>
-              <p className={styles.deviceMeta}>
-                {device.location} · {device.lastActive}
-              </p>
+        {devices.length === 0 ? (
+          <p className={styles.emptyText}>暂无登录设备</p>
+        ) : (
+          devices.map((device) => (
+            <div key={device.id} className={styles.deviceItem}>
+              <div className={styles.deviceIcon}>
+                {device.device_type === 'mobile' && '📱'}
+                {device.device_type === 'tablet' && '📱'}
+                {device.device_type === 'desktop' && '💻'}
+                {!device.device_type && '🖥️'}
+              </div>
+              <div className={styles.deviceInfo}>
+                <h4>
+                  {device.device_name}
+                  {device.is_current && <span className={styles.currentDevice}>当前设备</span>}
+                </h4>
+                <p className={styles.deviceMeta}>
+                  {device.location || device.ip_address} · 
+                  最后活跃: {new Date(device.last_active).toLocaleString('zh-CN')}
+                </p>
+              </div>
+              {!device.is_current && (
+                <button 
+                  className={styles.removeBtn}
+                  onClick={() => handleRemoveDevice(device.device_id)}
+                >
+                  移除
+                </button>
+              )}
             </div>
-            {!device.current && (
-              <button className={styles.removeBtn}>移除</button>
-            )}
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

@@ -143,16 +143,16 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link href="/create" className={styles.createBtn}>
-                <svg className={styles.createIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span>创建</span>
-              </Link>
-              <Link href="/login" className={styles.loginBtn}>
-                登录
-              </Link>
+          <Link href="/create" className={styles.createBtn}>
+            <svg className={styles.createIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>创建</span>
+          </Link>
+          <Link href="/login" className={styles.loginBtn}>
+            登录
+          </Link>
             </>
           )}
         </div>

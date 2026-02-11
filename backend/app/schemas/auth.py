@@ -184,9 +184,70 @@ class SendCodeData(BaseModel):
     sent_at: datetime = Field(..., description="发送时间", example="2026-02-10T10:00:00Z")
 
 
+class LoginLogResponse(BaseModel):
+    """登录日志响应模型"""
+    id: str = Field(..., description="日志 ID")
+    ip_address: str = Field(..., description="IP 地址")
+    user_agent: Optional[str] = Field(None, description="User Agent")
+    device_type: Optional[str] = Field(None, description="设备类型")
+    browser: Optional[str] = Field(None, description="浏览器")
+    os: Optional[str] = Field(None, description="操作系统")
+    location: Optional[str] = Field(None, description="地理位置")
+    login_type: str = Field(..., description="登录类型")
+    status: str = Field(..., description="登录状态")
+    created_at: datetime = Field(..., description="登录时间")
+    
+    @field_validator('id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+    
+    class Config:
+        from_attributes = True
+
+
+class LoginDeviceResponse(BaseModel):
+    """登录设备响应模型"""
+    id: str = Field(..., description="设备 ID")
+    device_id: str = Field(..., description="设备唯一标识")
+    device_name: str = Field(..., description="设备名称")
+    device_type: Optional[str] = Field(None, description="设备类型")
+    browser: Optional[str] = Field(None, description="浏览器")
+    os: Optional[str] = Field(None, description="操作系统")
+    ip_address: str = Field(..., description="IP 地址")
+    location: Optional[str] = Field(None, description="地理位置")
+    last_active: datetime = Field(..., description="最后活跃时间")
+    created_at: datetime = Field(..., description="首次登录时间")
+    is_current: bool = Field(default=False, description="是否为当前设备")
+    
+    @field_validator('id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+    
+    class Config:
+        from_attributes = True
+
+
+class SecuritySettingsResponse(BaseModel):
+    """安全设置响应模型"""
+    two_factor_enabled: bool = Field(default=False, description="是否启用两步验证")
+    email_verified: bool = Field(..., description="邮箱是否已验证")
+    last_password_change: Optional[datetime] = Field(None, description="最后修改密码时间")
+    active_devices_count: int = Field(..., description="活跃设备数量")
+    recent_login_count: int = Field(..., description="最近登录次数")
+
+
 # 响应类型别名
 TokenResponse = ApiResponse[TokenData]
 SendCodeResponse = ApiResponse[SendCodeData]
 UserInfoResponse = ApiResponse[UserResponse]
 MessageResponse = ApiResponse[None]
 UpdateProfileResponse = ApiResponse[UserResponse]
+LoginLogsResponse = ApiResponse[list[LoginLogResponse]]
+LoginDevicesResponse = ApiResponse[list[LoginDeviceResponse]]
+SecuritySettingsInfoResponse = ApiResponse[SecuritySettingsResponse]

@@ -143,3 +143,29 @@ export const verifyToken = async (): Promise<boolean> => {
   }
 };
 
+// 获取安全设置信息
+export const getSecuritySettings = async () => {
+  const response = await apiClient.get('/auth/security/settings');
+  return response.data;
+};
+
+// 获取登录日志
+export const getLoginLogs = async (limit: number = 20, offset: number = 0) => {
+  const response = await apiClient.get('/auth/security/login-logs', {
+    params: { limit, offset }
+  });
+  return response.data;
+};
+
+// 获取登录设备
+export const getLoginDevices = async () => {
+  const response = await apiClient.get('/auth/security/devices');
+  return response.data;
+};
+
+// 移除登录设备
+export const removeLoginDevice = async (deviceId: string) => {
+  const response = await apiClient.delete(`/auth/security/devices/${deviceId}`);
+  return response.data;
+};
+

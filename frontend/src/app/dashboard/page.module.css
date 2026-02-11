@@ -687,3 +687,41 @@
   animation: pulse-ring 1.5s infinite;
 }
 
+/* 安全设置概览 */
+.securityOverview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.overviewItem {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.overviewLabel {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.overviewValue {
+  font-size: 2rem;
+  color: white;
+  font-weight: 700;
+}
+
+/* 空状态 */
+.emptyText {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
