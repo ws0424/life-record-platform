@@ -213,6 +213,24 @@ AI: 检测到修改：README.md, LOCAL_DEVELOPMENT.md
 - `检查代码` / `check code`
 - `重构代码` / `refactor code`
 
+---
+
+### 7. Frontend Best Practices Skill
+
+**文件位置**: `.cursor/skills/frontend-best-practices/SKILL.md`  
+**版本**: 1.0.0  
+**类别**: 代码质量
+
+#### 📝 描述
+前端最佳实践检查工具。检查 Ant Design、Day.js、Lodash 等第三方库的使用是否合理，避免性能问题和不规范用法。当用户提交代码、创建组件或页面时自动触发检查。
+
+#### 🎯 触发关键词
+- `提交代码` / `commit code`
+- `创建组件` / `create component`
+- `创建页面` / `create page`
+- `检查代码` / `check code`
+- `优化代码` / `optimize code`
+
 #### ⚡ 主要功能
 
 ##### 🔍 7 大检查项
@@ -246,6 +264,60 @@ AI: 检测到修改：README.md, LOCAL_DEVELOPMENT.md
 - Props 数量不超过 10 个
 - 通用组件使用绝对路径 `@/components/`
 - 页面组件使用相对路径 `./components/`
+
+---
+
+### 7. Frontend Best Practices Skill
+
+**文件位置**: `.cursor/skills/frontend-best-practices/SKILL.md`  
+**版本**: 1.0.0  
+**类别**: 代码质量
+
+#### 📝 描述
+前端最佳实践检查工具。检查 Ant Design、Day.js、Lodash 等第三方库的使用是否合理，避免性能问题和不规范用法。当用户提交代码、创建组件或页面时自动触发检查。
+
+#### 🎯 触发关键词
+- `提交代码` / `commit code`
+- `创建组件` / `create component`
+- `创建页面` / `create page`
+- `检查代码` / `check code`
+- `优化代码` / `optimize code`
+
+#### ⚡ 主要功能
+
+##### 📦 Ant Design 检查（8 项）
+- 按需导入组件
+- ConfigProvider 统一配置
+- Form.useForm() 使用
+- Table rowKey 检查
+- 避免在组件内定义配置
+- 避免直接修改全局样式
+- Modal 合理使用
+- message/notification 静态方法
+
+##### 📅 Day.js 检查（8 项）
+- 统一配置 Day.js
+- 定义日期格式常量
+- 只导入需要的插件
+- 正确处理时区
+- 使用 Day.js 方法比较日期
+- 避免重复创建实例
+- 格式化后再使用
+- 避免混用 Date 和 Day.js
+
+##### 🔧 Lodash 检查（7 项）
+- 按需导入函数
+- 避免导入整个库
+- debounce/throttle 使用 useMemo
+- 清理 debounce/throttle
+- 避免过度使用 Lodash
+- 简单操作使用原生方法
+- 避免在循环中创建 debounce/throttle
+
+##### 🚀 优化建议
+- 性能优化（React.memo、useMemo、useCallback）
+- 代码组织（提取常量、工具函数、Hooks）
+- 最佳实践示例（表单、表格、搜索组件）
 
 #### 📖 使用示例
 
@@ -535,6 +607,31 @@ AI: 🔧 开始代码重构...
     ✅ 重构完成！
 ```
 
+### 使用 Frontend Best Practices
+
+```
+用户: 提交代码
+AI: 🔍 检查第三方库使用规范...
+    检查 Ant Design...
+    检查 Day.js...
+    检查 Lodash...
+    ✅ 所有检查通过！
+
+用户: 创建表单组件
+AI: 📝 创建组件...
+    应用 Ant Design 最佳实践...
+    使用 Form.useForm()...
+    添加表单验证...
+    ✅ 组件创建完成！
+
+用户: 优化代码
+AI: 🚀 开始优化...
+    修改为按需导入...
+    添加 useMemo 缓存...
+    使用 debounce 优化...
+    ✅ 优化完成！
+```
+
 ---
 
 ## 📝 最佳实践
@@ -608,6 +705,28 @@ AI: 🔧 开始代码重构...
 - 组件代码过长
 - 缺少类型注释
 
+### Frontend Best Practices Skill
+
+**应该做 ✅**
+- 按需导入第三方库
+- 使用 ConfigProvider 统一配置
+- 使用 Form.useForm() 管理表单
+- Table 指定 rowKey
+- 使用 useMemo 缓存配置
+- 使用 debounce/throttle 优化性能
+- 统一使用 Day.js 处理日期
+- 定义日期格式常量
+
+**不应该做 ❌**
+- 导入整个库（antd、lodash）
+- 在组件内定义 columns/options
+- 直接修改 antd 全局样式
+- 混用 Date 和 Day.js
+- 过度使用 Lodash
+- 在循环中创建 debounce/throttle
+- 忘记清理 debounce/throttle
+- 硬编码日期格式
+
 ---
 
 ## 🔧 配置说明
@@ -668,6 +787,16 @@ AI: 🔧 开始代码重构...
 - **参考文档**: `frontend/COMPONENT_GUIDELINES.md`
 - **检查脚本**: `scripts/check-code.sh`
 
+### Frontend Best Practices 配置
+- **Skills 目录**: `.cursor/skills/frontend-best-practices/`
+- **检查项目**: Ant Design（8 项）、Day.js（8 项）、Lodash（7 项）
+- **优化建议**: 性能优化、代码组织、最佳实践示例
+- **检查脚本**: `scripts/check-libraries.sh`
+- **参考文档**: 
+  - [Ant Design 官方文档](https://ant.design/)
+  - [Day.js 官方文档](https://day.js.org/)
+  - [Lodash 官方文档](https://lodash.com/)
+
 ---
 
 ## 📚 参考资源
@@ -716,6 +845,10 @@ AI: 🔧 开始代码重构...
     ├── SKILL.md
     └── scripts/
         └── check-code.sh
+└── frontend-best-practices/
+    ├── SKILL.md
+    └── scripts/
+        └── check-libraries.sh
 ```
 
 ### 扩展阅读
@@ -795,6 +928,16 @@ AI: 🔧 开始代码重构...
 - ✅ 自动修复功能
 - ✅ 检查报告生成
 
+### Frontend Best Practices v1.0.0 (2026-02-11)
+- ✨ 初始版本发布
+- ✅ Ant Design 使用检查（8 项）
+- ✅ Day.js 使用检查（8 项）
+- ✅ Lodash 使用检查（7 项）
+- ✅ 性能优化建议
+- ✅ 代码组织建议
+- ✅ 最佳实践示例
+- ✅ 自动检查脚本
+
 ---
 
 ## 🤝 贡献指南
@@ -854,7 +997,7 @@ description: 详细描述，包含触发条件和使用场景
 ---
 
 **最后更新**: 2026-02-11  
-**Skills 总数**: 6  
+**Skills 总数**: 7  
 **遵循规范**: OpenSkills
 
 ## 📦 项目 Skills
@@ -866,7 +1009,8 @@ description: 详细描述，包含触发条件和使用场景
 3. **Git Auto Commit** - Git 自动提交工具
 4. **Frontend Design** - 前端设计指南
 5. **UI/UX Pro Max** - UI/UX 设计系统
-6. **Frontend Code Review** - 前端代码审查工具 ⭐ 新增
+6. **Frontend Code Review** - 前端代码审查工具
+7. **Frontend Best Practices** - 前端最佳实践检查工具 ⭐ 新增
 
 ## 🔗 相关文档
 
