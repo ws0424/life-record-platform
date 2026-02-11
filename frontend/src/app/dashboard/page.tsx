@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Card, Avatar, Tabs, Spin, message } from 'antd';
+import { Card, Avatar, Spin, message } from 'antd';
 import { UserOutlined, LockOutlined, BarChartOutlined, MobileOutlined, LinkOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { ProfileSection } from './components/ProfileSection';
@@ -20,57 +20,12 @@ export default function DashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
 
-  const tabItems = [
-    {
-      key: 'profile',
-      label: (
-        <span>
-          <UserOutlined style={{ marginRight: 8 }} />
-          个人信息
-        </span>
-      ),
-      children: <ProfileSection user={user} />,
-    },
-    {
-      key: 'security',
-      label: (
-        <span>
-          <LockOutlined style={{ marginRight: 8 }} />
-          安全设置
-        </span>
-      ),
-      children: <SecuritySection user={user} />,
-    },
-    {
-      key: 'activity',
-      label: (
-        <span>
-          <BarChartOutlined style={{ marginRight: 8 }} />
-          最新动态
-        </span>
-      ),
-      children: <ActivitySection />,
-    },
-    {
-      key: 'devices',
-      label: (
-        <span>
-          <MobileOutlined style={{ marginRight: 8 }} />
-          登录设备
-        </span>
-      ),
-      children: <DevicesSection />,
-    },
-    {
-      key: 'bindings',
-      label: (
-        <span>
-          <LinkOutlined style={{ marginRight: 8 }} />
-          账号绑定
-        </span>
-      ),
-      children: <BindingsSection />,
-    },
+  const tabs = [
+    { id: 'profile' as TabType, label: '个人信息', icon: <UserOutlined /> },
+    { id: 'security' as TabType, label: '安全设置', icon: <LockOutlined /> },
+    { id: 'activity' as TabType, label: '最新动态', icon: <BarChartOutlined /> },
+    { id: 'devices' as TabType, label: '登录设备', icon: <MobileOutlined /> },
+    { id: 'bindings' as TabType, label: '账号绑定', icon: <LinkOutlined /> },
   ];
 
   // 检查登录状态，未登录时跳转
@@ -145,6 +100,21 @@ export default function DashboardPage() {
               </p>
             )}
           </Card>
+
+          <Card style={{ padding: '8px 0' }}>
+            <nav className={styles.nav}>
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`${styles.navItem} ${activeTab === tab.id ? styles.active : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <span className={styles.navIcon}>{tab.icon}</span>
+                  <span className={styles.navLabel}>{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+          </Card>
         </motion.aside>
 
         {/* 主内容区 */}
@@ -154,13 +124,11 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Tabs
-            activeKey={activeTab}
-            onChange={(key) => setActiveTab(key as TabType)}
-            items={tabItems}
-            size="large"
-            tabPosition="top"
-          />
+          {activeTab === 'profile' && <ProfileSection user={user} />}
+          {activeTab === 'security' && <SecuritySection user={user} />}
+          {activeTab === 'activity' && <ActivitySection />}
+          {activeTab === 'devices' && <DevicesSection />}
+          {activeTab === 'bindings' && <BindingsSection />}
         </motion.main>
       </div>
     </div>
