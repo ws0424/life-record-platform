@@ -7,7 +7,7 @@ import { Form, Input, Button, Checkbox, Select, message } from 'antd';
 import { useAuthStore } from '@/lib/store/authStore';
 import { TypeSelector } from './components/TypeSelector';
 import { ImageUpload } from './components/ImageUpload';
-import { TagInput } from './components/TagInput';
+import { TagSelector } from './components/TagSelector';
 import { CONTENT_TYPES, MAX_IMAGES, MAX_TITLE_LENGTH, MAX_CONTENT_LENGTH } from './constants';
 import { validateImageFile, generateImagePreviews } from './utils/imageUtils';
 import type { ContentType } from './types';
@@ -259,10 +259,11 @@ export default function CreatePage() {
             )}
 
             {/* 标签 */}
-            <TagInput
+            <TagSelector
               tags={tags}
               onAdd={handleAddTag}
               onRemove={handleRemoveTag}
+              maxCount={10}
             />
 
             {/* 可见性 */}

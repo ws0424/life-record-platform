@@ -497,4 +497,65 @@ class ContentService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"获取评论列表失败: {str(e)}"
             )
+    
+    def get_hot_tags(self, limit: int = 10) -> ApiResponse[dict]:
+        """获取热门标签"""
+        try:
+            logger.info(f"🏷️  获取热门标签 - 数量: {limit}")
+            
+            # 查询所有公开内容的标签
+            contents = self.db.query(Content).filter(Content.is_public == True).all()
+            
+            # 统计标签使用次数
+            tag_counts = {}
+            for content in contents:
+                if content.tags:
+                    for tag in content.tags:
+                        tag_counts[tag] = tag_counts.get(tag, 0) + 1
+            
+            # 如果没有标签，返回默认热门标签
+            if not tag_counts:
+                default_tags = [
+                    {"name": "生活", "count": 0},
+                    {"name": "美食", "count": 0},
+                    {"name": "旅行", "count": 0},
+                    {"name": "摄影", "count": 0},
+                    {"name": "运动", "count": 0},
+                    {"name": "学习", "count": 0},
+                    {"name": "工作", "count": 0},
+                    {"name": "娱乐", "count": 0},
+                    {"name": "健康", "count": 0},
+                    {"name": "阅读", "count": 0},
+                ]
+                logger.info(f"✅ 返回默认热门标签 - 数量: {len(default_tags)}")
+                return ApiResponse(
+                    code=200,
+                    data={"tags": default_tags[:limit]},
+                    msg="获取成功",
+                    errMsg=None
+                )
+            
+            # 按使用次数排序
+            sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)
+            
+            # 构建响应
+            hot_tags = [
+                {"name": tag, "count": count}
+                for tag, count in sorted_tags[:limit]
+            ]
+            
+            logger.info(f"✅ 获取热门标签成功 - 数量: {len(hot_tags)}")
+            
+            return ApiResponse(
+                code=200,
+                data={"tags": hot_tags},
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 获取热门标签失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"获取热门标签失败: {str(e)}"
+            )
 

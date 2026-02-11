@@ -335,3 +335,20 @@ async def get_comments(
     service = ContentService(db)
     return service.get_comments(content_id, page, page_size)
 
+
+# ==================== 标签相关接口 ====================
+
+@router.get(
+    "/tags/hot",
+    response_model=ApiResponse[dict],
+    summary="获取热门标签",
+    description="获取使用频率最高的标签（允许未登录访问）"
+)
+async def get_hot_tags(
+    limit: int = Query(10, ge=1, le=50, description="返回数量"),
+    db: Session = Depends(get_db)
+):
+    """获取热门标签"""
+    service = ContentService(db)
+    return service.get_hot_tags(limit)
+
