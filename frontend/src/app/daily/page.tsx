@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, Pagination, Empty, Spin, Button, Tag, Avatar } from 'antd';
+import { Card, Pagination, Empty, Spin, Button, Tag, Avatar, Tooltip } from 'antd';
 import { PlusOutlined, EyeOutlined, HeartOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { getDailyList } from '@/lib/api/content';
@@ -155,41 +155,68 @@ export default function DailyPage() {
                     >
                       <Meta
                         title={
-                          <div style={{
-                            fontSize: 18,
-                            fontWeight: 600,
-                            color: 'var(--text-primary)',
-                            marginBottom: 8,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            {content.title}
-                          </div>
+                          <Tooltip title={content.title}>
+                            <div style={{
+                              fontSize: 18,
+                              fontWeight: 600,
+                              color: 'var(--text-primary)',
+                              marginBottom: 8,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {content.title}
+                            </div>
+                          </Tooltip>
                         }
                         description={
                           <div>
-                            <p style={{
-                              color: 'var(--text-secondary)',
-                              marginBottom: 12,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              lineHeight: 1.6,
-                            }}>
-                              {content.description || content.title}
-                            </p>
+                            <Tooltip title={content.description || content.title}>
+                              <p style={{
+                                color: 'var(--text-secondary)',
+                                marginBottom: 12,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                lineHeight: 1.6,
+                                minHeight: 48,
+                                maxHeight: 48,
+                              }}>
+                                {content.description || content.title}
+                              </p>
+                            </Tooltip>
 
                             {/* 标签 */}
                             {content.tags && content.tags.length > 0 && (
-                              <div style={{ marginBottom: 12 }}>
+                              <div style={{ 
+                                marginBottom: 12,
+                                minHeight: 32,
+                                maxHeight: 32,
+                                overflow: 'hidden',
+                              }}>
                                 {content.tags.slice(0, 3).map((tag) => (
-                                  <Tag key={tag} style={{ marginBottom: 4 }}>
-                                    #{tag}
-                                  </Tag>
+                                  <Tooltip key={tag} title={`#${tag}`}>
+                                    <Tag style={{ 
+                                      marginBottom: 4,
+                                      maxWidth: 100,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      display: 'inline-block',
+                                    }}>
+                                      #{tag}
+                                    </Tag>
+                                  </Tooltip>
                                 ))}
+                                {content.tags.length > 3 && (
+                                  <Tooltip title={content.tags.slice(3).map(t => `#${t}`).join(', ')}>
+                                    <Tag style={{ marginBottom: 4 }}>
+                                      +{content.tags.length - 3}
+                                    </Tag>
+                                  </Tooltip>
+                                )}
                               </div>
                             )}
 
