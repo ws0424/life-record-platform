@@ -132,163 +132,165 @@ export function SecuritySection({ user, success, error }: SecuritySectionProps) 
 
   return (
     <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>安全设置</h2>
+      <div className={styles.sectionContent}>
+        <h2 className={styles.sectionTitle}>安全设置</h2>
 
-      {securitySettings && (
-        <div className={styles.securityOverview}>
-          <div className={styles.overviewItem}>
-            <span className={styles.overviewLabel}>活跃设备</span>
-            <span className={styles.overviewValue}>{securitySettings.active_devices_count} 台</span>
-          </div>
-          <div className={styles.overviewItem}>
-            <span className={styles.overviewLabel}>最近30天登录</span>
-            <span className={styles.overviewValue}>{securitySettings.recent_login_count} 次</span>
-          </div>
-        </div>
-      )}
-
-      <div className={styles.securityCard}>
-        <div className={styles.securityItem}>
-          <div className={styles.securityInfo}>
-            <h3>修改密码</h3>
-            <p>定期修改密码可以提高账户安全性</p>
-          </div>
-          <button
-            className={styles.actionBtn}
-            onClick={() => setShowPasswordForm(!showPasswordForm)}
-          >
-            {showPasswordForm ? '取消' : '修改密码'}
-          </button>
-        </div>
-
-        {showPasswordForm && (
-          <form onSubmit={handlePasswordChange} className={styles.passwordForm}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>当前密码</label>
-              <input
-                type="password"
-                className={styles.input}
-                value={passwordData.currentPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                required
-              />
+        {securitySettings && (
+          <div className={styles.securityOverview}>
+            <div className={styles.overviewItem}>
+              <span className={styles.overviewLabel}>活跃设备</span>
+              <span className={styles.overviewValue}>{securitySettings.active_devices_count} 台</span>
             </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.label}>新密码</label>
-              <input
-                type="password"
-                className={styles.input}
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                required
-                minLength={6}
-              />
-              <p className={styles.hint}>密码必须包含字母和数字，长度至少6位</p>
+            <div className={styles.overviewItem}>
+              <span className={styles.overviewLabel}>最近30天登录</span>
+              <span className={styles.overviewValue}>{securitySettings.recent_login_count} 次</span>
             </div>
-
-            <div className={styles.formGroup}>
-              <label className={styles.label}>确认新密码</label>
-              <input
-                type="password"
-                className={styles.input}
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                required
-              />
-            </div>
-
-            <button type="submit" className={styles.submitBtn} disabled={isLoading}>
-              {isLoading ? '修改中...' : '确认修改'}
-            </button>
-          </form>
+          </div>
         )}
 
-        <div className={styles.securityItem}>
-          <div className={styles.securityInfo}>
-            <h3>邮箱验证</h3>
-            <p>
-              当前邮箱: {user?.email}
-              {user?.is_verified ? (
-                <span className={styles.verified}> ✓ 已验证</span>
-              ) : (
-                <span className={styles.unverified}> ✗ 未验证</span>
-              )}
-            </p>
-          </div>
-          <button 
-            className={styles.actionBtn}
-            onClick={() => setShowEmailForm(!showEmailForm)}
-          >
-            {showEmailForm ? '取消' : '换绑邮箱'}
-          </button>
-        </div>
-
-        {showEmailForm && (
-          <form onSubmit={handleEmailChange} className={styles.passwordForm}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>新邮箱地址</label>
-              <input
-                type="email"
-                className={styles.input}
-                value={emailData.newEmail}
-                onChange={(e) => setEmailData({ ...emailData, newEmail: e.target.value })}
-                required
-                placeholder="请输入新邮箱地址"
-              />
+        <div className={styles.securityCard}>
+          <div className={styles.securityItem}>
+            <div className={styles.securityInfo}>
+              <h3>修改密码</h3>
+              <p>定期修改密码可以提高账户安全性</p>
             </div>
+            <button
+              className={styles.actionBtn}
+              onClick={() => setShowPasswordForm(!showPasswordForm)}
+            >
+              {showPasswordForm ? '取消' : '修改密码'}
+            </button>
+          </div>
 
-            <div className={styles.formGroup}>
-              <label className={styles.label}>验证码</label>
-              <div className={styles.codeInputWrapper}>
+          {showPasswordForm && (
+            <form onSubmit={handlePasswordChange} className={styles.passwordForm}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>当前密码</label>
                 <input
-                  type="text"
+                  type="password"
                   className={styles.input}
-                  value={emailData.code}
-                  onChange={(e) => setEmailData({ ...emailData, code: e.target.value })}
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                   required
-                  maxLength={6}
-                  placeholder="请输入6位验证码"
                 />
-                <button
-                  type="button"
-                  className={styles.sendCodeBtn}
-                  onClick={handleSendCode}
-                  disabled={isSendingCode || countdown > 0}
-                >
-                  {countdown > 0 ? `${countdown}秒后重试` : isSendingCode ? '发送中...' : '发送验证码'}
-                </button>
               </div>
-            </div>
 
-            <div className={styles.formGroup}>
-              <label className={styles.label}>当前密码</label>
-              <input
-                type="password"
-                className={styles.input}
-                value={emailData.password}
-                onChange={(e) => setEmailData({ ...emailData, password: e.target.value })}
-                required
-                placeholder="请输入当前密码以验证身份"
-              />
-            </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>新密码</label>
+                <input
+                  type="password"
+                  className={styles.input}
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  required
+                  minLength={6}
+                />
+                <p className={styles.hint}>密码必须包含字母和数字，长度至少6位</p>
+              </div>
 
-            <button type="submit" className={styles.submitBtn} disabled={isLoading}>
-              {isLoading ? '换绑中...' : '确认换绑'}
+              <div className={styles.formGroup}>
+                <label className={styles.label}>确认新密码</label>
+                <input
+                  type="password"
+                  className={styles.input}
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  required
+                />
+              </div>
+
+              <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+                {isLoading ? '修改中...' : '确认修改'}
+              </button>
+            </form>
+          )}
+
+          <div className={styles.securityItem}>
+            <div className={styles.securityInfo}>
+              <h3>邮箱验证</h3>
+              <p>
+                当前邮箱: {user?.email}
+                {user?.is_verified ? (
+                  <span className={styles.verified}> ✓ 已验证</span>
+                ) : (
+                  <span className={styles.unverified}> ✗ 未验证</span>
+                )}
+              </p>
+            </div>
+            <button 
+              className={styles.actionBtn}
+              onClick={() => setShowEmailForm(!showEmailForm)}
+            >
+              {showEmailForm ? '取消' : '换绑邮箱'}
             </button>
-          </form>
-        )}
+          </div>
 
-        <div className={styles.securityItem}>
-          <div className={styles.securityInfo}>
-            <h3>账户状态</h3>
-            <p>
-              {user?.is_active ? (
-                <span className={styles.active}>● 正常</span>
-              ) : (
-                <span className={styles.inactive}>● 已停用</span>
-              )}
-            </p>
+          {showEmailForm && (
+            <form onSubmit={handleEmailChange} className={styles.passwordForm}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>新邮箱地址</label>
+                <input
+                  type="email"
+                  className={styles.input}
+                  value={emailData.newEmail}
+                  onChange={(e) => setEmailData({ ...emailData, newEmail: e.target.value })}
+                  required
+                  placeholder="请输入新邮箱地址"
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>验证码</label>
+                <div className={styles.codeInputWrapper}>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    value={emailData.code}
+                    onChange={(e) => setEmailData({ ...emailData, code: e.target.value })}
+                    required
+                    maxLength={6}
+                    placeholder="请输入6位验证码"
+                  />
+                  <button
+                    type="button"
+                    className={styles.sendCodeBtn}
+                    onClick={handleSendCode}
+                    disabled={isSendingCode || countdown > 0}
+                  >
+                    {countdown > 0 ? `${countdown}秒后重试` : isSendingCode ? '发送中...' : '发送验证码'}
+                  </button>
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>当前密码</label>
+                <input
+                  type="password"
+                  className={styles.input}
+                  value={emailData.password}
+                  onChange={(e) => setEmailData({ ...emailData, password: e.target.value })}
+                  required
+                  placeholder="请输入当前密码以验证身份"
+                />
+              </div>
+
+              <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+                {isLoading ? '换绑中...' : '确认换绑'}
+              </button>
+            </form>
+          )}
+
+          <div className={styles.securityItem}>
+            <div className={styles.securityInfo}>
+              <h3>账户状态</h3>
+              <p>
+                {user?.is_active ? (
+                  <span className={styles.active}>● 正常</span>
+                ) : (
+                  <span className={styles.inactive}>● 已停用</span>
+                )}
+              </p>
+            </div>
           </div>
         </div>
       </div>

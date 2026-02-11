@@ -114,9 +114,9 @@ export function ActivitySection() {
 
   return (
     <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>最新动态</h2>
-      
-      <div className={styles.activityListWrapper}>
+      <div className={styles.sectionContent}>
+        <h2 className={styles.sectionTitle}>最新动态</h2>
+        
         <div className={styles.activityList}>
           {activities.length === 0 ? (
             <p className={styles.emptyText}>暂无登录记录</p>
@@ -140,45 +140,47 @@ export function ActivitySection() {
       </div>
       
       {activities.length > 0 && totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button
-            className={styles.pageBtn}
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1 || isLoading}
-            aria-label="上一页"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            上一页
-          </button>
-          
-          <div className={styles.pageNumbers} role="navigation" aria-label="分页导航">
-            {pageNumbers.map((pageNum) => (
-              <button
-                key={pageNum}
-                className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
-                onClick={() => handlePageChange(pageNum)}
-                disabled={isLoading}
-                aria-label={`第 ${pageNum} 页`}
-                aria-current={currentPage === pageNum ? 'page' : undefined}
-              >
-                {pageNum}
-              </button>
-            ))}
+        <div className={styles.sectionFooter}>
+          <div className={styles.pagination}>
+            <button
+              className={styles.pageBtn}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1 || isLoading}
+              aria-label="上一页"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              上一页
+            </button>
+            
+            <div className={styles.pageNumbers} role="navigation" aria-label="分页导航">
+              {pageNumbers.map((pageNum) => (
+                <button
+                  key={pageNum}
+                  className={`${styles.pageNumber} ${currentPage === pageNum ? styles.active : ''}`}
+                  onClick={() => handlePageChange(pageNum)}
+                  disabled={isLoading}
+                  aria-label={`第 ${pageNum} 页`}
+                  aria-current={currentPage === pageNum ? 'page' : undefined}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              className={styles.pageBtn}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages || isLoading}
+              aria-label="下一页"
+            >
+              下一页
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
           </div>
-          
-          <button
-            className={styles.pageBtn}
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages || isLoading}
-            aria-label="下一页"
-          >
-            下一页
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
         </div>
       )}
     </div>

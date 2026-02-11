@@ -75,48 +75,50 @@ export function DevicesSection({ success, error }: DevicesSectionProps) {
 
   return (
     <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>登录设备</h2>
-      <div className={styles.deviceList}>
-        {devices.length === 0 ? (
-          <p className={styles.emptyText}>暂无登录设备</p>
-        ) : (
-          devices.map((device) => (
-            <div key={device.id} className={styles.deviceItem}>
-              <div className={styles.deviceIcon}>
-                {device.device_type === 'mobile' && '📱'}
-                {device.device_type === 'tablet' && '📱'}
-                {device.device_type === 'desktop' && '💻'}
-                {!device.device_type && '🖥️'}
-              </div>
-              <div className={styles.deviceInfo}>
-                <h4>
-                  {device.device_name}
-                  {device.is_current && <span className={styles.currentDevice}>当前设备</span>}
-                </h4>
-                <p className={styles.deviceMeta}>
-                  {device.location || device.ip_address} · 
-                  最后活跃: {new Date(device.last_active).toLocaleString('zh-CN')}
-                </p>
-              </div>
-              {!device.is_current && (
-                <div className={styles.deviceActions}>
-                  <button 
-                    className={styles.logoutBtn}
-                    onClick={() => handleForceLogout(device.device_id)}
-                  >
-                    强制下线
-                  </button>
-                  <button 
-                    className={styles.removeBtn}
-                    onClick={() => handleRemoveDevice(device.device_id)}
-                  >
-                    移除
-                  </button>
+      <div className={styles.sectionContent}>
+        <h2 className={styles.sectionTitle}>登录设备</h2>
+        <div className={styles.deviceList}>
+          {devices.length === 0 ? (
+            <p className={styles.emptyText}>暂无登录设备</p>
+          ) : (
+            devices.map((device) => (
+              <div key={device.id} className={styles.deviceItem}>
+                <div className={styles.deviceIcon}>
+                  {device.device_type === 'mobile' && '📱'}
+                  {device.device_type === 'tablet' && '📱'}
+                  {device.device_type === 'desktop' && '💻'}
+                  {!device.device_type && '🖥️'}
                 </div>
-              )}
-            </div>
-          ))
-        )}
+                <div className={styles.deviceInfo}>
+                  <h4>
+                    {device.device_name}
+                    {device.is_current && <span className={styles.currentDevice}>当前设备</span>}
+                  </h4>
+                  <p className={styles.deviceMeta}>
+                    {device.location || device.ip_address} · 
+                    最后活跃: {new Date(device.last_active).toLocaleString('zh-CN')}
+                  </p>
+                </div>
+                {!device.is_current && (
+                  <div className={styles.deviceActions}>
+                    <button 
+                      className={styles.logoutBtn}
+                      onClick={() => handleForceLogout(device.device_id)}
+                    >
+                      强制下线
+                    </button>
+                    <button 
+                      className={styles.removeBtn}
+                      onClick={() => handleRemoveDevice(device.device_id)}
+                    >
+                      移除
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
