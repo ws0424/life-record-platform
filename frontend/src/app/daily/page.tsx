@@ -47,12 +47,13 @@ export default function DailyPage() {
     }
   };
 
-  const handleCreateClick = (e: React.MouseEvent) => {
+  const handleCreateClick = () => {
     if (!isAuthenticated) {
-      e.preventDefault();
       if (confirm('需要登录后才能创建日常记录，是否前往登录？')) {
         router.push('/login?redirect=' + encodeURIComponent('/create?type=daily'));
       }
+    } else {
+      router.push('/create?type=daily');
     }
   };
 
