@@ -13,6 +13,7 @@ from app.schemas import (
     UpdateProfileRequest,
     UpdateProfileResponse,
     ChangePasswordRequest,
+    ChangeEmailRequest,
     LoginLogsResponse,
     LoginDevicesResponse,
     SecuritySettingsInfoResponse
@@ -1119,4 +1120,125 @@ async def remove_login_device(
     """
     security_service = SecurityService(db)
     result = security_service.remove_device(str(current_user.id), device_id)
+    return result
+
+
+@router.post(
+    "/security/devices/{device_id}/logout",
+    response_model=MessageResponse,
+    summary="强制设备下线",
+    description="强制指定设备下线",
+    response_description="返回下线结果"
+)
+async def force_logout_device(
+    device_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 强制设备下线
+    
+    强制指定设备下线，该设备将立即失去访问权限。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 路径参数
+    - **device_id**: 设备唯一标识
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": null,
+        "msg": "设备已强制下线",
+        "errMsg": null
+    }
+    ```
+    
+    ### 注意事项
+    - 不能强制当前设备下线
+    - 下线后该设备需要重新登录
+    - Token 将立即失效
+    """
+    security_service = SecurityService(db)
+    result = security_service.force_logout_device(str(current_user.id), device_id)
+    return result
+
+
+@router.post(
+    "/change-email",
+    response_model=UpdateProfileResponse,
+    summary="换绑邮箱",
+    description="更换绑定的邮箱地址",
+    response_description="返回更新后的用户信息"
+)
+async def change_email(
+    email_data: ChangeEmailRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    ## 换绑邮箱
+    
+    更换当前用户绑定的邮箱地址，需要验证码和密码验证。
+    
+    ### 请求头
+    ```
+    Authorization: Bearer {access_token}
+    ```
+    
+    ### 请求参数
+    - **new_email**: 新邮箱地址（必填）
+    - **code**: 6位数字验证码（必填）
+    - **password**: 当前密码（必填）
+    
+    ### 换绑流程
+    1. 调用 `/api/auth/send-code` 发送验证码到新邮箱（type: register）
+    2. 用户收到验证码
+    3. 填写新邮箱、验证码和当前密码
+    4. 验证通过后更新邮箱
+    
+    ### 验证规则
+    - 验证码必须正确且未过期
+    - 当前密码必须正确
+    - 新邮箱不能与其他用户重复
+    
+    ### 示例请求
+    ```json
+    {
+        "new_email": "newemail@example.com",
+        "code": "123456",
+        "password": "test123"
+    }
+    ```
+    
+    ### 成功响应示例
+    ```json
+    {
+        "code": 200,
+        "data": {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "username": "张三",
+            "email": "newemail@example.com",
+            "avatar": "https://example.com/avatar.jpg",
+            "bio": "这是我的个人简介",
+            "is_active": true,
+            "is_verified": true,
+            "created_at": "2026-02-10T10:00:00Z",
+            "updated_at": "2026-02-11T10:00:00Z"
+        },
+        "msg": "邮箱换绑成功",
+        "errMsg": null
+    }
+    ```
+    
+    ### 安全提示
+    - 换绑后建议重新登录
+    - 如非本人操作，请立即联系客服
+    """
+    auth_service = AuthService(db)
+    result = await auth_service.change_email(str(current_user.id), email_data)
     return result

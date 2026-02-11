@@ -725,3 +725,62 @@
   font-size: 1rem;
 }
 
+/* 设备操作按钮组 */
+.deviceActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.logoutBtn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 2px solid var(--color-warning, #f59e0b);
+  color: var(--color-warning, #f59e0b);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.logoutBtn:hover {
+  background: var(--color-warning, #f59e0b);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* 验证码输入框 */
+.codeInputWrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.codeInputWrapper .input {
+  flex: 1;
+}
+
+.sendCodeBtn {
+  padding: 0.875rem 1.5rem;
+  background: var(--color-cta);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  white-space: nowrap;
+}
+
+.sendCodeBtn:hover:not(:disabled) {
+  background: var(--color-cta-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.sendCodeBtn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+

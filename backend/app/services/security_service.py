@@ -162,6 +162,38 @@ class SecurityService:
             errMsg=None
         )
     
+    def force_logout_device(
+        self,
+        user_id: str,
+        device_id: str
+    ) -> ApiResponse[None]:
+        """强制设备下线"""
+        device = self.db.query(LoginDevice).filter(
+            LoginDevice.user_id == user_id,
+            LoginDevice.device_id == device_id
+        ).first()
+        
+        if not device:
+            return ApiResponse(
+                code=404,
+                data=None,
+                msg="error",
+                errMsg="设备不存在"
+            )
+        
+        # 删除设备记录，强制下线
+        self.db.delete(device)
+        self.db.commit()
+        
+        # TODO: 可以在这里添加 Token 黑名单逻辑，使该设备的 Token 立即失效
+        
+        return ApiResponse(
+            code=200,
+            data=None,
+            msg="设备已强制下线",
+            errMsg=None
+        )
+    
     def get_security_settings(
         self,
         user_id: str

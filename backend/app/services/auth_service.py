@@ -13,7 +13,8 @@ from app.schemas import (
     ResetPasswordRequest,
     MessageResponse,
     UpdateProfileRequest,
-    ChangePasswordRequest
+    ChangePasswordRequest,
+    ChangeEmailRequest
 )
 from app.utils.security import verify_password, get_password_hash, create_access_token, create_refresh_token
 from app.utils.verification import generate_code, save_code, verify_code, check_code_rate_limit
@@ -410,5 +411,75 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_200_OK,
                 detail=f"密码修改失败: {str(e)}"
+            )
+    
+    async def change_email(self, user_id: str, email_data: ChangeEmailRequest) -> ApiResponse[UserResponse]:
+        """换绑邮箱"""
+        try:
+            logger.info(f"🔄 开始换绑邮箱 - 用户ID: {user_id}")
+            
+            # 验证验证码
+            logger.info(f"🔍 验证验证码 - 新邮箱: {email_data.new_email}, 验证码: {email_data.code}")
+            if not verify_code(email_data.new_email, email_data.code, "register"):
+                logger.warning(f"❌ 验证码错误或已过期 - 新邮箱: {email_data.new_email}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="验证码错误或已过期"
+                )
+            logger.info(f"✅ 验证码验证通过 - 新邮箱: {email_data.new_email}")
+            
+            # 查找用户
+            user = self.db.query(User).filter(User.id == user_id).first()
+            if not user:
+                logger.warning(f"❌ 用户不存在 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="用户不存在"
+                )
+            
+            # 验证当前密码
+            if not verify_password(email_data.password, user.password_hash):
+                logger.warning(f"❌ 当前密码错误 - 用户ID: {user_id}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="当前密码错误"
+                )
+            
+            # 检查新邮箱是否已被使用
+            existing_user = self.db.query(User).filter(
+                User.email == email_data.new_email,
+                User.id != user_id
+            ).first()
+            if existing_user:
+                logger.warning(f"❌ 新邮箱已被使用 - 新邮箱: {email_data.new_email}")
+                raise HTTPException(
+                    status_code=status.HTTP_200_OK,
+                    detail="该邮箱已被其他用户使用"
+                )
+            
+            # 更新邮箱
+            logger.info(f"📧 更新邮箱 - 用户ID: {user_id}, 旧邮箱: {user.email}, 新邮箱: {email_data.new_email}")
+            old_email = user.email
+            user.email = email_data.new_email
+            user.is_verified = True  # 验证码验证通过，设为已验证
+            user.updated_at = datetime.utcnow()
+            
+            self.db.commit()
+            self.db.refresh(user)
+            logger.info(f"✅ 邮箱换绑成功 - 用户ID: {user_id}, {old_email} -> {email_data.new_email}")
+            
+            return ApiResponse(
+                code=200,
+                data=UserResponse.from_orm(user),
+                msg="邮箱换绑成功",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 邮箱换绑失败 - 用户ID: {user_id}, 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_200_OK,
+                detail=f"邮箱换绑失败: {str(e)}"
             )
 

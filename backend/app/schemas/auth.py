@@ -168,6 +168,22 @@ class ChangePasswordRequest(BaseModel):
         }
 
 
+class ChangeEmailRequest(BaseModel):
+    """换绑邮箱请求模型"""
+    new_email: EmailStr = Field(..., description="新邮箱地址", example="newemail@example.com")
+    code: str = Field(..., min_length=6, max_length=6, description="6位数字验证码", example="123456")
+    password: str = Field(..., min_length=6, max_length=20, description="当前密码", example="test123")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "new_email": "newemail@example.com",
+                "code": "123456",
+                "password": "test123"
+            }
+        }
+
+
 class TokenData(BaseModel):
     """Token 数据模型"""
     access_token: str = Field(..., description="访问令牌，有效期 1 小时", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")

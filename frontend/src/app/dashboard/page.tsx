@@ -203,12 +203,21 @@ function ProfileSection({ user, success, error }: { user: any; success: (msg: st
 // 安全设置组件
 function SecuritySection({ user, success, error }: { user: any; success: (msg: string) => void; error: (msg: string) => void }) {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const [securitySettings, setSecuritySettings] = useState<any>(null);
+  const { setUser } = useAuthStore();
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+  });
+  const [emailData, setEmailData] = useState({
+    newEmail: '',
+    code: '',
+    password: '',
   });
 
   // 加载安全设置信息
@@ -224,6 +233,14 @@ function SecuritySection({ user, success, error }: { user: any; success: (msg: s
     };
     loadSecuritySettings();
   }, []);
+
+  // 倒计时
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,6 +264,58 @@ function SecuritySection({ user, success, error }: { user: any; success: (msg: s
     } catch (err: any) {
       console.error('Change password error:', err);
       error(err.message || '密码修改失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendCode = async () => {
+    if (!emailData.newEmail) {
+      error('请输入新邮箱地址');
+      return;
+    }
+
+    setIsSendingCode(true);
+    try {
+      const { sendCode } = await import('@/lib/api/auth');
+      await sendCode({
+        email: emailData.newEmail,
+        type: 'register',
+      });
+      success('验证码已发送到新邮箱！');
+      setCountdown(60);
+    } catch (err: any) {
+      console.error('Send code error:', err);
+      error(err.message || '验证码发送失败，请重试');
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  const handleEmailChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    try {
+      const { changeEmail } = await import('@/lib/api/auth');
+      const updatedUser = await changeEmail({
+        new_email: emailData.newEmail,
+        code: emailData.code,
+        password: emailData.password,
+      });
+      
+      // 更新本地用户信息
+      setUser(updatedUser);
+      success('邮箱换绑成功！');
+      setEmailData({
+        newEmail: '',
+        code: '',
+        password: '',
+      });
+      setShowEmailForm(false);
+    } catch (err: any) {
+      console.error('Change email error:', err);
+      error(err.message || '邮箱换绑失败，请重试');
     } finally {
       setIsLoading(false);
     }
@@ -330,17 +399,76 @@ function SecuritySection({ user, success, error }: { user: any; success: (msg: s
           <div className={styles.securityInfo}>
             <h3>邮箱验证</h3>
             <p>
+              当前邮箱: {user?.email}
               {user?.is_verified ? (
-                <span className={styles.verified}>✓ 已验证</span>
+                <span className={styles.verified}> ✓ 已验证</span>
               ) : (
-                <span className={styles.unverified}>✗ 未验证</span>
+                <span className={styles.unverified}> ✗ 未验证</span>
               )}
             </p>
           </div>
-          {!user?.is_verified && (
-            <button className={styles.actionBtn}>发送验证邮件</button>
-          )}
+          <button 
+            className={styles.actionBtn}
+            onClick={() => setShowEmailForm(!showEmailForm)}
+          >
+            {showEmailForm ? '取消' : '换绑邮箱'}
+          </button>
         </div>
+
+        {showEmailForm && (
+          <form onSubmit={handleEmailChange} className={styles.passwordForm}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>新邮箱地址</label>
+              <input
+                type="email"
+                className={styles.input}
+                value={emailData.newEmail}
+                onChange={(e) => setEmailData({ ...emailData, newEmail: e.target.value })}
+                required
+                placeholder="请输入新邮箱地址"
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>验证码</label>
+              <div className={styles.codeInputWrapper}>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={emailData.code}
+                  onChange={(e) => setEmailData({ ...emailData, code: e.target.value })}
+                  required
+                  maxLength={6}
+                  placeholder="请输入6位验证码"
+                />
+                <button
+                  type="button"
+                  className={styles.sendCodeBtn}
+                  onClick={handleSendCode}
+                  disabled={isSendingCode || countdown > 0}
+                >
+                  {countdown > 0 ? `${countdown}秒后重试` : isSendingCode ? '发送中...' : '发送验证码'}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>当前密码</label>
+              <input
+                type="password"
+                className={styles.input}
+                value={emailData.password}
+                onChange={(e) => setEmailData({ ...emailData, password: e.target.value })}
+                required
+                placeholder="请输入当前密码以验证身份"
+              />
+            </div>
+
+            <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+              {isLoading ? '换绑中...' : '确认换绑'}
+            </button>
+          </form>
+        )}
 
         <div className={styles.securityItem}>
           <div className={styles.securityInfo}>
@@ -459,6 +587,23 @@ function DevicesSection() {
     }
   };
 
+  const handleForceLogout = async (deviceId: string) => {
+    if (!confirm('确定要强制此设备下线吗？该设备将立即失去访问权限。')) {
+      return;
+    }
+
+    try {
+      const { forceLogoutDevice } = await import('@/lib/api/auth');
+      await forceLogoutDevice(deviceId);
+      success('设备已强制下线！');
+      // 重新加载设备列表
+      loadDevices();
+    } catch (err: any) {
+      console.error('Force logout device error:', err);
+      error(err.message || '强制下线失败，请重试');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className={styles.section}>
@@ -494,12 +639,20 @@ function DevicesSection() {
                 </p>
               </div>
               {!device.is_current && (
-                <button 
-                  className={styles.removeBtn}
-                  onClick={() => handleRemoveDevice(device.device_id)}
-                >
-                  移除
-                </button>
+                <div className={styles.deviceActions}>
+                  <button 
+                    className={styles.logoutBtn}
+                    onClick={() => handleForceLogout(device.device_id)}
+                  >
+                    强制下线
+                  </button>
+                  <button 
+                    className={styles.removeBtn}
+                    onClick={() => handleRemoveDevice(device.device_id)}
+                  >
+                    移除
+                  </button>
+                </div>
               )}
             </div>
           ))

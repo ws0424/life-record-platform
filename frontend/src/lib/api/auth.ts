@@ -169,3 +169,19 @@ export const removeLoginDevice = async (deviceId: string) => {
   return response.data;
 };
 
+// 强制设备下线
+export const forceLogoutDevice = async (deviceId: string) => {
+  const response = await apiClient.post(`/auth/security/devices/${deviceId}/logout`);
+  return response.data;
+};
+
+// 换绑邮箱
+export const changeEmail = async (data: {
+  new_email: string;
+  code: string;
+  password: string;
+}) => {
+  const response = await apiClient.post('/auth/change-email', data);
+  return response.data;
+};
+
