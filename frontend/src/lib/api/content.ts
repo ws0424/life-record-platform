@@ -119,7 +119,7 @@ export interface SaveResponse {
  * 创建内容
  */
 export async function createContent(data: ContentCreate): Promise<Content> {
-  const response = await apiClient.post('/content/', data);
+  const response = await apiClient.post('/content', data);
   return response.data;
 }
 
@@ -159,7 +159,7 @@ export async function getContentList(params?: {
   tag?: string;
   is_featured?: boolean;
 }): Promise<ContentListResponse> {
-  const response = await apiClient.get('/content/', { params });
+  const response = await apiClient.get('/content', { params });
   return response.data;
 }
 

@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
 
+  // 禁用自动添加末尾斜杠（避免 307/308 重定向）
+  trailingSlash: false,
+
   // 图片优化配置
   images: {
     domains: ['localhost'],
