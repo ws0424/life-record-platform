@@ -1,46 +1,49 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Form, Input, Button, Checkbox, Select, message } from 'antd';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useToast } from '@/lib/hooks/useToast';
-import { ToastContainer } from '@/components/ui/Toast';
 import { TypeSelector } from './components/TypeSelector';
 import { ImageUpload } from './components/ImageUpload';
 import { TagInput } from './components/TagInput';
 import { CONTENT_TYPES, MAX_IMAGES, MAX_TITLE_LENGTH, MAX_CONTENT_LENGTH } from './constants';
 import { validateImageFile, generateImagePreviews } from './utils/imageUtils';
-import { validateFormData } from './utils/validation';
-import type { FormData, ContentType } from './types';
+import type { ContentType } from './types';
 import styles from './page.module.css';
+
+const { TextArea } = Input;
+
+interface FormValues {
+  type: ContentType;
+  title: string;
+  content: string;
+  location?: string;
+  isPublic: boolean;
+}
 
 export default function CreatePage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const { toasts, removeToast, success, error, warning } = useToast();
+  const [form] = Form.useForm<FormValues>();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    type: 'daily',
-    title: '',
-    content: '',
-    tags: [],
-    images: [],
-    location: '',
-    isPublic: true,
-  });
+  const [contentType, setContentType] = useState<ContentType>('daily');
+  const [tags, setTags] = useState<string[]>([]);
+  const [images, setImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
 
   // 类型改变处理
   const handleTypeChange = useCallback((type: ContentType) => {
-    setFormData((prev) => ({ ...prev, type }));
-  }, []);
+    setContentType(type);
+    form.setFieldValue('type', type);
+  }, [form]);
 
   // 图片上传处理
   const handleImageUpload = useCallback(async (files: File[]) => {
     // 检查数量限制
-    if (files.length + formData.images.length > MAX_IMAGES) {
-      error(`最多只能上传${MAX_IMAGES}张图片`);
+    if (files.length + images.length > MAX_IMAGES) {
+      message.error(`最多只能上传${MAX_IMAGES}张图片`);
       return;
     }
 
@@ -49,7 +52,7 @@ export default function CreatePage() {
     for (const file of files) {
       const validation = validateImageFile(file);
       if (!validation.valid) {
-        error(validation.error || '图片验证失败');
+        message.error(validation.error || '图片验证失败');
         continue;
       }
       validFiles.push(file);
@@ -61,50 +64,35 @@ export default function CreatePage() {
       // 生成预览
       const newPreviews = await generateImagePreviews(validFiles);
       
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, ...validFiles],
-      }));
-      
+      setImages((prev) => [...prev, ...validFiles]);
       setPreviewImages((prev) => [...prev, ...newPreviews]);
     } catch (err) {
-      error('生成图片预览失败');
+      message.error('生成图片预览失败');
       console.error('Generate preview error:', err);
     }
-  }, [formData.images.length, error]);
+  }, [images.length]);
 
   // 删除图片处理
   const handleRemoveImage = useCallback((index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
+    setImages((prev) => prev.filter((_, i) => i !== index));
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   // 添加标签处理
   const handleAddTag = useCallback((tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: [...prev.tags, tag],
-    }));
+    setTags((prev) => [...prev, tag]);
   }, []);
 
   // 删除标签处理
   const handleRemoveTag = useCallback((tag: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((t) => t !== tag),
-    }));
+    setTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
   // 表单提交处理
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = useCallback(async (values: FormValues) => {
     // 检查登录状态
     if (!isAuthenticated) {
-      warning('请先登录后再发布内容');
+      message.warning('请先登录后再发布内容');
       setTimeout(() => {
         const currentPath = window.location.pathname;
         const redirectUrl = encodeURIComponent(currentPath);
@@ -113,58 +101,46 @@ export default function CreatePage() {
       return;
     }
 
-    // 验证表单
-    const errors = validateFormData(formData);
-    if (errors.length > 0) {
-      error(errors[0].message);
-      return;
-    }
-
     setIsLoading(true);
 
     try {
       // 1. 上传图片到 MinIO
       let imageUrls: string[] = [];
-      if (formData.images.length > 0) {
+      if (images.length > 0) {
         const { uploadImages } = await import('@/lib/api/upload');
-        imageUrls = await uploadImages(formData.images);
+        imageUrls = await uploadImages(images);
+        message.success(`成功上传 ${imageUrls.length} 张图片`);
       }
       
       // 2. 创建内容
       const { createContent } = await import('@/lib/api/content');
       
       await createContent({
-        type: formData.type,
-        title: formData.title,
-        content: formData.content,
-        tags: formData.tags,
+        type: contentType,
+        title: values.title,
+        content: values.content,
+        tags: tags,
         images: imageUrls,
-        location: formData.location,
-        is_public: formData.isPublic,
+        location: values.location,
+        is_public: values.isPublic,
       });
       
-      success('创建成功！');
+      message.success('创建成功！');
       
       // 跳转到对应的列表页
       setTimeout(() => {
-        router.push(`/${formData.type}`);
+        router.push(`/${contentType}`);
       }, 1000);
     } catch (err: any) {
       console.error('Create content error:', err);
-      error(err.message || '创建失败，请重试');
+      message.error(err.message || '创建失败，请重试');
     } finally {
       setIsLoading(false);
     }
-  }, [formData, router, success, error, warning, isAuthenticated]);
-
-  // 计算字符数
-  const titleCharCount = useMemo(() => formData.title.length, [formData.title]);
-  const contentCharCount = useMemo(() => formData.content.length, [formData.content]);
+  }, [contentType, tags, images, router, isAuthenticated]);
 
   return (
     <div className={styles.page}>
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
-      
       <div className={styles.container}>
         <motion.div
           className={styles.header}
@@ -198,62 +174,67 @@ export default function CreatePage() {
               <div className={styles.loginWarningText}>
                 <strong>提示：</strong>您当前未登录，可以预览页面功能，但需要登录后才能发布内容。
               </div>
-              <button
+              <Button
+                type="primary"
+                size="small"
                 onClick={() => router.push('/login?redirect=' + encodeURIComponent(window.location.pathname))}
-                className={styles.loginWarningBtn}
               >
                 去登录
-              </button>
+              </Button>
             </motion.div>
           )}
+
           {/* 内容类型选择 */}
           <TypeSelector
-            selectedType={formData.type}
+            selectedType={contentType}
             types={CONTENT_TYPES}
             onChange={handleTypeChange}
           />
 
           {/* 表单 */}
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            initialValues={{
+              type: 'daily',
+              isPublic: true,
+            }}
+            autoComplete="off"
+          >
             {/* 标题 */}
-            <div className={styles.formGroup}>
-              <label htmlFor="title-input" className={styles.label}>
-                标题 <span className={styles.required}>*</span>
-              </label>
-              <input
-                id="title-input"
-                type="text"
-                className={styles.input}
-                value={formData.title}
-                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+            <Form.Item
+              label="标题"
+              name="title"
+              rules={[
+                { required: true, message: '请输入标题' },
+                { max: MAX_TITLE_LENGTH, message: `标题不能超过${MAX_TITLE_LENGTH}个字符` },
+              ]}
+            >
+              <Input
                 placeholder="给你的内容起个标题..."
                 maxLength={MAX_TITLE_LENGTH}
-                required
+                showCount
+                size="large"
               />
-              <span className={styles.charCount}>
-                {titleCharCount}/{MAX_TITLE_LENGTH}
-              </span>
-            </div>
+            </Form.Item>
 
             {/* 内容 */}
-            <div className={styles.formGroup}>
-              <label htmlFor="content-input" className={styles.label}>
-                内容 <span className={styles.required}>*</span>
-              </label>
-              <textarea
-                id="content-input"
-                className={styles.textarea}
-                value={formData.content}
-                onChange={(e) => setFormData((prev) => ({ ...prev, content: e.target.value }))}
+            <Form.Item
+              label="内容"
+              name="content"
+              rules={[
+                { required: true, message: '请输入内容' },
+                { max: MAX_CONTENT_LENGTH, message: `内容不能超过${MAX_CONTENT_LENGTH}个字符` },
+              ]}
+            >
+              <TextArea
                 placeholder="分享你的故事..."
                 rows={10}
                 maxLength={MAX_CONTENT_LENGTH}
-                required
+                showCount
               />
-              <span className={styles.charCount}>
-                {contentCharCount}/{MAX_CONTENT_LENGTH}
-              </span>
-            </div>
+            </Form.Item>
 
             {/* 图片上传 */}
             <ImageUpload
@@ -264,63 +245,53 @@ export default function CreatePage() {
             />
 
             {/* 位置（旅游路线专用） */}
-            {formData.type === 'travel' && (
-              <div className={styles.formGroup}>
-                <label htmlFor="location-input" className={styles.label}>
-                  位置 <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="location-input"
-                  type="text"
-                  className={styles.input}
-                  value={formData.location}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, location: e.target.value }))}
+            {contentType === 'travel' && (
+              <Form.Item
+                label="位置"
+                name="location"
+                rules={[{ required: true, message: '请输入位置' }]}
+              >
+                <Input
                   placeholder="例如：北京·故宫"
-                  required
+                  size="large"
                 />
-              </div>
+              </Form.Item>
             )}
 
             {/* 标签 */}
             <TagInput
-              tags={formData.tags}
+              tags={tags}
               onAdd={handleAddTag}
               onRemove={handleRemoveTag}
             />
 
             {/* 可见性 */}
-            <div className={styles.formGroup}>
-              <label htmlFor="public-checkbox" className={styles.checkboxLabel}>
-                <input
-                  id="public-checkbox"
-                  type="checkbox"
-                  checked={formData.isPublic}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, isPublic: e.target.checked }))}
-                />
-                <span>公开发布（其他人可以看到）</span>
-              </label>
-            </div>
+            <Form.Item name="isPublic" valuePropName="checked">
+              <Checkbox>公开发布（其他人可以看到）</Checkbox>
+            </Form.Item>
 
             {/* 提交按钮 */}
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.cancelBtn}
-                onClick={() => router.back()}
-                disabled={isLoading}
-              >
-                取消
-              </button>
-              <button 
-                type="submit" 
-                className={styles.submitBtn} 
-                disabled={isLoading}
-                title={!isAuthenticated ? '请先登录' : ''}
-              >
-                {isLoading ? '发布中...' : isAuthenticated ? '发布' : '登录后发布'}
-              </button>
-            </div>
-          </form>
+            <Form.Item>
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
+                <Button
+                  size="large"
+                  onClick={() => router.back()}
+                  disabled={isLoading}
+                >
+                  取消
+                </Button>
+                <Button
+                  type="primary"
+                  size="large"
+                  htmlType="submit"
+                  loading={isLoading}
+                  disabled={!isAuthenticated}
+                >
+                  {isAuthenticated ? '发布' : '登录后发布'}
+                </Button>
+              </div>
+            </Form.Item>
+          </Form>
         </motion.div>
       </div>
     </div>

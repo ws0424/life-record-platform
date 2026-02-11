@@ -1,9 +1,11 @@
 /**
- * 标签输入组件
+ * 标签输入组件 - 使用 Ant Design Tag 和 Input
  */
 
-import { memo, useCallback, useState } from 'react';
-import styles from './TagInput.module.css';
+import { memo, useCallback, useState, useRef } from 'react';
+import { Tag, Input, Space } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import type { InputRef } from 'antd';
 
 interface TagInputProps {
   /** 标签列表 */
@@ -16,62 +18,76 @@ interface TagInputProps {
 
 export const TagInput = memo<TagInputProps>(({ tags, onAdd, onRemove }) => {
   const [inputValue, setInputValue] = useState('');
+  const [inputVisible, setInputVisible] = useState(false);
+  const inputRef = useRef<InputRef>(null);
 
-  const handleAdd = useCallback(() => {
+  const showInput = () => {
+    setInputVisible(true);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  };
+
+  const handleInputConfirm = useCallback(() => {
     const trimmedValue = inputValue.trim();
     if (trimmedValue && !tags.includes(trimmedValue)) {
       onAdd(trimmedValue);
-      setInputValue('');
     }
+    setInputValue('');
+    setInputVisible(false);
   }, [inputValue, tags, onAdd]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAdd();
-    }
-  }, [handleAdd]);
+  const handleClose = (removedTag: string) => {
+    onRemove(removedTag);
+  };
 
   return (
-    <div className={styles.formGroup}>
-      <label htmlFor="tag-input" className={styles.label}>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>
         标签
-      </label>
-      <div className={styles.tagInput}>
-        <input
-          id="tag-input"
-          type="text"
-          className={styles.input}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="输入标签后按回车添加"
-        />
-        <button 
-          type="button" 
-          className={styles.addTagBtn} 
-          onClick={handleAdd}
-          disabled={!inputValue.trim()}
-        >
-          添加
-        </button>
       </div>
-      {tags.length > 0 && (
-        <div className={styles.tagList}>
-          {tags.map((tag) => (
-            <span key={tag} className={styles.tag}>
-              {tag}
-              <button 
-                type="button" 
-                onClick={() => onRemove(tag)}
-                aria-label={`删除标签 ${tag}`}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
+      <Space size={[8, 8]} wrap>
+        {tags.map((tag) => (
+          <Tag
+            key={tag}
+            closable
+            onClose={() => handleClose(tag)}
+            style={{
+              fontSize: 14,
+              padding: '4px 12px',
+              borderRadius: 8,
+            }}
+          >
+            {tag}
+          </Tag>
+        ))}
+        {inputVisible ? (
+          <Input
+            ref={inputRef}
+            type="text"
+            size="small"
+            style={{ width: 120 }}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onBlur={handleInputConfirm}
+            onPressEnter={handleInputConfirm}
+            placeholder="输入标签"
+          />
+        ) : (
+          <Tag
+            onClick={showInput}
+            style={{
+              fontSize: 14,
+              padding: '4px 12px',
+              borderRadius: 8,
+              cursor: 'pointer',
+              borderStyle: 'dashed',
+            }}
+          >
+            <PlusOutlined /> 添加标签
+          </Tag>
+        )}
+      </Space>
     </div>
   );
 });

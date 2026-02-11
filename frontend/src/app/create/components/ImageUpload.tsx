@@ -1,9 +1,11 @@
 /**
- * 图片上传组件
+ * 图片上传组件 - 使用 Ant Design Upload
  */
 
-import { memo, useCallback } from 'react';
-import styles from './ImageUpload.module.css';
+import { memo, useState } from 'react';
+import { Upload, message } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import type { UploadFile, UploadProps } from 'antd';
 
 interface ImageUploadProps {
   /** 预览图片列表 */
@@ -22,49 +24,65 @@ export const ImageUpload = memo<ImageUploadProps>(({
   onUpload, 
   onRemove 
 }) => {
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 0) {
-      onUpload(files);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+
+  const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
+    setFileList(newFileList);
+  };
+
+  const beforeUpload = (file: File, fileList: File[]) => {
+    // 验证文件类型
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('只能上传图片文件！');
+      return Upload.LIST_IGNORE;
     }
-    // 重置 input，允许重复选择同一文件
-    e.target.value = '';
-  }, [onUpload]);
+
+    // 验证文件大小（10MB）
+    const isLt10M = file.size / 1024 / 1024 < 10;
+    if (!isLt10M) {
+      message.error('图片大小不能超过 10MB！');
+      return Upload.LIST_IGNORE;
+    }
+
+    // 调用父组件的上传回调
+    onUpload([file]);
+    
+    // 阻止自动上传
+    return false;
+  };
+
+  const handleRemove = (file: UploadFile) => {
+    const index = fileList.indexOf(file);
+    if (index > -1) {
+      onRemove(index);
+    }
+  };
+
+  const uploadButton = (
+    <button style={{ border: 0, background: 'none' }} type="button">
+      <PlusOutlined style={{ fontSize: 24 }} />
+      <div style={{ marginTop: 8 }}>上传图片</div>
+    </button>
+  );
 
   return (
-    <div className={styles.formGroup}>
-      <label className={styles.label}>图片（最多{maxCount}张）</label>
-      <div className={styles.imageUpload}>
-        {previews.map((preview, index) => (
-          <div key={index} className={styles.imagePreview}>
-            <img src={preview} alt={`预览 ${index + 1}`} />
-            <button
-              type="button"
-              className={styles.removeImage}
-              onClick={() => onRemove(index)}
-              aria-label={`删除图片 ${index + 1}`}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        {previews.length < maxCount && (
-          <label className={styles.uploadBtn}>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/gif,image/webp"
-              multiple
-              onChange={handleFileChange}
-              className={styles.fileInput}
-              aria-label="上传图片"
-            />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <span>上传图片</span>
-          </label>
-        )}
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 8, fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>
+        图片（最多{maxCount}张）
       </div>
+      <Upload
+        listType="picture-card"
+        fileList={fileList}
+        onChange={handleChange}
+        beforeUpload={beforeUpload}
+        onRemove={handleRemove}
+        maxCount={maxCount}
+        multiple
+        accept="image/jpeg,image/png,image/gif,image/webp"
+      >
+        {fileList.length >= maxCount ? null : uploadButton}
+      </Upload>
     </div>
   );
 });
