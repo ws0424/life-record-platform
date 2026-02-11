@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { Modal } from 'antd';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from '@/components/ui/Toast';
@@ -571,37 +572,44 @@ function DevicesSection() {
   };
 
   const handleRemoveDevice = async (deviceId: string) => {
-    if (!confirm('确定要移除此设备吗？')) {
-      return;
-    }
-
-    try {
-      const { removeLoginDevice } = await import('@/lib/api/auth');
-      await removeLoginDevice(deviceId);
-      success('设备移除成功！');
-      // 重新加载设备列表
-      loadDevices();
-    } catch (err: any) {
-      console.error('Remove device error:', err);
-      error(err.message || '设备移除失败，请重试');
-    }
+    Modal.confirm({
+      title: '确认移除设备',
+      content: '确定要移除此设备吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const { removeLoginDevice } = await import('@/lib/api/auth');
+          await removeLoginDevice(deviceId);
+          success('设备移除成功！');
+          loadDevices();
+        } catch (err: any) {
+          console.error('Remove device error:', err);
+          error(err.message || '设备移除失败，请重试');
+        }
+      },
+    });
   };
 
   const handleForceLogout = async (deviceId: string) => {
-    if (!confirm('确定要强制此设备下线吗？该设备将立即失去访问权限。')) {
-      return;
-    }
-
-    try {
-      const { forceLogoutDevice } = await import('@/lib/api/auth');
-      await forceLogoutDevice(deviceId);
-      success('设备已强制下线！');
-      // 重新加载设备列表
-      loadDevices();
-    } catch (err: any) {
-      console.error('Force logout device error:', err);
-      error(err.message || '强制下线失败，请重试');
-    }
+    Modal.confirm({
+      title: '强制设备下线',
+      content: '确定要强制此设备下线吗？该设备将立即失去访问权限。',
+      okText: '确认下线',
+      cancelText: '取消',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          const { forceLogoutDevice } = await import('@/lib/api/auth');
+          await forceLogoutDevice(deviceId);
+          success('设备已强制下线！');
+          loadDevices();
+        } catch (err: any) {
+          console.error('Force logout device error:', err);
+          error(err.message || '强制下线失败，请重试');
+        }
+      },
+    });
   };
 
   if (isLoading) {

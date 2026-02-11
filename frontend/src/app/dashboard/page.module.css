@@ -784,3 +784,64 @@
   transform: none;
 }
 
+/* 水波纹效果 */
+.submitBtn,
+.actionBtn,
+.bindBtn,
+.editBtn,
+.logoutBtn,
+.removeBtn,
+.sendCodeBtn {
+  position: relative;
+  overflow: hidden;
+}
+
+.submitBtn::before,
+.actionBtn::before,
+.bindBtn::before,
+.editBtn::before,
+.logoutBtn::before,
+.removeBtn::before,
+.sendCodeBtn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.submitBtn:active::before,
+.actionBtn:active::before,
+.bindBtn:active::before,
+.editBtn:active::before,
+.logoutBtn:active::before,
+.removeBtn:active::before,
+.sendCodeBtn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* 悬浮时的光晕效果 */
+.submitBtn:hover,
+.actionBtn:hover,
+.bindBtn:hover {
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+}
+
+.editBtn:hover {
+  box-shadow: 0 0 20px rgba(225, 29, 72, 0.5);
+}
+
+.logoutBtn:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+.removeBtn:hover {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+

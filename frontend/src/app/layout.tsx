@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@/lib/ThemeContext';
+import { AntdProvider } from '@/components/providers/AntdProvider';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { TokenVerifier } from '@/components/auth/TokenVerifier';
@@ -35,12 +36,14 @@ export default function RootLayout({
       <body>
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <ThemeProvider>
-            <TokenVerifier />
-            <Header />
-            <main style={{ flex: 1 }}>
-              {children}
-            </main>
-            <Footer />
+            <AntdProvider>
+              <TokenVerifier />
+              <Header />
+              <main style={{ flex: 1 }}>
+                {children}
+              </main>
+              <Footer />
+            </AntdProvider>
           </ThemeProvider>
         </div>
       </body>
