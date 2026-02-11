@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
+from uuid import UUID
 
 
 class ContentType(str, Enum):
@@ -42,6 +43,14 @@ class UserBrief(BaseModel):
     username: str
     email: str
 
+    @field_validator('id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """将 UUID 转换为字符串"""
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
     class Config:
         from_attributes = True
 
@@ -72,6 +81,14 @@ class ContentResponse(BaseModel):
     is_liked: Optional[bool] = None  # 当前用户是否点赞
     is_saved: Optional[bool] = None  # 当前用户是否收藏
 
+    @field_validator('id', 'user_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """将 UUID 转换为字符串"""
+        if isinstance(v, UUID):
+            return str(v)
+        return v
+
     class Config:
         from_attributes = True
 
@@ -95,6 +112,14 @@ class ContentListItem(BaseModel):
     
     # 关联数据
     user: Optional[UserBrief] = None
+
+    @field_validator('id', 'user_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """将 UUID 转换为字符串"""
+        if isinstance(v, UUID):
+            return str(v)
+        return v
 
     class Config:
         from_attributes = True
@@ -129,6 +154,14 @@ class CommentResponse(BaseModel):
     # 关联数据
     user: Optional[UserBrief] = None
     replies: Optional[List["CommentResponse"]] = None
+
+    @field_validator('id', 'content_id', 'user_id', 'parent_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """将 UUID 转换为字符串"""
+        if isinstance(v, UUID):
+            return str(v)
+        return v
 
     class Config:
         from_attributes = True
