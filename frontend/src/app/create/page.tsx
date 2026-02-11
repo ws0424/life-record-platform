@@ -123,7 +123,14 @@ export default function CreatePage() {
     setIsLoading(true);
 
     try {
-      // 调用 API 创建内容
+      // 1. 上传图片到 MinIO
+      let imageUrls: string[] = [];
+      if (formData.images.length > 0) {
+        const { uploadImages } = await import('@/lib/api/upload');
+        imageUrls = await uploadImages(formData.images);
+      }
+      
+      // 2. 创建内容
       const { createContent } = await import('@/lib/api/content');
       
       await createContent({
@@ -131,7 +138,7 @@ export default function CreatePage() {
         title: formData.title,
         content: formData.content,
         tags: formData.tags,
-        images: formData.images.map((file) => URL.createObjectURL(file)), // TODO: 上传图片到服务器
+        images: imageUrls,
         location: formData.location,
         is_public: formData.isPublic,
       });
