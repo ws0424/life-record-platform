@@ -1,94 +1,136 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useToast } from '@/lib/hooks/useToast';
+import { ToastContainer } from '@/components/ui/Toast';
 import styles from './page.module.css';
 
-type ContentType = 'post' | 'album' | 'travel' | 'daily';
+type ContentType = 'daily' | 'album' | 'travel';
 
-export default function CreatePage() {
+interface FormData {
+  type: ContentType;
+  title: string;
+  content: string;
+  tags: string[];
+  images: File[];
+  location?: string;
+  isPublic: boolean;
+}
+
+function CreateContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const typeParam = searchParams.get('type') as ContentType;
-  
-  const [contentType, setContentType] = useState<ContentType>(typeParam || 'post');
-  const [formData, setFormData] = useState({
+  const { toasts, removeToast, success, error } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
+    type: 'daily',
     title: '',
     content: '',
-    tags: '',
+    tags: [],
+    images: [],
     location: '',
-    privacy: 'public',
+    isPublic: true,
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [tagInput, setTagInput] = useState('');
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
 
   const contentTypes = [
-    {
-      id: 'post' as ContentType,
-      label: '日常记录',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'album' as ContentType,
-      label: '相册',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
-        </svg>
-      ),
-    },
-    {
-      id: 'travel' as ContentType,
-      label: '旅游路线',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-          <circle cx="12" cy="10" r="3" />
-        </svg>
-      ),
-    },
-    {
-      id: 'daily' as ContentType,
-      label: '每日心情',
-      icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-          <line x1="9" y1="9" x2="9.01" y2="9" />
-          <line x1="15" y1="9" x2="15.01" y2="9" />
-        </svg>
-      ),
-    },
+    { id: 'daily', label: '日常记录', icon: '📝', description: '记录生活点滴' },
+    { id: 'album', label: '相册', icon: '📷', description: '分享精彩照片' },
+    { id: 'travel', label: '旅游路线', icon: '🗺️', description: '分享旅行攻略' },
   ];
+
+  const handleTypeChange = (type: ContentType) => {
+    setFormData({ ...formData, type });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + formData.images.length > 9) {
+      error('最多只能上传9张图片');
+      return;
+    }
+
+    setFormData({ ...formData, images: [...formData.images, ...files] });
+
+    // 生成预览
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImages((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, i) => i !== index),
+    });
+    setPreviewImages(previewImages.filter((_, i) => i !== index));
+  };
+
+  const handleAddTag = () => {
+    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+      setFormData({ ...formData, tags: [...formData.tags, tagInput.trim()] });
+      setTagInput('');
+    }
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // TODO: 实现创建逻辑
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push('/');
-    }, 1500);
-  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (!formData.title.trim()) {
+      error('请输入标题');
+      return;
+    }
+
+    if (!formData.content.trim()) {
+      error('请输入内容');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // 调用 API 创建内容
+      const { createContent } = await import('@/lib/api/content');
+      
+      await createContent({
+        type: formData.type,
+        title: formData.title,
+        content: formData.content,
+        tags: formData.tags,
+        images: formData.images.map((file) => URL.createObjectURL(file)), // TODO: 上传图片到服务器
+        location: formData.location,
+        is_public: formData.isPublic,
+      });
+      
+      success('创建成功！');
+      
+      // 跳转到对应的列表页
+      setTimeout(() => {
+        router.push(`/${formData.type}`);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Create content error:', err);
+      error(err.message || '创建失败，请重试');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className={styles.page}>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      
       <div className={styles.container}>
         <motion.div
           className={styles.header}
@@ -97,164 +139,171 @@ export default function CreatePage() {
           transition={{ duration: 0.5 }}
         >
           <h1 className={styles.title}>创建内容</h1>
-          <p className={styles.subtitle}>分享你的生活，记录美好时刻</p>
+          <p className={styles.subtitle}>分享你的精彩生活</p>
         </motion.div>
 
         <motion.div
           className={styles.content}
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className={styles.typeSelector}>
-            <h2 className={styles.sectionTitle}>选择内容类型</h2>
+          {/* 内容类型选择 */}
+          <div className={styles.section}>
+            <h2 className={styles.sectionTitle}>选择类型</h2>
             <div className={styles.typeGrid}>
               {contentTypes.map((type) => (
                 <button
                   key={type.id}
-                  className={`${styles.typeCard} ${contentType === type.id ? styles.typeCardActive : ''}`}
-                  onClick={() => setContentType(type.id)}
+                  className={`${styles.typeCard} ${
+                    formData.type === type.id ? styles.active : ''
+                  }`}
+                  onClick={() => handleTypeChange(type.id as ContentType)}
                 >
-                  <div className={styles.typeIcon}>{type.icon}</div>
+                  <span className={styles.typeIcon}>{type.icon}</span>
                   <span className={styles.typeLabel}>{type.label}</span>
+                  <span className={styles.typeDescription}>{type.description}</span>
                 </button>
               ))}
             </div>
           </div>
 
+          {/* 表单 */}
           <form onSubmit={handleSubmit} className={styles.form}>
+            {/* 标题 */}
             <div className={styles.formGroup}>
-              <label htmlFor="title" className={styles.label}>
-                标题 *
+              <label className={styles.label}>
+                标题 <span className={styles.required}>*</span>
               </label>
               <input
                 type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
                 className={styles.input}
-                placeholder="给你的内容起个标题"
-                required
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="给你的内容起个标题..."
+                maxLength={100}
               />
+              <span className={styles.charCount}>{formData.title.length}/100</span>
             </div>
 
+            {/* 内容 */}
             <div className={styles.formGroup}>
-              <label htmlFor="content" className={styles.label}>
-                内容 *
+              <label className={styles.label}>
+                内容 <span className={styles.required}>*</span>
               </label>
               <textarea
-                id="content"
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
                 className={styles.textarea}
-                placeholder="写下你想分享的内容..."
-                rows={8}
-                required
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                placeholder="分享你的故事..."
+                rows={10}
+                maxLength={5000}
               />
+              <span className={styles.charCount}>{formData.content.length}/5000</span>
             </div>
 
-            {contentType === 'travel' && (
+            {/* 图片上传 */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>图片（最多9张）</label>
+              <div className={styles.imageUpload}>
+                {previewImages.map((preview, index) => (
+                  <div key={index} className={styles.imagePreview}>
+                    <img src={preview} alt={`预览 ${index + 1}`} />
+                    <button
+                      type="button"
+                      className={styles.removeImage}
+                      onClick={() => handleRemoveImage(index)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {formData.images.length < 9 && (
+                  <label className={styles.uploadBtn}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    <span>上传图片</span>
+                  </label>
+                )}
+              </div>
+            </div>
+
+            {/* 位置（旅游路线专用） */}
+            {formData.type === 'travel' && (
               <div className={styles.formGroup}>
-                <label htmlFor="location" className={styles.label}>
-                  地点
-                </label>
-                <div className={styles.inputWrapper}>
-                  <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleChange}
-                    className={styles.inputWithIcon}
-                    placeholder="添加地点"
-                  />
-                </div>
+                <label className={styles.label}>位置</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="例如：北京·故宫"
+                />
               </div>
             )}
 
+            {/* 标签 */}
             <div className={styles.formGroup}>
-              <label htmlFor="tags" className={styles.label}>
-                标签
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                  <line x1="7" y1="7" x2="7.01" y2="7" />
-                </svg>
+              <label className={styles.label}>标签</label>
+              <div className={styles.tagInput}>
                 <input
                   type="text"
-                  id="tags"
-                  name="tags"
-                  value={formData.tags}
-                  onChange={handleChange}
-                  className={styles.inputWithIcon}
-                  placeholder="用逗号分隔标签，如：旅行, 美食, 摄影"
+                  className={styles.input}
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                  placeholder="输入标签后按回车添加"
                 />
+                <button type="button" className={styles.addTagBtn} onClick={handleAddTag}>
+                  添加
+                </button>
               </div>
+              {formData.tags.length > 0 && (
+                <div className={styles.tagList}>
+                  {formData.tags.map((tag) => (
+                    <span key={tag} className={styles.tag}>
+                      {tag}
+                      <button type="button" onClick={() => handleRemoveTag(tag)}>
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* 可见性 */}
             <div className={styles.formGroup}>
-              <label htmlFor="privacy" className={styles.label}>
-                隐私设置
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={formData.isPublic}
+                  onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+                />
+                <span>公开发布（其他人可以看到）</span>
               </label>
-              <select
-                id="privacy"
-                name="privacy"
-                value={formData.privacy}
-                onChange={handleChange}
-                className={styles.select}
-              >
-                <option value="public">公开 - 所有人可见</option>
-                <option value="friends">好友 - 仅好友可见</option>
-                <option value="private">私密 - 仅自己可见</option>
-              </select>
             </div>
 
-            <div className={styles.uploadSection}>
-              <h3 className={styles.uploadTitle}>添加媒体</h3>
-              <div className={styles.uploadGrid}>
-                <button type="button" className={styles.uploadBtn}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                  <span>上传图片</span>
-                </button>
-                <button type="button" className={styles.uploadBtn}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <polygon points="23 7 16 12 23 17 23 7" />
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                  </svg>
-                  <span>上传视频</span>
-                </button>
-              </div>
-            </div>
-
-            <div className={styles.formActions}>
+            {/* 提交按钮 */}
+            <div className={styles.actions}>
               <button
                 type="button"
                 className={styles.cancelBtn}
                 onClick={() => router.back()}
+                disabled={isLoading}
               >
                 取消
               </button>
-              <button
-                type="submit"
-                className={styles.submitBtn}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className={styles.spinner} />
-                ) : (
-                  '发布'
-                )}
+              <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+                {isLoading ? '发布中...' : '发布'}
               </button>
             </div>
           </form>
@@ -264,3 +313,10 @@ export default function CreatePage() {
   );
 }
 
+export default function CreatePage() {
+  return (
+    <ProtectedRoute>
+      <CreateContent />
+    </ProtectedRoute>
+  );
+}

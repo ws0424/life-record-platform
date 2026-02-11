@@ -1,6 +1,7 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 import uuid
 
 
@@ -21,6 +22,10 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
+    # 关系
+    contents = relationship("Content", back_populates="user", cascade="all, delete-orphan")
+    
     def __repr__(self):
         return f"<User {self.username}>"
+
 

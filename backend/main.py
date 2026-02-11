@@ -9,7 +9,7 @@ from app.core.exceptions import (
     validation_exception_handler,
     general_exception_handler
 )
-from app.api.v1 import auth
+from app.api.v1 import auth, content
 import logging
 
 # 配置日志
@@ -123,6 +123,10 @@ app = FastAPI(
             "description": "用户认证相关接口，包括注册、登录、验证码等功能。所有响应遵循统一格式 {code, data, msg, errMsg}。",
         },
         {
+            "name": "内容",
+            "description": "内容管理相关接口，包括创建、查询、更新、删除内容等功能。支持日常记录、相册、旅游路线三种类型。",
+        },
+        {
             "name": "系统",
             "description": "系统相关接口，包括健康检查、API 信息等。",
         }
@@ -153,6 +157,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
+app.include_router(content.router, prefix="/api/content", tags=["内容"])
 
 
 @app.get(
