@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useToast } from '@/lib/hooks/useToast';
 import { ToastContainer } from '@/components/ui/Toast';
-import { ProfileSection } from '@/components/dashboard/ProfileSection';
-import { SecuritySection } from '@/components/dashboard/SecuritySection';
-import { ActivitySection } from '@/components/dashboard/ActivitySection';
-import { DevicesSection } from '@/components/dashboard/DevicesSection';
-import { BindingsSection } from '@/components/dashboard/BindingsSection';
-import { ProfileSkeleton } from '@/components/dashboard/Skeleton';
+import { ProfileSection } from './components/ProfileSection';
+import { SecuritySection } from './components/SecuritySection';
+import { ActivitySection } from './components/ActivitySection';
+import { DevicesSection } from './components/DevicesSection';
+import { BindingsSection } from './components/BindingsSection';
+import { ProfileSkeleton } from './components/Skeleton';
 import styles from './page.module.css';
 
 type TabType = 'profile' | 'security' | 'activity' | 'devices' | 'bindings';
