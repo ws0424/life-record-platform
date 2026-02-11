@@ -196,6 +196,160 @@ AI: 检测到修改：README.md, LOCAL_DEVELOPMENT.md
 - **ux** - 最佳实践、反模式
 - **web** - Web 界面指南（ARIA、焦点、键盘等）
 
+---
+
+### 6. Frontend Code Review Skill
+
+**文件位置**: `.cursor/skills/frontend-code-review/SKILL.md`  
+**版本**: 1.0.0  
+**类别**: 代码质量
+
+#### 📝 描述
+前端代码审查和重构工具。在提交代码前自动检查代码规范、组件结构、样式规范等，确保代码质量和一致性。当用户要求提交代码、重构代码或进行代码审查时触发此技能。
+
+#### 🎯 触发关键词
+- `提交代码` / `commit code`
+- `代码审查` / `code review`
+- `检查代码` / `check code`
+- `重构代码` / `refactor code`
+
+#### ⚡ 主要功能
+
+##### 🔍 7 大检查项
+1. **组件结构检查** - 组件位置、命名规范、导出方式、Props 类型
+2. **样式规范检查** - CSS Modules、CSS 变量、避免全局样式
+3. **TypeScript 检查** - 类型定义、避免 any、函数返回值类型
+4. **组件职责检查** - 代码行数、Props 数量、重复代码
+5. **导入路径检查** - 绝对/相对路径、导入顺序、循环依赖
+6. **性能优化检查** - React.memo、useMemo、useCallback、key 属性
+7. **可访问性检查** - alt 属性、aria-label、label、语义化标签
+
+##### 🔧 自动修复功能
+- ✅ 组件位置调整
+- ✅ 导入路径优化
+- ✅ 样式文件重命名
+- ✅ 代码格式化
+
+##### 📊 检查报告
+- ✅ 通过项 - 符合规范的检查项
+- ⚠️  警告项 - 建议优化的问题
+- ❌ 错误项 - 必须修复的问题
+
+##### 📋 检查规则
+- 通用组件放在 `src/components/`
+- 页面组件放在 `src/app/[page]/components/`
+- 组件使用 PascalCase 命名
+- 使用命名导出而非默认导出
+- 样式文件使用 `*.module.css`
+- 避免使用 any 类型
+- 组件代码不超过 300 行
+- Props 数量不超过 10 个
+- 通用组件使用绝对路径 `@/components/`
+- 页面组件使用相对路径 `./components/`
+
+#### 📖 使用示例
+
+##### 示例 1: 提交代码前检查
+```
+用户: 提交代码
+
+AI: 🔍 开始前端代码审查...
+
+📊 检查结果:
+- ✅ 组件结构: 通过
+- ✅ 样式规范: 通过
+- ✅ TypeScript: 通过
+- ⚠️  组件职责: 1 个警告
+- ✅ 导入路径: 通过
+- ✅ 性能优化: 通过
+- ✅ 可访问性: 通过
+
+⚠️  发现 1 个警告:
+- SecuritySection.tsx (280 行) 建议拆分为更小的组件
+
+是否继续提交？
+```
+
+##### 示例 2: 代码重构
+```
+用户: 重构代码
+
+AI: 🔧 开始代码重构...
+
+检测到以下问题:
+1. ❌ 组件位置错误 (5 个文件)
+2. ⚠️  组件代码过长 (1 个文件)
+3. ⚠️  缺少类型定义 (3 处)
+
+自动修复:
+- ✅ 移动组件到正确位置
+- ✅ 更新导入路径
+- ✅ 格式化代码
+
+手动优化建议:
+- 拆分 SecuritySection 组件
+- 添加 Props 注释
+- 优化性能
+
+✅ 重构完成！
+```
+
+##### 示例 3: 代码审查
+```
+用户: 检查代码
+
+AI: 📋 代码审查报告
+
+✅ 优秀实践:
+- 组件结构清晰
+- 类型定义完整
+- 样式规范统一
+- 性能优化良好
+
+💡 改进建议:
+- 考虑添加单元测试
+- 部分组件可以提取为通用组件
+- 可以添加更多的错误处理
+
+总体评分: 9/10
+代码质量优秀，可以提交！
+```
+
+#### 🎯 工作流程
+1. **触发检查** - 用户说"提交代码"或"检查代码"
+2. **执行检查** - 运行 7 大检查项
+3. **生成报告** - 统计通过/警告/错误项
+4. **自动修复** - 修复可自动修复的问题
+5. **手动修复** - 提示需要手动修复的问题
+6. **重新检查** - 确认所有问题已解决
+7. **提交代码** - 执行 git commit
+
+#### 📚 参考文档
+- [组件规范文档](frontend/COMPONENT_GUIDELINES.md)
+- [React 最佳实践](https://react.dev/learn)
+- [TypeScript 类型系统](https://www.typescriptlang.org/docs/)
+- [Next.js 文档](https://nextjs.org/docs)
+- [Ant Design 组件库](https://ant.design/)
+
+#### ⚡ 主要功能
+
+##### 🎨 设计系统生成
+- 自动分析产品类型、行业、风格关键词
+- 并行搜索 5 个领域（产品、样式、颜色、落地页、排版）
+- 应用推理规则选择最佳匹配
+- 返回完整设计系统：模式、样式、颜色、排版、效果
+- 包含反模式建议
+
+##### 🔍 领域搜索
+- **product** - 产品类型推荐（SaaS、电商、作品集等）
+- **style** - UI 样式（玻璃态、极简、暗黑模式等）
+- **typography** - 字体配对（Google Fonts）
+- **color** - 调色板（按产品类型）
+- **landing** - 页面结构、CTA 策略
+- **chart** - 图表类型、库推荐
+- **ux** - 最佳实践、反模式
+- **web** - Web 界面指南（ARIA、焦点、键盘等）
+
 ##### 🛠️ 技术栈支持
 - `html-tailwind` - Tailwind 工具类、响应式、无障碍（默认）
 - `react` - 状态、Hooks、性能、模式
@@ -356,6 +510,31 @@ AI: 🎨 生成设计系统...
     ✅ 页面已创建！
 ```
 
+### 使用 Frontend Code Review
+
+```
+用户: 提交代码
+AI: 🔍 开始前端代码审查...
+    执行 7 项检查...
+    生成检查报告...
+    ✅ 所有检查通过，可以提交！
+
+用户: 检查代码
+AI: 📋 代码审查报告...
+    ✅ 通过: 15 项
+    ⚠️  警告: 3 项
+    ❌ 错误: 1 项
+    自动修复错误...
+    ✅ 修复完成！
+
+用户: 重构代码
+AI: 🔧 开始代码重构...
+    检测问题...
+    自动修复...
+    提供优化建议...
+    ✅ 重构完成！
+```
+
 ---
 
 ## 📝 最佳实践
@@ -409,6 +588,26 @@ AI: 🎨 生成设计系统...
 - 忽视美学一致性
 - 过度或不足的复杂度
 
+### Frontend Code Review Skill
+
+**应该做 ✅**
+- 提交前运行代码检查
+- 修复所有错误项
+- 优化警告项（建议）
+- 遵循组件规范
+- 使用 CSS Modules
+- 完整的类型定义
+- 保持组件职责单一
+
+**不应该做 ❌**
+- 跳过代码检查直接提交
+- 忽略错误和警告
+- 组件放错位置
+- 使用全局样式
+- 使用 any 类型
+- 组件代码过长
+- 缺少类型注释
+
 ---
 
 ## 🔧 配置说明
@@ -461,6 +660,14 @@ AI: 🎨 生成设计系统...
 - **设计系统目录**: `design-system/MASTER.md`（主规则）、`design-system/pages/`（页面覆盖）
 - **输出格式**: ASCII box（默认）/ Markdown
 
+### Frontend Code Review 配置
+- **Skills 目录**: `.cursor/skills/frontend-code-review/`
+- **检查项目**: 7 大检查项（组件结构、样式规范、TypeScript、组件职责、导入路径、性能优化、可访问性）
+- **自动修复**: 组件位置、导入路径、样式文件、代码格式
+- **报告格式**: Markdown
+- **参考文档**: `frontend/COMPONENT_GUIDELINES.md`
+- **检查脚本**: `scripts/check-code.sh`
+
 ---
 
 ## 📚 参考资源
@@ -486,25 +693,29 @@ AI: 🎨 生成设计系统...
 ├── frontend-design/
 │   ├── SKILL.md
 │   └── LICENSE.txt
-└── ui-ux-pro-max/
+├── ui-ux-pro-max/
+│   ├── SKILL.md
+│   ├── data/
+│   │   ├── stacks/
+│   │   ├── charts.csv
+│   │   ├── colors.csv
+│   │   ├── icons.csv
+│   │   ├── landing.csv
+│   │   ├── products.csv
+│   │   ├── react-performance.csv
+│   │   ├── styles.csv
+│   │   ├── typography.csv
+│   │   ├── ui-reasoning.csv
+│   │   ├── ux-guidelines.csv
+│   │   └── web-interface.csv
+│   └── scripts/
+│       ├── core.py
+│       ├── design_system.py
+│       └── search.py
+└── frontend-code-review/
     ├── SKILL.md
-    ├── data/
-    │   ├── stacks/
-    │   ├── charts.csv
-    │   ├── colors.csv
-    │   ├── icons.csv
-    │   ├── landing.csv
-    │   ├── products.csv
-    │   ├── react-performance.csv
-    │   ├── styles.csv
-    │   ├── typography.csv
-    │   ├── ui-reasoning.csv
-    │   ├── ux-guidelines.csv
-    │   └── web-interface.csv
     └── scripts/
-        ├── core.py
-        ├── design_system.py
-        └── search.py
+        └── check-code.sh
 ```
 
 ### 扩展阅读
@@ -572,6 +783,18 @@ AI: 🎨 生成设计系统...
 - ✅ 交付前检查清单
 - ✅ 专业 UI 常见规则
 
+### Frontend Code Review v1.0.0 (2026-02-11)
+- ✨ 初始版本发布
+- ✅ 组件结构检查
+- ✅ 样式规范检查
+- ✅ TypeScript 类型检查
+- ✅ 组件职责检查
+- ✅ 导入路径检查
+- ✅ 性能优化检查
+- ✅ 可访问性检查
+- ✅ 自动修复功能
+- ✅ 检查报告生成
+
 ---
 
 ## 🤝 贡献指南
@@ -630,8 +853,8 @@ description: 详细描述，包含触发条件和使用场景
 
 ---
 
-**最后更新**: 2026-02-09  
-**Skills 总数**: 5  
+**最后更新**: 2026-02-11  
+**Skills 总数**: 6  
 **遵循规范**: OpenSkills
 
 ## 📦 项目 Skills
@@ -640,9 +863,10 @@ description: 详细描述，包含触发条件和使用场景
 
 1. **Skill Validator** - Skill 验证工具
 2. **Skill Optimizer** - Skill 优化工具
-3. **Git Auto Commit** - Git 自动提交工具 ⭐ 新增
+3. **Git Auto Commit** - Git 自动提交工具
 4. **Frontend Design** - 前端设计指南
 5. **UI/UX Pro Max** - UI/UX 设计系统
+6. **Frontend Code Review** - 前端代码审查工具 ⭐ 新增
 
 ## 🔗 相关文档
 
@@ -651,5 +875,6 @@ description: 详细描述，包含触发条件和使用场景
 - [本地开发指南](./LOCAL_DEVELOPMENT.md)
 - [Git 推送指南](./GIT_PUSH_GUIDE.md)
 - [项目总结](./PROJECT_SUMMARY.md)
-- [前端动画开发指南](./FRONTEND_ANIMATION_GUIDE.md) ⭐ 新增
-- [主题系统开发指南](./THEME_SYSTEM_GUIDE.md) ⭐ 新增
+- [前端动画开发指南](./FRONTEND_ANIMATION_GUIDE.md)
+- [主题系统开发指南](./THEME_SYSTEM_GUIDE.md)
+- [组件规范文档](./frontend/COMPONENT_GUIDELINES.md) ⭐ 新增
