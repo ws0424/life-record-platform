@@ -9,7 +9,7 @@ from typing import Optional, Dict, List
 from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session
 
-from app.services.minio_service import MinioService
+from app.core.minio import minio_client
 from app.core.config import settings
 
 
@@ -18,7 +18,6 @@ class ChunkUploadService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.minio_service = MinioService()
         # 临时目录用于存储切片
         self.temp_dir = Path(settings.UPLOAD_DIR) / "chunks"
         self.temp_dir.mkdir(parents=True, exist_ok=True)
@@ -119,12 +118,13 @@ class ChunkUploadService:
             file_ext = Path(filename).suffix
             unique_filename = f"{file_identifier}{file_ext}"
             
-            # 上传到 MinIO
-            url = self.minio_service.upload_file(
-                file_data=file_data,
-                filename=unique_filename,
-                content_type=mime_type,
-                bucket_name=bucket_name
+            # 上传到 MinIO（使用 upload_file_object 方法）
+            from io import BytesIO
+            url = minio_client.upload_file_object(
+                file_data=BytesIO(file_data),
+                object_name=unique_filename,
+                length=len(file_data),
+                content_type=mime_type
             )
             
             # 清理临时文件
