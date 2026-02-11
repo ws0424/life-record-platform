@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Card, Avatar, Tabs, Spin, message } from 'antd';
+import { UserOutlined, LockOutlined, BarChartOutlined, MobileOutlined, LinkOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useToast } from '@/lib/hooks/useToast';
-import { ToastContainer } from '@/components/ui/Toast';
 import { ProfileSection } from './components/ProfileSection';
 import { SecuritySection } from './components/SecuritySection';
 import { ActivitySection } from './components/ActivitySection';
@@ -19,34 +19,76 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
-  const { toasts, removeToast, success, error, warning } = useToast();
 
-  const tabs = [
-    { id: 'profile', label: '个人信息', icon: '👤' },
-    { id: 'security', label: '安全设置', icon: '🔒' },
-    { id: 'activity', label: '最新动态', icon: '📊' },
-    { id: 'devices', label: '登录设备', icon: '📱' },
-    { id: 'bindings', label: '账号绑定', icon: '🔗' },
+  const tabItems = [
+    {
+      key: 'profile',
+      label: (
+        <span>
+          <UserOutlined style={{ marginRight: 8 }} />
+          个人信息
+        </span>
+      ),
+      children: <ProfileSection user={user} />,
+    },
+    {
+      key: 'security',
+      label: (
+        <span>
+          <LockOutlined style={{ marginRight: 8 }} />
+          安全设置
+        </span>
+      ),
+      children: <SecuritySection user={user} />,
+    },
+    {
+      key: 'activity',
+      label: (
+        <span>
+          <BarChartOutlined style={{ marginRight: 8 }} />
+          最新动态
+        </span>
+      ),
+      children: <ActivitySection />,
+    },
+    {
+      key: 'devices',
+      label: (
+        <span>
+          <MobileOutlined style={{ marginRight: 8 }} />
+          登录设备
+        </span>
+      ),
+      children: <DevicesSection />,
+    },
+    {
+      key: 'bindings',
+      label: (
+        <span>
+          <LinkOutlined style={{ marginRight: 8 }} />
+          账号绑定
+        </span>
+      ),
+      children: <BindingsSection />,
+    },
   ];
 
   // 检查登录状态，未登录时跳转
   useEffect(() => {
     if (!isAuthenticated) {
-      warning('请先登录后再访问个人中心');
+      message.warning('请先登录后再访问个人中心');
       setTimeout(() => {
         router.push('/login?redirect=' + encodeURIComponent('/dashboard'));
       }, 1500);
     }
-  }, [isAuthenticated, router, warning]);
+  }, [isAuthenticated, router]);
 
   // 未登录时显示加载状态
   if (!isAuthenticated) {
     return (
       <div className={styles.page}>
-        <ToastContainer toasts={toasts} onRemove={removeToast} />
-        <div className={styles.loadingContainer}>
-          <div className={styles.spinner} />
-          <p>正在跳转到登录页...</p>
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <Spin size="large" tip="正在跳转到登录页..." />
         </div>
       </div>
     );
@@ -54,7 +96,6 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className={styles.container}>
         {/* 侧边栏 */}
         <motion.aside
@@ -63,33 +104,47 @@ export default function DashboardPage() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className={styles.userCard}>
-            <div className={styles.avatar}>
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.username} />
-              ) : (
-                <div className={styles.avatarPlaceholder}>
-                  {user?.username?.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-            <h2 className={styles.username}>{user?.username}</h2>
-            <p className={styles.email}>{user?.email}</p>
-            {user?.bio && <p className={styles.bio}>{user.bio}</p>}
-          </div>
-
-          <nav className={styles.nav}>
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={`${styles.navItem} ${activeTab === tab.id ? styles.active : ''}`}
-                onClick={() => setActiveTab(tab.id as TabType)}
-              >
-                <span className={styles.navIcon}>{tab.icon}</span>
-                <span className={styles.navLabel}>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
+          <Card
+            style={{
+              textAlign: 'center',
+              marginBottom: 24,
+            }}
+          >
+            <Avatar
+              size={80}
+              src={user?.avatar}
+              style={{
+                background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                marginBottom: 16,
+              }}
+            >
+              {user?.username?.charAt(0).toUpperCase()}
+            </Avatar>
+            <h2 style={{
+              fontSize: 20,
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              marginBottom: 8,
+            }}>
+              {user?.username}
+            </h2>
+            <p style={{
+              fontSize: 14,
+              color: 'var(--text-secondary)',
+              marginBottom: user?.bio ? 12 : 0,
+            }}>
+              {user?.email}
+            </p>
+            {user?.bio && (
+              <p style={{
+                fontSize: 13,
+                color: 'var(--text-tertiary)',
+                lineHeight: 1.6,
+              }}>
+                {user.bio}
+              </p>
+            )}
+          </Card>
         </motion.aside>
 
         {/* 主内容区 */}
@@ -99,11 +154,13 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {activeTab === 'profile' && <ProfileSection user={user} success={success} error={error} />}
-          {activeTab === 'security' && <SecuritySection user={user} success={success} error={error} />}
-          {activeTab === 'activity' && <ActivitySection />}
-          {activeTab === 'devices' && <DevicesSection success={success} error={error} />}
-          {activeTab === 'bindings' && <BindingsSection />}
+          <Tabs
+            activeKey={activeTab}
+            onChange={(key) => setActiveTab(key as TabType)}
+            items={tabItems}
+            size="large"
+            tabPosition="top"
+          />
         </motion.main>
       </div>
     </div>
