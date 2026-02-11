@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select, desc, func
 from typing import Optional, List
 from datetime import datetime, timedelta
@@ -17,10 +17,10 @@ from app.schemas.auth import (
 class SecurityService:
     """安全设置服务"""
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
     
-    async def create_login_log(
+    def create_login_log(
         self,
         user_id: str,
         ip_address: str,
@@ -45,23 +45,20 @@ class SecurityService:
             status=status
         )
         self.db.add(log)
-        await self.db.commit()
-        await self.db.refresh(log)
+        self.db.commit()
+        self.db.refresh(log)
         return log
     
-    async def get_login_logs(
+    def get_login_logs(
         self,
         user_id: str,
         limit: int = 20,
         offset: int = 0
     ) -> ApiResponse[List[LoginLogResponse]]:
         """获取登录日志"""
-        query = select(LoginLog).where(
+        logs = self.db.query(LoginLog).filter(
             LoginLog.user_id == user_id
-        ).order_by(desc(LoginLog.created_at)).limit(limit).offset(offset)
-        
-        result = await self.db.execute(query)
-        logs = result.scalars().all()
+        ).order_by(desc(LoginLog.created_at)).limit(limit).offset(offset).all()
         
         log_responses = [LoginLogResponse.model_validate(log) for log in logs]
         
@@ -72,7 +69,7 @@ class SecurityService:
             errMsg=None
         )
     
-    async def create_or_update_device(
+    def create_or_update_device(
         self,
         user_id: str,
         device_id: str,
@@ -85,9 +82,9 @@ class SecurityService:
     ) -> LoginDevice:
         """创建或更新登录设备"""
         # 查找现有设备
-        query = select(LoginDevice).where(LoginDevice.device_id == device_id)
-        result = await self.db.execute(query)
-        device = result.scalar_one_or_none()
+        device = self.db.query(LoginDevice).filter(
+            LoginDevice.device_id == device_id
+        ).first()
         
         if device:
             # 更新现有设备
@@ -108,22 +105,19 @@ class SecurityService:
             )
             self.db.add(device)
         
-        await self.db.commit()
-        await self.db.refresh(device)
+        self.db.commit()
+        self.db.refresh(device)
         return device
     
-    async def get_login_devices(
+    def get_login_devices(
         self,
         user_id: str,
         current_device_id: Optional[str] = None
     ) -> ApiResponse[List[LoginDeviceResponse]]:
         """获取登录设备列表"""
-        query = select(LoginDevice).where(
+        devices = self.db.query(LoginDevice).filter(
             LoginDevice.user_id == user_id
-        ).order_by(desc(LoginDevice.last_active))
-        
-        result = await self.db.execute(query)
-        devices = result.scalars().all()
+        ).order_by(desc(LoginDevice.last_active)).all()
         
         device_responses = []
         for device in devices:
@@ -138,18 +132,16 @@ class SecurityService:
             errMsg=None
         )
     
-    async def remove_device(
+    def remove_device(
         self,
         user_id: str,
         device_id: str
     ) -> ApiResponse[None]:
         """移除登录设备"""
-        query = select(LoginDevice).where(
+        device = self.db.query(LoginDevice).filter(
             LoginDevice.user_id == user_id,
             LoginDevice.device_id == device_id
-        )
-        result = await self.db.execute(query)
-        device = result.scalar_one_or_none()
+        ).first()
         
         if not device:
             return ApiResponse(
@@ -159,8 +151,8 @@ class SecurityService:
                 errMsg="设备不存在"
             )
         
-        await self.db.delete(device)
-        await self.db.commit()
+        self.db.delete(device)
+        self.db.commit()
         
         return ApiResponse(
             code=200,
@@ -169,15 +161,13 @@ class SecurityService:
             errMsg=None
         )
     
-    async def get_security_settings(
+    def get_security_settings(
         self,
         user_id: str
     ) -> ApiResponse[SecuritySettingsResponse]:
         """获取安全设置信息"""
         # 获取用户信息
-        user_query = select(User).where(User.id == user_id)
-        user_result = await self.db.execute(user_query)
-        user = user_result.scalar_one_or_none()
+        user = self.db.query(User).filter(User.id == user_id).first()
         
         if not user:
             return ApiResponse(
@@ -188,21 +178,17 @@ class SecurityService:
             )
         
         # 获取活跃设备数量
-        devices_query = select(func.count(LoginDevice.id)).where(
+        active_devices_count = self.db.query(func.count(LoginDevice.id)).filter(
             LoginDevice.user_id == user_id
-        )
-        devices_result = await self.db.execute(devices_query)
-        active_devices_count = devices_result.scalar() or 0
+        ).scalar() or 0
         
         # 获取最近30天登录次数
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        logs_query = select(func.count(LoginLog.id)).where(
+        recent_login_count = self.db.query(func.count(LoginLog.id)).filter(
             LoginLog.user_id == user_id,
             LoginLog.created_at >= thirty_days_ago,
             LoginLog.status == "success"
-        )
-        logs_result = await self.db.execute(logs_query)
-        recent_login_count = logs_result.scalar() or 0
+        ).scalar() or 0
         
         settings = SecuritySettingsResponse(
             two_factor_enabled=False,  # 暂未实现两步验证

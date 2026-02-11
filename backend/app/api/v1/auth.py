@@ -458,7 +458,7 @@ async def login(
         device_info = SecurityService.parse_user_agent(user_agent)
         
         # 创建登录日志
-        await security_service.create_login_log(
+        security_service.create_login_log(
             user_id=str(result.data.user.id),
             ip_address=ip_address,
             user_agent=user_agent,
@@ -472,7 +472,7 @@ async def login(
         
         # 创建或更新设备
         device_id = SecurityService.generate_device_id(user_agent, ip_address)
-        await security_service.create_or_update_device(
+        security_service.create_or_update_device(
             user_id=str(result.data.user.id),
             device_id=device_id,
             device_name=device_info["device_name"],
@@ -962,7 +962,7 @@ async def get_security_settings(
     ```
     """
     security_service = SecurityService(db)
-    result = await security_service.get_security_settings(str(current_user.id))
+    result = security_service.get_security_settings(str(current_user.id))
     return result
 
 
@@ -1017,7 +1017,7 @@ async def get_login_logs(
     ```
     """
     security_service = SecurityService(db)
-    result = await security_service.get_login_logs(str(current_user.id), limit, offset)
+    result = security_service.get_login_logs(str(current_user.id), limit, offset)
     return result
 
 
@@ -1074,7 +1074,7 @@ async def get_login_devices(
     ip_address = request.client.host if request.client else ""
     current_device_id = SecurityService.generate_device_id(user_agent, ip_address)
     
-    result = await security_service.get_login_devices(str(current_user.id), current_device_id)
+    result = security_service.get_login_devices(str(current_user.id), current_device_id)
     return result
 
 
@@ -1118,5 +1118,5 @@ async def remove_login_device(
     - 移除后该设备需要重新登录
     """
     security_service = SecurityService(db)
-    result = await security_service.remove_device(str(current_user.id), device_id)
+    result = security_service.remove_device(str(current_user.id), device_id)
     return result
