@@ -4,11 +4,15 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Card, Pagination, Empty, Spin, Button, Tag, Avatar } from 'antd';
+import { PlusOutlined, EyeOutlined, HeartOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { getDailyList } from '@/lib/api/content';
 import type { ContentListItem } from '@/lib/api/content';
 import { formatDate } from '@/lib/utils/date';
 import styles from './page.module.css';
+
+const { Meta } = Card;
 
 export default function DailyPage() {
   const router = useRouter();
@@ -63,54 +67,49 @@ export default function DailyPage() {
         >
           <h1 className={styles.title}>日常记录</h1>
           <p className={styles.subtitle}>记录生活的点点滴滴</p>
-          <Link 
-            href="/create?type=daily" 
-            className={styles.createBtn}
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
             onClick={handleCreateClick}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
             {isAuthenticated ? '创建记录' : '登录后创建'}
-          </Link>
+          </Button>
         </motion.div>
 
         {/* 加载状态 */}
         {loading && (
-          <div className={styles.loading}>
-            <div className={styles.spinner}></div>
-            <p>加载中...</p>
+          <div style={{ textAlign: 'center', padding: '60px 0' }}>
+            <Spin size="large" tip="加载中..." />
           </div>
         )}
 
         {/* 错误状态 */}
-        {error && (
-          <div className={styles.error}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <p>{error}</p>
-            <button onClick={fetchDailyList} className={styles.retryBtn}>
+        {error && !loading && (
+          <Empty
+            description={error}
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          >
+            <Button type="primary" onClick={fetchDailyList}>
               重试
-            </button>
-          </div>
+            </Button>
+          </Empty>
         )}
 
         {/* 空状态 */}
         {!loading && !error && contents.length === 0 && (
-          <div className={styles.empty}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M9 11l3 3L22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
-            <p>还没有日常记录</p>
-            <Link href="/create?type=daily" className={styles.createBtn}>
+          <Empty
+            description="还没有日常记录"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          >
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreateClick}
+            >
               创建第一条记录
-            </Link>
-          </div>
+            </Button>
+          </Empty>
         )}
 
         {/* 内容列表 */}
@@ -118,112 +117,152 @@ export default function DailyPage() {
           <>
             <div className={styles.grid}>
               {contents.map((content, index) => (
-                <motion.article
+                <motion.div
                   key={content.id}
-                  className={styles.card}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ y: -8, boxShadow: 'var(--shadow-lg)' }}
                 >
-                  <Link href={`/daily/${content.id}`} className={styles.cardLink}>
-                    {/* 图片 */}
-                    {content.images && content.images.length > 0 ? (
-                      <div className={styles.cardImage}>
-                        <img src={content.images[0]} alt={content.title} />
-                      </div>
-                    ) : (
-                      <div className={styles.cardImage}>
-                        <div className={styles.imagePlaceholder}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                            <circle cx="8.5" cy="8.5" r="1.5" />
-                            <polyline points="21 15 16 10 5 21" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className={styles.cardContent}>
-                      <h2 className={styles.cardTitle}>{content.title}</h2>
-                      <p className={styles.cardDescription}>
-                        {content.description || content.title}
-                      </p>
-                      
-                      {/* 标签 */}
-                      {content.tags && content.tags.length > 0 && (
-                        <div className={styles.tags}>
-                          {content.tags.slice(0, 3).map((tag) => (
-                            <span key={tag} className={styles.tag}>
-                              #{tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className={styles.cardMeta}>
-                        <div className={styles.author}>
-                          {content.user && (
-                            <>
-                              <div className={styles.avatar}>
-                                {content.user.username.charAt(0).toUpperCase()}
+                  <Link href={`/daily/${content.id}`} style={{ textDecoration: 'none' }}>
+                    <Card
+                      hoverable
+                      cover={
+                        content.images && content.images.length > 0 ? (
+                          <div style={{ height: 200, overflow: 'hidden' }}>
+                            <img
+                              alt={content.title}
+                              src={content.images[0]}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </div>
+                        ) : (
+                          <div style={{
+                            height: 200,
+                            background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                              <circle cx="8.5" cy="8.5" r="1.5" />
+                              <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                          </div>
+                        )
+                      }
+                      style={{ height: '100%' }}
+                    >
+                      <Meta
+                        title={
+                          <div style={{
+                            fontSize: 18,
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            marginBottom: 8,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {content.title}
+                          </div>
+                        }
+                        description={
+                          <div>
+                            <p style={{
+                              color: 'var(--text-secondary)',
+                              marginBottom: 12,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              lineHeight: 1.6,
+                            }}>
+                              {content.description || content.title}
+                            </p>
+
+                            {/* 标签 */}
+                            {content.tags && content.tags.length > 0 && (
+                              <div style={{ marginBottom: 12 }}>
+                                {content.tags.slice(0, 3).map((tag) => (
+                                  <Tag key={tag} style={{ marginBottom: 4 }}>
+                                    #{tag}
+                                  </Tag>
+                                ))}
                               </div>
-                              <span>{content.user.username}</span>
-                            </>
-                          )}
-                        </div>
-                        <span className={styles.date}>
-                          {formatDate(content.created_at)}
-                        </span>
-                      </div>
-                      
-                      <div className={styles.stats}>
-                        <span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                          {content.view_count}
-                        </span>
-                        <span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                          </svg>
-                          {content.like_count}
-                        </span>
-                        <span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                          </svg>
-                          {content.comment_count}
-                        </span>
-                      </div>
-                    </div>
+                            )}
+
+                            {/* 作者信息 */}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              paddingTop: 12,
+                              borderTop: '1px solid var(--border-secondary)',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {content.user ? (
+                                  <>
+                                    <Avatar size="small" style={{
+                                      background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+                                    }}>
+                                      {content.user.username.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                    <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                                      {content.user.username}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <Avatar size="small" icon={<UserOutlined />} />
+                                )}
+                              </div>
+                              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                                {formatDate(content.created_at)}
+                              </span>
+                            </div>
+
+                            {/* 统计数据 */}
+                            <div style={{
+                              display: 'flex',
+                              gap: 16,
+                              marginTop: 12,
+                              fontSize: 13,
+                              color: 'var(--text-tertiary)',
+                            }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <EyeOutlined />
+                                {content.view_count}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <HeartOutlined />
+                                {content.like_count}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <MessageOutlined />
+                                {content.comment_count}
+                              </span>
+                            </div>
+                          </div>
+                        }
+                      />
+                    </Card>
                   </Link>
-                </motion.article>
+                </motion.div>
               ))}
             </div>
 
             {/* 分页 */}
             {total > pageSize && (
-              <div className={styles.pagination}>
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className={styles.pageBtn}
-                >
-                  上一页
-                </button>
-                <span className={styles.pageInfo}>
-                  第 {page} 页 / 共 {Math.ceil(total / pageSize)} 页
-                </span>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={page >= Math.ceil(total / pageSize)}
-                  className={styles.pageBtn}
-                >
-                  下一页
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 48 }}>
+                <Pagination
+                  current={page}
+                  total={total}
+                  pageSize={pageSize}
+                  onChange={setPage}
+                  showSizeChanger={false}
+                  showTotal={(total) => `共 ${total} 条记录`}
+                />
               </div>
             )}
           </>
