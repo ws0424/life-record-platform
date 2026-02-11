@@ -26,13 +26,15 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
       isInitialized: false,
       setAuth: (user, token) => {
-        localStorage.setItem('access_token', token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('access_token', token);
+        }
         set({ user, token, isAuthenticated: true, isInitialized: true });
       },
       setUser: (user) => set({ user, isAuthenticated: !!user }),
@@ -44,20 +46,31 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, token: null, isAuthenticated: false });
       },
       initialize: () => {
-        // 从 localStorage 恢复 token
+        // 从 localStorage 和 persist storage 恢复状态
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('access_token');
-          if (token) {
+          const state = get();
+          
+          // 如果有 token 且有用户信息，认为已登录
+          if (token && state.user) {
+            set({ token, isAuthenticated: true, isInitialized: true });
+          } else if (token) {
+            // 有 token 但没有用户信息，仍然认为已登录（用户信息可以后续获取）
             set({ token, isAuthenticated: true, isInitialized: true });
           } else {
-            set({ isInitialized: true });
+            set({ isAuthenticated: false, isInitialized: true });
           }
+        } else {
+          set({ isInitialized: true });
         }
       },
     }),
     {
       name: 'auth-storage',
-      partialState: true,
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+      }),
     }
   )
 );

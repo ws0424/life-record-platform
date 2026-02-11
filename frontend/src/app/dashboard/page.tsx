@@ -17,8 +17,9 @@ type TabType = 'profile' | 'security' | 'activity' | 'devices' | 'bindings';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isInitialized, initialize } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
+  const [isLoading, setIsLoading] = useState(true);
 
   const tabs = [
     { id: 'profile' as TabType, label: '个人信息', icon: <UserOutlined /> },
@@ -28,22 +29,30 @@ export default function DashboardPage() {
     { id: 'bindings' as TabType, label: '账号绑定', icon: <LinkOutlined /> },
   ];
 
-  // 检查登录状态，未登录时跳转
+  // 初始化认证状态
   useEffect(() => {
-    if (!isAuthenticated) {
-      message.warning('请先登录后再访问个人中心');
-      setTimeout(() => {
-        router.push('/login?redirect=' + encodeURIComponent('/dashboard'));
-      }, 1500);
-    }
-  }, [isAuthenticated, router]);
+    initialize();
+  }, [initialize]);
 
-  // 未登录时显示加载状态
-  if (!isAuthenticated) {
+  // 等待初始化完成后再检查登录状态
+  useEffect(() => {
+    if (isInitialized) {
+      setIsLoading(false);
+      if (!isAuthenticated) {
+        message.warning('请先登录后再访问个人中心');
+        setTimeout(() => {
+          router.push('/login?redirect=' + encodeURIComponent('/dashboard'));
+        }, 1500);
+      }
+    }
+  }, [isInitialized, isAuthenticated, router]);
+
+  // 加载中或未登录时显示加载状态
+  if (isLoading || !isAuthenticated) {
     return (
       <div className={styles.page}>
         <div style={{ textAlign: 'center', padding: '100px 0' }}>
-          <Spin size="large" tip="正在跳转到登录页..." />
+          <Spin size="large" tip={isLoading ? "加载中..." : "正在跳转到登录页..."} />
         </div>
       </div>
     );
