@@ -25,9 +25,28 @@ export interface ChunkUploadResult {
  * 计算文件 MD5（用于断点续传）
  */
 async function calculateFileMD5(file: File): Promise<string> {
-  // 简化版：使用文件名、大小、修改时间生成唯一标识
+  // 使用文件名、大小、修改时间生成唯一标识
   const identifier = `${file.name}-${file.size}-${file.lastModified}`;
-  return btoa(identifier).replace(/[^a-zA-Z0-9]/g, '');
+  
+  // 使用 TextEncoder 和 base64 编码，支持中文等非 Latin1 字符
+  try {
+    // 方法1：使用 crypto.subtle.digest（推荐）
+    const encoder = new TextEncoder();
+    const data = encoder.encode(identifier);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex.substring(0, 32); // 取前32位
+  } catch (error) {
+    // 方法2：降级方案 - 使用简单的哈希算法
+    let hash = 0;
+    for (let i = 0; i < identifier.length; i++) {
+      const char = identifier.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(36).padStart(16, '0');
+  }
 }
 
 /**
