@@ -974,8 +974,8 @@ async def get_security_settings(
     response_description="返回登录日志列表"
 )
 async def get_login_logs(
-    limit: int = 20,
-    offset: int = 0,
+    page: int = 1,
+    pageSize: int = 20,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -990,8 +990,8 @@ async def get_login_logs(
     ```
     
     ### 查询参数
-    - **limit**: 每页数量，默认 20
-    - **offset**: 偏移量，默认 0
+    - **page**: 页码，默认 1
+    - **pageSize**: 每页数量，默认 20
     
     ### 成功响应示例
     ```json
@@ -1017,7 +1017,7 @@ async def get_login_logs(
     ```
     """
     security_service = SecurityService(db)
-    result = security_service.get_login_logs(str(current_user.id), limit, offset)
+    result = security_service.get_login_logs(str(current_user.id), page, pageSize)
     return result
 
 

@@ -150,9 +150,9 @@ export const getSecuritySettings = async () => {
 };
 
 // 获取登录日志
-export const getLoginLogs = async (limit: number = 20, offset: number = 0) => {
+export const getLoginLogs = async (page: number = 1, pageSize: number = 20) => {
   const response = await apiClient.get('/auth/security/login-logs', {
-    params: { limit, offset }
+    params: { page, pageSize }
   });
   return response.data;
 };

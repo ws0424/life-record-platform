@@ -368,7 +368,7 @@ function ActivitySection() {
     const loadActivities = async () => {
       try {
         const { getLoginLogs } = await import('@/lib/api/auth');
-        const logs = await getLoginLogs(10, 0);
+        const logs = await getLoginLogs(1, 10);
         setActivities(logs);
       } catch (err: any) {
         console.error('Load activities error:', err);

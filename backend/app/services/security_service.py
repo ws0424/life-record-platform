@@ -52,13 +52,14 @@ class SecurityService:
     def get_login_logs(
         self,
         user_id: str,
-        limit: int = 20,
-        offset: int = 0
+        page: int = 1,
+        page_size: int = 20
     ) -> ApiResponse[List[LoginLogResponse]]:
         """获取登录日志"""
+        offset = (page - 1) * page_size
         logs = self.db.query(LoginLog).filter(
             LoginLog.user_id == user_id
-        ).order_by(desc(LoginLog.created_at)).limit(limit).offset(offset).all()
+        ).order_by(desc(LoginLog.created_at)).limit(page_size).offset(offset).all()
         
         log_responses = [LoginLogResponse.model_validate(log) for log in logs]
         
