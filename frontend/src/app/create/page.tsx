@@ -7,6 +7,7 @@ import { Form, Input, Button, Checkbox, Select, message } from 'antd';
 import { useAuthStore } from '@/lib/store/authStore';
 import { TypeSelector } from './components/TypeSelector';
 import { ImageUpload } from './components/ImageUpload';
+import VideoUpload from './components/VideoUpload';
 import { TagSelector } from './components/TagSelector';
 import { CONTENT_TYPES, MAX_IMAGES, MAX_TITLE_LENGTH, MAX_CONTENT_LENGTH } from './constants';
 import { validateImageFile, generateImagePreviews } from './utils/imageUtils';
@@ -32,6 +33,7 @@ export default function CreatePage() {
   const [tags, setTags] = useState<string[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
 
   // 类型改变处理
   const handleTypeChange = useCallback((type: ContentType) => {
@@ -88,6 +90,11 @@ export default function CreatePage() {
     setTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
+  // 视频上传处理
+  const handleVideoChange = useCallback((urls: string[]) => {
+    setVideos(urls);
+  }, []);
+
   // 表单提交处理
   const handleSubmit = useCallback(async (values: FormValues) => {
     // 检查登录状态
@@ -121,6 +128,7 @@ export default function CreatePage() {
         content: values.content,
         tags: tags,
         images: imageUrls,
+        videos: videos,
         location: values.location,
         is_public: values.isPublic,
       });
@@ -243,6 +251,16 @@ export default function CreatePage() {
               onUpload={handleImageUpload}
               onRemove={handleRemoveImage}
             />
+
+            {/* 视频上传 */}
+            <Form.Item label="视频">
+              <VideoUpload
+                value={videos}
+                onChange={handleVideoChange}
+                maxCount={5}
+                maxSize={500}
+              />
+            </Form.Item>
 
             {/* 位置（旅游路线专用） */}
             {contentType === 'travel' && (

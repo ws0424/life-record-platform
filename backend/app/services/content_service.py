@@ -35,6 +35,7 @@ class ContentService:
                 content=content_data.content,
                 tags=content_data.tags,
                 images=content_data.images,
+                videos=content_data.videos,
                 location=content_data.location,
                 extra_data=content_data.extra_data,
                 is_public=content_data.is_public,

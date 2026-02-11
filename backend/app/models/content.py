@@ -26,6 +26,7 @@ class Content(Base):
     description = Column(String(500), nullable=True)  # 描述/摘要
     content = Column(Text, nullable=False)
     images = Column(ARRAY(String), default=list)  # 图片 URL 列表
+    videos = Column(ARRAY(String), default=list)  # 视频 URL 列表
     tags = Column(ARRAY(String), default=list)  # 标签列表
     location = Column(String(200), nullable=True)  # 位置
     

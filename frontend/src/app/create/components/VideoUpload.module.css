@@ -1,0 +1,98 @@
+.container {
+  width: 100%;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.videoList {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.videoCard {
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.videoCard:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.1);
+}
+
+.videoInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.videoIcon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.1), rgba(251, 113, 133, 0.1));
+  border-radius: 8px;
+}
+
+.videoDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.videoName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.videoSize {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.successText {
+  font-size: 12px;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.errorText {
+  font-size: 12px;
+  color: var(--color-error);
+  font-weight: 500;
+}
+
+.videoActions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .videoInfo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .videoActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+

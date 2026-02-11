@@ -20,6 +20,7 @@ class ContentCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=10000)
     tags: List[str] = Field(default_factory=list)
     images: List[str] = Field(default_factory=list)
+    videos: List[str] = Field(default_factory=list)
     location: Optional[str] = Field(None, max_length=200)
     extra_data: Optional[Dict[str, Any]] = None
     is_public: bool = True
@@ -32,6 +33,7 @@ class ContentUpdate(BaseModel):
     content: Optional[str] = Field(None, min_length=1, max_length=10000)
     tags: Optional[List[str]] = None
     images: Optional[List[str]] = None
+    videos: Optional[List[str]] = None
     location: Optional[str] = Field(None, max_length=200)
     extra_data: Optional[Dict[str, Any]] = None
     is_public: Optional[bool] = None
@@ -65,6 +67,7 @@ class ContentResponse(BaseModel):
     content: str
     tags: List[str]
     images: List[str]
+    videos: List[str]
     location: Optional[str]
     extra_data: Optional[Dict[str, Any]]
     is_public: bool
@@ -102,6 +105,7 @@ class ContentListItem(BaseModel):
     description: Optional[str]
     tags: List[str]
     images: List[str]
+    videos: List[str]
     location: Optional[str]
     is_featured: bool
     view_count: int
