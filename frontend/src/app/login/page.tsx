@@ -4,36 +4,35 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Form, Input, Button, Checkbox, message } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import styles from './page.module.css';
 import * as authApi from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useToast } from '@/lib/hooks/useToast';
-import { ToastContainer } from '@/components/ui/Toast';
+
+type LoginFormValues = {
+  identifier: string;
+  password: string;
+  remember: boolean;
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const { toasts, removeToast, success, error } = useToast();
-  
-  const [formData, setFormData] = useState({
-    identifier: '', // 用户名或邮箱
-    password: '',
-    remember: false,
-  });
+  const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     
     try {
       // 判断是邮箱还是用户名
-      const isEmail = formData.identifier.includes('@');
+      const isEmail = values.identifier.includes('@');
       
       const response = await authApi.login({
-        identifier: formData.identifier,
-        password: formData.password,
-        remember: formData.remember,
+        identifier: values.identifier,
+        password: values.password,
+        remember: values.remember,
         login_type: isEmail ? 'email' : 'username',
       });
       
@@ -42,7 +41,7 @@ export default function LoginPage() {
       localStorage.setItem('refresh_token', response.refresh_token);
       setAuth(response.user, response.access_token);
       
-      success('登录成功！');
+      message.success('登录成功！');
       
       // 获取 redirect 参数
       const searchParams = new URLSearchParams(window.location.search);
@@ -54,23 +53,14 @@ export default function LoginPage() {
       }, 1000);
     } catch (err: any) {
       console.error('Login error:', err);
-      error(err.message || '登录失败，请检查用户名/邮箱和密码');
+      message.error(err.message || '登录失败，请检查用户名/邮箱和密码');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
   return (
     <div className={styles.page}>
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className={styles.container}>
         <motion.div
           className={styles.formCard}
@@ -83,87 +73,79 @@ export default function LoginPage() {
             <p className={styles.subtitle}>登录你的账户，继续记录生活</p>
           </div>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="identifier" className={styles.label}>
-                用户名或邮箱
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <input
-                  type="text"
-                  id="identifier"
-                  name="identifier"
-                  value={formData.identifier}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="用户名或邮箱"
-                  required
-                />
-              </div>
-            </div>
+          <Form
+            form={form}
+            name="login"
+            onFinish={handleSubmit}
+            initialValues={{ remember: true }}
+            size="large"
+            layout="vertical"
+            requiredMark={false}
+          >
+            <Form.Item
+              name="identifier"
+              label="用户名或邮箱"
+              rules={[
+                { required: true, message: '请输入用户名或邮箱' },
+              ]}
+            >
+              <Input
+                prefix={<UserOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="用户名或邮箱"
+                autoComplete="username"
+              />
+            </Form.Item>
 
-            <div className={styles.formGroup}>
-              <label htmlFor="password" className={styles.label}>
-                密码
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-            </div>
+            <Form.Item
+              name="password"
+              label="密码"
+              rules={[
+                { required: true, message: '请输入密码' },
+                { min: 6, message: '密码至少6个字符' },
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </Form.Item>
 
-            <div className={styles.formOptions}>
-              <label className={styles.checkbox}>
-                <input
-                  type="checkbox"
-                  name="remember"
-                  checked={formData.remember}
-                  onChange={handleChange}
-                />
-                <span className={styles.checkboxLabel}>记住我</span>
-              </label>
-              <Link href="/forgot-password" className={styles.forgotLink}>
-                忘记密码？
+            <Form.Item>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Form.Item name="remember" valuePropName="checked" noStyle>
+                  <Checkbox>记住我</Checkbox>
+                </Form.Item>
+                <Link href="/forgot-password" style={{ color: 'var(--color-primary)' }}>
+                  忘记密码？
+                </Link>
+              </div>
+            </Form.Item>
+
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isLoading}
+                block
+                size="large"
+                style={{
+                  height: 48,
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+              >
+                登录
+              </Button>
+            </Form.Item>
+
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+              还没有账户？
+              <Link href="/register" style={{ color: 'var(--color-primary)', marginLeft: 8, fontWeight: 500 }}>
+                立即注册
               </Link>
             </div>
-
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className={styles.spinner} />
-              ) : (
-                '登录'
-              )}
-            </button>
-
-            <div className={styles.registerHint}>
-              <p>
-                还没有账户？
-                <Link href="/register" className={styles.registerLink}>
-                  立即注册
-                </Link>
-              </p>
-            </div>
-          </form>
+          </Form>
         </motion.div>
 
         <motion.div

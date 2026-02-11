@@ -4,56 +4,56 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Form, Input, Button, message } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, SafetyOutlined } from '@ant-design/icons';
 import styles from './page.module.css';
 import * as authApi from '@/lib/api/auth';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useToast } from '@/lib/hooks/useToast';
-import { ToastContainer } from '@/components/ui/Toast';
+
+type RegisterFormValues = {
+  email: string;
+  code: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+};
 
 export default function RegisterPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const { toasts, removeToast, success, error, info } = useToast();
-  
+  const [form] = Form.useForm();
   const [isLoading, setIsLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  
-  // 注册表单
-  const [formData, setFormData] = useState({
-    email: '',
-    code: '',
-    username: '',
-    password: '',
-    confirmPassword: '',
-  });
 
   // 发送验证码
   const handleSendCode = async () => {
-    if (!formData.email) {
-      error('请输入邮箱地址');
-      return;
-    }
-
-    // 验证邮箱格式
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      error('请输入正确的邮箱格式');
-      return;
-    }
-
-    if (countdown > 0) {
-      return;
-    }
-
-    setIsLoading(true);
-    
     try {
+      const email = form.getFieldValue('email');
+      
+      if (!email) {
+        message.error('请输入邮箱地址');
+        return;
+      }
+
+      // 验证邮箱格式
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        message.error('请输入正确的邮箱格式');
+        return;
+      }
+
+      if (countdown > 0) {
+        return;
+      }
+
+      setIsLoading(true);
+      
       await authApi.sendCode({
-        email: formData.email,
+        email,
         type: 'register',
       });
       
-      success('验证码已发送到您的邮箱');
+      message.success('验证码已发送到您的邮箱');
       setCountdown(60);
       
       // 倒计时
@@ -68,47 +68,22 @@ export default function RegisterPage() {
       }, 1000);
     } catch (err: any) {
       console.error('Send code error:', err);
-      error(err.message || '验证码发送失败');
+      message.error(err.message || '验证码发送失败');
     } finally {
       setIsLoading(false);
     }
   };
 
   // 注册提交
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // 验证密码
-    if (formData.password !== formData.confirmPassword) {
-      error('两次输入的密码不一致');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      error('密码长度至少6位');
-      return;
-    }
-
-    // 验证密码强度（包含字母和数字）
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)/;
-    if (!passwordRegex.test(formData.password)) {
-      error('密码必须包含字母和数字');
-      return;
-    }
-
-    if (formData.username.length < 2 || formData.username.length > 20) {
-      error('用户名长度必须在2-20个字符之间');
-      return;
-    }
-
+  const handleSubmit = async (values: RegisterFormValues) => {
     setIsLoading(true);
     
     try {
       const response = await authApi.register({
-        email: formData.email,
-        code: formData.code,
-        username: formData.username,
-        password: formData.password,
+        email: values.email,
+        code: values.code,
+        username: values.username,
+        password: values.password,
       });
       
       // 保存 token 和用户信息
@@ -116,7 +91,7 @@ export default function RegisterPage() {
       localStorage.setItem('refresh_token', response.refresh_token);
       setAuth(response.user, response.access_token);
       
-      success('注册成功！');
+      message.success('注册成功！');
       
       // 延迟跳转
       setTimeout(() => {
@@ -124,23 +99,14 @@ export default function RegisterPage() {
       }, 1000);
     } catch (err: any) {
       console.error('Register error:', err);
-      error(err.message || '注册失败，请检查信息是否正确');
+      message.error(err.message || '注册失败，请检查信息是否正确');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   return (
     <div className={styles.page}>
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
       <div className={styles.container}>
         <motion.div
           className={styles.formCard}
@@ -153,154 +119,138 @@ export default function RegisterPage() {
             <p className={styles.subtitle}>加入我们，开始记录美好生活</p>
           </div>
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>
-                邮箱地址
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="your@email.com"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="code" className={styles.label}>
-                验证码
-              </label>
-              <div className={styles.codeWrapper}>
-                <div className={styles.inputWrapper}>
-                  <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
-                  </svg>
-                  <input
-                    type="text"
-                    id="code"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="请输入6位验证码"
-                    maxLength={6}
-                    required
-                  />
-                </div>
-                <button
-                  type="button"
-                  className={styles.codeBtn}
-                  onClick={handleSendCode}
-                  disabled={countdown > 0 || isLoading}
-                >
-                  {countdown > 0 ? `${countdown}秒后重试` : '发送验证码'}
-                </button>
-              </div>
-              <p className={styles.hint}>验证码将发送到您的邮箱，有效期5分钟</p>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="username" className={styles.label}>
-                用户名
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="请输入用户名（2-20个字符）"
-                  minLength={2}
-                  maxLength={20}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="password" className={styles.label}>
-                密码
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="至少6位，包含字母和数字"
-                  minLength={6}
-                  maxLength={20}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className={styles.formGroup}>
-              <label htmlFor="confirmPassword" className={styles.label}>
-                确认密码
-              </label>
-              <div className={styles.inputWrapper}>
-                <svg className={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="请再次输入密码"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isLoading}
+          <Form
+            form={form}
+            name="register"
+            onFinish={handleSubmit}
+            size="large"
+            layout="vertical"
+            requiredMark={false}
+          >
+            <Form.Item
+              name="email"
+              label="邮箱地址"
+              rules={[
+                { required: true, message: '请输入邮箱地址' },
+                { type: 'email', message: '请输入正确的邮箱格式' },
+              ]}
             >
-              {isLoading ? (
-                <span className={styles.spinner} />
-              ) : (
-                '注册'
-              )}
-            </button>
+              <Input
+                prefix={<MailOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="your@email.com"
+                autoComplete="email"
+              />
+            </Form.Item>
 
-            <div className={styles.loginHint}>
-              <p>
-                已有账户？
-                <Link href="/login" className={styles.loginLink}>
-                  立即登录
-                </Link>
-              </p>
+            <Form.Item
+              name="code"
+              label="验证码"
+              rules={[
+                { required: true, message: '请输入验证码' },
+                { len: 6, message: '验证码为6位数字' },
+              ]}
+              extra="验证码将发送到您的邮箱，有效期5分钟"
+            >
+              <Input
+                prefix={<SafetyOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="请输入6位验证码"
+                maxLength={6}
+                suffix={
+                  <Button
+                    type="link"
+                    onClick={handleSendCode}
+                    disabled={countdown > 0 || isLoading}
+                    style={{ padding: 0 }}
+                  >
+                    {countdown > 0 ? `${countdown}秒后重试` : '发送验证码'}
+                  </Button>
+                }
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="username"
+              label="用户名"
+              rules={[
+                { required: true, message: '请输入用户名' },
+                { min: 2, message: '用户名至少2个字符' },
+                { max: 20, message: '用户名最多20个字符' },
+              ]}
+            >
+              <Input
+                prefix={<UserOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="请输入用户名（2-20个字符）"
+                autoComplete="username"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label="密码"
+              rules={[
+                { required: true, message: '请输入密码' },
+                { min: 6, message: '密码至少6个字符' },
+                { max: 20, message: '密码最多20个字符' },
+                {
+                  pattern: /^(?=.*[A-Za-z])(?=.*\d)/,
+                  message: '密码必须包含字母和数字',
+                },
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="至少6位，包含字母和数字"
+                autoComplete="new-password"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="confirmPassword"
+              label="确认密码"
+              dependencies={['password']}
+              rules={[
+                { required: true, message: '请再次输入密码' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('password') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('两次输入的密码不一致'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined style={{ color: 'var(--text-tertiary)' }} />}
+                placeholder="请再次输入密码"
+                autoComplete="new-password"
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isLoading}
+                block
+                size="large"
+                style={{
+                  height: 48,
+                  fontSize: 16,
+                  fontWeight: 600,
+                }}
+              >
+                注册
+              </Button>
+            </Form.Item>
+
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+              已有账户？
+              <Link href="/login" style={{ color: 'var(--color-primary)', marginLeft: 8, fontWeight: 500 }}>
+                立即登录
+              </Link>
             </div>
-          </form>
+          </Form>
         </motion.div>
 
         <motion.div
