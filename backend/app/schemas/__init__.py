@@ -13,7 +13,13 @@ from app.schemas.auth import (
     UserInfoResponse,
     UpdateProfileRequest,
     UpdateProfileResponse,
-    ChangePasswordRequest
+    ChangePasswordRequest,
+    LoginLogResponse,
+    LoginDeviceResponse,
+    SecuritySettingsResponse,
+    LoginLogsResponse,
+    LoginDevicesResponse,
+    SecuritySettingsInfoResponse
 )
 
 __all__ = [
@@ -31,5 +37,11 @@ __all__ = [
     "UserInfoResponse",
     "UpdateProfileRequest",
     "UpdateProfileResponse",
-    "ChangePasswordRequest"
+    "ChangePasswordRequest",
+    "LoginLogResponse",
+    "LoginDeviceResponse",
+    "SecuritySettingsResponse",
+    "LoginLogsResponse",
+    "LoginDevicesResponse",
+    "SecuritySettingsInfoResponse"
 ]
