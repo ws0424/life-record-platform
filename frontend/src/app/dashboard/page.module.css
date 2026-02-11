@@ -353,6 +353,31 @@
 }
 
 /* 动态列表 */
+.activityListWrapper {
+  max-height: 600px;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+  padding-right: 0.5rem;
+}
+
+.activityListWrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.activityListWrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.activityListWrapper::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-radius: 10px;
+}
+
+.activityListWrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
 .activityList {
   display: flex;
   flex-direction: column;
@@ -394,6 +419,92 @@
 .activityMeta {
   font-size: 0.85rem;
   color: var(--text-secondary);
+}
+
+/* 分页器 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--border-primary);
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: white;
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.pageBtn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.5;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.pageBtn:disabled {
+  background: var(--bg-tertiary);
+  border-color: var(--border-primary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pageNumber {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.pageNumber:hover:not(:disabled):not(.active) {
+  background: rgba(225, 29, 72, 0.1);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.pageNumber.active {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.4);
+}
+
+.pageNumber:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* 设备列表 */

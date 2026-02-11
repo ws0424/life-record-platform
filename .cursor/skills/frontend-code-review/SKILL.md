@@ -1,6 +1,13 @@
 ---
 name: frontend-code-review
-description: 前端代码审查和重构工具。在提交代码前自动检查代码规范、组件结构、样式规范等，确保代码质量和一致性。当用户要求提交代码、重构代码或进行代码审查时触发此技能。
+description: 前端代码审查和重构工具。在提交代码前自动检查代码规范、组件结构、样式规范等，确保代码质量和一致性。
+triggers:
+  - 提交代码
+  - 代码审查
+  - 检查代码
+  - 重构代码
+  - code review
+  - commit code
 ---
 
 # Frontend Code Review Skill

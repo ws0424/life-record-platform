@@ -1,6 +1,14 @@
 ---
 name: frontend-best-practices
-description: 前端最佳实践检查工具。检查 Ant Design、Day.js、Lodash 等第三方库的使用是否合理，避免性能问题和不规范用法。当用户提交代码、创建组件或页面时自动触发检查。
+description: 前端最佳实践检查工具。检查 Ant Design、Day.js、Lodash 等第三方库的使用是否合理，避免性能问题和不规范用法。
+triggers:
+  - 提交代码
+  - 创建组件
+  - 创建页面
+  - 检查代码
+  - 优化代码
+  - commit code
+  - create component
 ---
 
 # Frontend Best Practices Skill
