@@ -9,7 +9,7 @@ import { HeartOutlined, HeartFilled, StarOutlined, StarFilled, ShareAltOutlined,
 import { useAuthStore } from '@/lib/store/authStore';
 import { getContent, toggleLike, toggleSave, createComment, getComments } from '@/lib/api/content';
 import type { Content, Comment as CommentType } from '@/lib/api/content';
-import { formatDate } from '@/lib/utils/date';
+import { formatDate, formatDateTime } from '@/lib/utils/date';
 import { ContentCover } from '@/components/ContentCover';
 import styles from './page.module.css';
 
@@ -342,7 +342,7 @@ export default function PostDetailPage() {
                   <div className={styles.commentContent}>
                     <div className={styles.commentHeader}>
                       <span className={styles.commentAuthor}>{comment.user?.username || '匿名用户'}</span>
-                      <span className={styles.commentDate}>{formatDate(comment.created_at)}</span>
+                      <span className={styles.commentDate}>{formatDateTime(comment.created_at)}</span>
                     </div>
                     <p className={styles.commentText}>{comment.comment_text}</p>
                     
@@ -363,7 +363,7 @@ export default function PostDetailPage() {
                             <div className={styles.replyContent}>
                               <span className={styles.replyAuthor}>{reply.user?.username || '匿名用户'}</span>
                               <span className={styles.replyText}>{reply.comment_text}</span>
-                              <span className={styles.replyDate}>{formatDate(reply.created_at)}</span>
+                              <span className={styles.replyDate}>{formatDateTime(reply.created_at)}</span>
                             </div>
                           </div>
                         ))}
