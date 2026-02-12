@@ -13,6 +13,7 @@
     "@types/react-lazy-load-image-component": "^1.6.5",
     "antd": "^6.3.0",
     "axios": "^1.6.2",
+    "dayjs": "^1.11.19",
     "framer-motion": "^10.16.16",
     "lodash": "^4.17.23",
     "next": "^14.0.4",
