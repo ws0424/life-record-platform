@@ -1,10 +1,16 @@
 /* 默认封面 */
 .defaultCover {
+  width: 100%;
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.defaultCover svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 /* 单张封面 */
