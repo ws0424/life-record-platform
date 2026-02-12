@@ -42,16 +42,17 @@ async def create_content(
     "/{content_id}",
     response_model=ApiResponse[ContentResponse],
     summary="获取内容详情",
-    description="获取指定内容的详细信息"
+    description="获取指定内容的详细信息（公开内容允许未登录访问）"
 )
 async def get_content(
     content_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取内容详情"""
+    """获取内容详情（公开内容允许未登录访问）"""
     service = ContentService(db)
-    return service.get_content(content_id, str(current_user.id))
+    user_id = str(current_user.id) if current_user else None
+    return service.get_content(content_id, user_id)
 
 
 @router.put(
@@ -322,16 +323,16 @@ async def create_comment(
     "/{content_id}/comments",
     response_model=ApiResponse[dict],
     summary="获取评论列表",
-    description="获取内容的评论列表"
+    description="获取内容的评论列表（允许未登录访问）"
 )
 async def get_comments(
     content_id: str,
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
-    """获取评论列表"""
+    """获取评论列表（允许未登录访问）"""
     service = ContentService(db)
     return service.get_comments(content_id, page, page_size)
 
