@@ -10,6 +10,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { getDailyList } from '@/lib/api/content';
 import type { ContentListItem } from '@/lib/api/content';
 import { formatDate } from '@/lib/utils/date';
+import { ContentCover } from '@/components/ContentCover';
 import styles from './page.module.css';
 
 const { Meta } = Card;
@@ -27,6 +28,7 @@ export default function DailyPage() {
   // 获取日常记录列表
   useEffect(() => {
     fetchDailyList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const fetchDailyList = async () => {
@@ -128,29 +130,13 @@ export default function DailyPage() {
                     <Card
                       hoverable
                       cover={
-                        content.images && content.images.length > 0 ? (
-                          <div style={{ height: 200, overflow: 'hidden' }}>
-                            <img
-                              alt={content.title}
-                              src={content.images[0]}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </div>
-                        ) : (
-                          <div style={{
-                            height: 200,
-                            background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                          </div>
-                        )
+                        <ContentCover
+                          images={content.images}
+                          videos={content.videos}
+                          videoThumbnails={content.video_thumbnails}
+                          title={content.title}
+                          height={200}
+                        />
                       }
                       style={{ height: '100%' }}
                     >

@@ -2,7 +2,7 @@
  * 大文件切片上传工具
  */
 
-import axios from 'axios';
+import apiClient from '@/lib/api/client';
 
 // 切片大小：5MB
 const CHUNK_SIZE = 5 * 1024 * 1024;
@@ -125,7 +125,7 @@ async function uploadSingleFile(
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await axios.post('/api/v1/upload/file', formData, {
+  const response = await apiClient.post('/upload/file', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -155,12 +155,11 @@ async function uploadChunk(options: {
 
   const formData = new FormData();
   formData.append('chunk', chunk);
-  formData.append('chunkIndex', chunkIndex.toString());
-  formData.append('totalChunks', totalChunks.toString());
-  formData.append('fileIdentifier', fileIdentifier);
-  formData.append('filename', filename);
+  formData.append('chunk_index', chunkIndex.toString());
+  formData.append('total_chunks', totalChunks.toString());
+  formData.append('file_id', fileIdentifier);
 
-  await axios.post('/api/v1/upload/chunk', formData, {
+  await apiClient.post('/upload/chunk', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -183,7 +182,17 @@ async function mergeChunks(options: {
   fileSize: number;
   mimeType: string;
 }): Promise<ChunkUploadResult> {
-  const response = await axios.post('/api/v1/upload/merge', options);
+  const formData = new FormData();
+  formData.append('file_id', options.fileIdentifier);
+  formData.append('total_chunks', options.totalChunks.toString());
+  formData.append('original_filename', options.filename);
+  formData.append('content_type', options.mimeType);
+
+  const response = await apiClient.post('/upload/merge', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 }
 
@@ -198,7 +207,7 @@ export async function checkFileExists(file: File): Promise<{
   const fileIdentifier = await calculateFileMD5(file);
   
   try {
-    const response = await axios.get('/api/v1/upload/check', {
+    const response = await apiClient.get('/upload/check', {
       params: {
         fileIdentifier,
         filename: file.name,

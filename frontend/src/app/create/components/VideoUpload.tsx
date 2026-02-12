@@ -5,11 +5,14 @@ import { Upload, Button, Progress, message, Card, Space } from 'antd';
 import { UploadOutlined, DeleteOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { uploadFileInChunks, validateFileType, formatFileSize } from '@/lib/utils/chunkUpload';
+import { generateVideoThumbnail } from '@/lib/utils/videoUtils';
+import { uploadImage } from '@/lib/api/upload';
 import styles from './VideoUpload.module.css';
 
 interface VideoUploadProps {
   value?: string[];
   onChange?: (urls: string[]) => void;
+  onThumbnailChange?: (thumbnails: string[]) => void;
   maxCount?: number;
   maxSize?: number; // MB
 }
@@ -18,6 +21,7 @@ interface VideoItem {
   uid: string;
   name: string;
   url?: string;
+  thumbnail?: string;
   status: 'uploading' | 'done' | 'error';
   progress: number;
   size: number;
@@ -26,6 +30,7 @@ interface VideoItem {
 export default function VideoUpload({
   value = [],
   onChange,
+  onThumbnailChange,
   maxCount = 5,
   maxSize = 500, // 默认最大 500MB
 }: VideoUploadProps) {
@@ -73,7 +78,18 @@ export default function VideoUpload({
     setUploading(true);
 
     try {
-      // 使用切片上传
+      // 1. 生成视频封面
+      message.loading({ content: '正在生成视频封面...', key: 'thumbnail' });
+      const thumbnailBlob = await generateVideoThumbnail(file, 1);
+      
+      // 2. 上传封面图片
+      const thumbnailFile = new File([thumbnailBlob], `${file.name}_thumbnail.jpg`, {
+        type: 'image/jpeg',
+      });
+      const thumbnailUrl = await uploadImage(thumbnailFile);
+      message.success({ content: '视频封面生成成功', key: 'thumbnail' });
+
+      // 3. 上传视频文件（使用切片上传）
       const result = await uploadFileInChunks({
         file,
         onProgress: (progress) => {
@@ -87,18 +103,33 @@ export default function VideoUpload({
         },
       });
 
-      // 上传成功
-      setVideos(prev =>
-        prev.map(v =>
-          v.uid === videoItem.uid
-            ? { ...v, status: 'done', url: result.url, progress: 100 }
-            : v
-        )
+      // 4. 上传成功，更新本地状态
+      const updatedVideos = videos.map(v =>
+        v.uid === videoItem.uid
+          ? { ...v, status: 'done' as const, url: result.url, thumbnail: thumbnailUrl, progress: 100 }
+          : v
       );
+      const newVideo = { ...videoItem, status: 'done' as const, url: result.url, thumbnail: thumbnailUrl, progress: 100 };
+      const allVideos = [...videos.filter(v => v.uid !== videoItem.uid), newVideo];
+      
+      setVideos(allVideos);
 
-      // 更新父组件
+      // 5. 更新父组件 - 视频 URL 列表
       const newUrls = [...value, result.url];
       onChange?.(newUrls);
+      
+      // 6. 更新父组件 - 封面列表
+      const allThumbnails = allVideos
+        .filter(v => v.status === 'done' && v.thumbnail)
+        .map(v => v.thumbnail!);
+      onThumbnailChange?.(allThumbnails);
+      
+      console.log('✅ 视频上传成功:', {
+        videoUrl: result.url,
+        thumbnailUrl,
+        allUrls: newUrls,
+        allThumbnails
+      });
 
       message.success('视频上传成功');
     } catch (error: any) {
@@ -130,6 +161,12 @@ export default function VideoUpload({
     if (video.url) {
       const newUrls = value.filter(url => url !== video.url);
       onChange?.(newUrls);
+      
+      // 更新封面列表
+      const newThumbnails = videos
+        .filter(v => v.uid !== uid && v.thumbnail)
+        .map(v => v.thumbnail!);
+      onThumbnailChange?.(newThumbnails);
     }
   };
 
@@ -169,7 +206,20 @@ export default function VideoUpload({
             >
               <div className={styles.videoInfo}>
                 <div className={styles.videoIcon}>
-                  <PlayCircleOutlined style={{ fontSize: 32, color: 'var(--color-primary)' }} />
+                  {video.thumbnail ? (
+                    <img 
+                      src={video.thumbnail} 
+                      alt={video.name}
+                      style={{ 
+                        width: 64, 
+                        height: 64, 
+                        objectFit: 'cover',
+                        borderRadius: 4
+                      }} 
+                    />
+                  ) : (
+                    <PlayCircleOutlined style={{ fontSize: 32, color: 'var(--color-primary)' }} />
+                  )}
                 </div>
                 <div className={styles.videoDetails}>
                   <div className={styles.videoName} title={video.name}>

@@ -9,6 +9,7 @@ import { useDebounce } from '@/lib/hooks/useDebounce';
 import { exploreContents } from '@/lib/api/content';
 import type { ContentListItem } from '@/lib/api/content';
 import { formatDate } from '@/lib/utils/date';
+import { ContentCover } from '@/components/ContentCover';
 import styles from './page.module.css';
 
 const { Search } = Input;
@@ -27,6 +28,7 @@ export default function ExplorePage() {
   // 获取内容列表
   useEffect(() => {
     fetchContents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory, searchQuery, page]);
 
   const fetchContents = async () => {
@@ -148,29 +150,13 @@ export default function ExplorePage() {
                     <Card
                       hoverable
                       cover={
-                        content.images && content.images.length > 0 ? (
-                          <div style={{ height: 200, overflow: 'hidden' }}>
-                            <img
-                              alt={content.title}
-                              src={content.images[0]}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </div>
-                        ) : (
-                          <div style={{
-                            height: 200,
-                            background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <polyline points="21 15 16 10 5 21" />
-                            </svg>
-                          </div>
-                        )
+                        <ContentCover
+                          images={content.images}
+                          videos={content.videos}
+                          videoThumbnails={content.video_thumbnails}
+                          title={content.title}
+                          height={200}
+                        />
                       }
                       style={{ height: '100%' }}
                     >

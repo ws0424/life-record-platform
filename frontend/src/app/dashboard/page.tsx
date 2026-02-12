@@ -133,10 +133,27 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          {activeTab === 'profile' && <ProfileSection user={user} />}
-          {activeTab === 'security' && <SecuritySection user={user} />}
+          {activeTab === 'profile' && (
+            <ProfileSection 
+              user={user} 
+              success={(msg) => message.success(msg)}
+              error={(msg) => message.error(msg)}
+            />
+          )}
+          {activeTab === 'security' && (
+            <SecuritySection 
+              user={user}
+              success={(msg) => message.success(msg)}
+              error={(msg) => message.error(msg)}
+            />
+          )}
           {activeTab === 'activity' && <ActivitySection />}
-          {activeTab === 'devices' && <DevicesSection />}
+          {activeTab === 'devices' && (
+            <DevicesSection 
+              success={(msg) => message.success(msg)}
+              error={(msg) => message.error(msg)}
+            />
+          )}
           {activeTab === 'bindings' && <BindingsSection />}
         </motion.main>
       </div>

@@ -34,6 +34,7 @@ export default function CreatePage() {
   const [images, setImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [videos, setVideos] = useState<string[]>([]);
+  const [videoThumbnails, setVideoThumbnails] = useState<string[]>([]);
 
   // 类型改变处理
   const handleTypeChange = useCallback((type: ContentType) => {
@@ -95,6 +96,11 @@ export default function CreatePage() {
     setVideos(urls);
   }, []);
 
+  // 视频封面处理
+  const handleVideoThumbnailChange = useCallback((thumbnails: string[]) => {
+    setVideoThumbnails(thumbnails);
+  }, []);
+
   // 表单提交处理
   const handleSubmit = useCallback(async (values: FormValues) => {
     // 检查登录状态
@@ -122,16 +128,23 @@ export default function CreatePage() {
       // 2. 创建内容
       const { createContent } = await import('@/lib/api/content');
       
-      await createContent({
+      const contentData = {
         type: contentType,
         title: values.title,
         content: values.content,
         tags: tags,
         images: imageUrls,
         videos: videos,
+        video_thumbnails: videoThumbnails,
         location: values.location,
         is_public: values.isPublic,
-      });
+      };
+      
+      console.log('📝 创建内容数据:', contentData);
+      console.log('🎬 视频列表:', videos);
+      console.log('🖼️  封面列表:', videoThumbnails);
+      
+      await createContent(contentData);
       
       message.success('创建成功！');
       
@@ -145,7 +158,7 @@ export default function CreatePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [contentType, tags, images, router, isAuthenticated]);
+  }, [contentType, tags, images, videos, videoThumbnails, router, isAuthenticated]);
 
   return (
     <div className={styles.page}>
@@ -257,6 +270,7 @@ export default function CreatePage() {
               <VideoUpload
                 value={videos}
                 onChange={handleVideoChange}
+                onThumbnailChange={handleVideoThumbnailChange}
                 maxCount={5}
                 maxSize={500}
               />

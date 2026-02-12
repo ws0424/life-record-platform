@@ -23,8 +23,15 @@ def _truncate_password(password: str) -> str:
     2. 输出固定为 44 字节（base64 编码后）
     3. 保持密码的熵值
     """
-    # 将密码转换为 SHA256 哈希，然后 base64 编码
-    password_hash = hashlib.sha256(password.encode('utf-8')).digest()
+    # 检查密码字节长度
+    password_bytes = password.encode('utf-8')
+    
+    # 如果密码小于 72 字节，直接返回
+    if len(password_bytes) <= 72:
+        return password
+    
+    # 如果超过 72 字节，使用 SHA256 哈希
+    password_hash = hashlib.sha256(password_bytes).digest()
     return base64.b64encode(password_hash).decode('utf-8')
 
 

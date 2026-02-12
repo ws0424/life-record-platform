@@ -180,7 +180,39 @@ class AuthService:
                 )
             
             # 验证密码
-            if not verify_password(login_data.password, user.password_hash):
+            password_valid = verify_password(login_data.password, user.password_hash)
+            
+            # 如果密码验证失败，尝试使用旧的哈希方法验证（兼容性处理）
+            if not password_valid:
+                try:
+                    from app.utils.security import _truncate_password
+                    import hashlib
+                    import base64
+                    from passlib.context import CryptContext
+                    
+                    # 旧的截断方法：总是使用 SHA256
+                    old_password = base64.b64encode(
+                        hashlib.sha256(login_data.password.encode('utf-8')).digest()
+                    ).decode('utf-8')
+                    
+                    pwd_context = CryptContext(
+                        schemes=["bcrypt"],
+                        deprecated="auto",
+                        bcrypt__ident="2b",
+                        bcrypt__default_rounds=12
+                    )
+                    
+                    if pwd_context.verify(old_password, user.password_hash):
+                        password_valid = True
+                        # 自动迁移到新的哈希方式
+                        logger.info(f"🔄 自动迁移密码 - 用户ID: {user.id}")
+                        user.password_hash = get_password_hash(login_data.password)
+                        self.db.commit()
+                        logger.info(f"✅ 密码迁移成功 - 用户ID: {user.id}")
+                except Exception as e:
+                    logger.warning(f"⚠️  密码兼容性验证失败: {str(e)}")
+            
+            if not password_valid:
                 raise HTTPException(
                     status_code=status.HTTP_200_OK,
                     detail=error_msg

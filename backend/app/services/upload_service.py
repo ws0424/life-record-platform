@@ -274,17 +274,59 @@ class UploadService:
             str: 合并后的文件访问 URL
         """
         try:
+            from io import BytesIO
+            from app.core.config import settings
+            
             # 生成最终文件名
             object_name = UploadService.generate_filename(original_filename, user_id)
             
-            # TODO: 实现分片合并逻辑
-            # 这里需要从 MinIO 下载所有分片，合并后重新上传
-            # 由于 MinIO Python SDK 不直接支持分片合并，需要手动实现
+            # 下载并合并所有分片
+            merged_data = BytesIO()
             
-            logger.info(f"✅ 文件合并成功 - 用户: {user_id}, 文件: {object_name}")
+            for chunk_index in range(total_chunks):
+                chunk_name = f"chunks/{user_id}/{file_id}/chunk_{chunk_index}"
+                
+                try:
+                    # 从 MinIO 下载分片
+                    response = minio_client.client.get_object(
+                        settings.MINIO_BUCKET,
+                        chunk_name
+                    )
+                    
+                    # 写入合并数据
+                    merged_data.write(response.read())
+                    response.close()
+                    response.release_conn()
+                    
+                    logger.info(f"✅ 分片下载成功 - 分片: {chunk_index}/{total_chunks}")
+                    
+                except Exception as e:
+                    logger.error(f"❌ 分片下载失败 - 分片: {chunk_index}, 错误: {str(e)}")
+                    raise
             
-            # 返回文件 URL
-            url = f"{minio_client.client._base_url.geturl()}/utils-web/{object_name}"
+            # 重置指针到开头
+            merged_data.seek(0)
+            file_size = merged_data.getbuffer().nbytes
+            
+            # 上传合并后的文件
+            url = minio_client.upload_file_object(
+                merged_data,
+                object_name,
+                file_size,
+                content_type
+            )
+            
+            # 删除临时分片文件
+            try:
+                for chunk_index in range(total_chunks):
+                    chunk_name = f"chunks/{user_id}/{file_id}/chunk_{chunk_index}"
+                    minio_client.delete_file(chunk_name)
+                logger.info(f"✅ 临时分片已清理 - 文件ID: {file_id}")
+            except Exception as e:
+                logger.warning(f"⚠️  清理临时分片失败: {str(e)}")
+            
+            logger.info(f"✅ 文件合并成功 - 用户: {user_id}, 文件: {object_name}, URL: {url}")
+            
             return url
             
         except Exception as e:

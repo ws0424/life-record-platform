@@ -7,6 +7,8 @@ export interface ContentCreate {
   content: string;
   tags?: string[];
   images?: string[];
+  videos?: string[];
+  video_thumbnails?: string[];
   location?: string;
   extra_data?: Record<string, any>;
   is_public?: boolean;
@@ -18,6 +20,8 @@ export interface ContentUpdate {
   content?: string;
   tags?: string[];
   images?: string[];
+  videos?: string[];
+  video_thumbnails?: string[];
   location?: string;
   extra_data?: Record<string, any>;
   is_public?: boolean;
@@ -38,6 +42,8 @@ export interface Content {
   content: string;
   tags: string[];
   images: string[];
+  videos: string[];
+  video_thumbnails: string[];
   location?: string;
   extra_data?: Record<string, any>;
   is_public: boolean;
@@ -61,6 +67,8 @@ export interface ContentListItem {
   description?: string;
   tags: string[];
   images: string[];
+  videos: string[];
+  video_thumbnails: string[];
   location?: string;
   is_featured: boolean;
   view_count: number;
