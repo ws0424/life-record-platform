@@ -301,6 +301,99 @@ async def toggle_save(
     return service.toggle_save(content_id, str(current_user.id))
 
 
+# ==================== 我的创作相关接口 ====================
+# 注意：这些路由必须放在 /{content_id} 相关路由之前，避免路径冲突
+
+@router.get(
+    "/my/works",
+    response_model=ApiResponse[ContentListResponse],
+    summary="我的作品",
+    description="获取当前用户创建的所有作品"
+)
+async def get_my_works(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    type: Optional[ContentType] = Query(None, description="内容类型"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取我的作品"""
+    service = ContentService(db)
+    return service.list_contents(
+        page=page,
+        page_size=page_size,
+        content_type=type,
+        user_id=str(current_user.id),
+    )
+
+
+@router.get(
+    "/my/views",
+    response_model=ApiResponse[ContentListResponse],
+    summary="浏览记录",
+    description="获取当前用户的浏览记录"
+)
+async def get_my_views(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取浏览记录"""
+    service = ContentService(db)
+    return service.get_user_views(str(current_user.id), page, page_size)
+
+
+@router.get(
+    "/my/likes",
+    response_model=ApiResponse[ContentListResponse],
+    summary="点赞记录",
+    description="获取当前用户点赞的内容"
+)
+async def get_my_likes(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取点赞记录"""
+    service = ContentService(db)
+    return service.get_user_likes(str(current_user.id), page, page_size)
+
+
+@router.get(
+    "/my/comments",
+    response_model=ApiResponse[dict],
+    summary="评论记录",
+    description="获取当前用户的评论记录"
+)
+async def get_my_comments(
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取评论记录"""
+    service = ContentService(db)
+    return service.get_user_comments(str(current_user.id), page, page_size)
+
+
+@router.delete(
+    "/my/views/{content_id}",
+    response_model=MessageResponse,
+    summary="删除浏览记录",
+    description="删除指定的浏览记录"
+)
+async def delete_view_record(
+    content_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """删除浏览记录"""
+    service = ContentService(db)
+    return service.delete_view_record(content_id, str(current_user.id))
+
+
 # ==================== 评论相关接口 ====================
 
 @router.post(
@@ -393,81 +486,7 @@ async def get_comment_replies(
     return service.get_comment_replies(comment_id, page, page_size, user_id)
 
 
-# ==================== 我的创作相关接口 ====================
-
-@router.get(
-    "/my/works",
-    response_model=ApiResponse[ContentListResponse],
-    summary="我的作品",
-    description="获取当前用户创建的所有作品"
-)
-async def get_my_works(
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    type: Optional[ContentType] = Query(None, description="内容类型"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """获取我的作品"""
-    service = ContentService(db)
-    return service.list_contents(
-        page=page,
-        page_size=page_size,
-        content_type=type,
-        user_id=str(current_user.id),
-    )
-
-
-@router.get(
-    "/my/views",
-    response_model=ApiResponse[ContentListResponse],
-    summary="浏览记录",
-    description="获取当前用户的浏览记录"
-)
-async def get_my_views(
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """获取浏览记录"""
-    service = ContentService(db)
-    return service.get_user_views(str(current_user.id), page, page_size)
-
-
-@router.get(
-    "/my/likes",
-    response_model=ApiResponse[ContentListResponse],
-    summary="点赞记录",
-    description="获取当前用户点赞的内容"
-)
-async def get_my_likes(
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """获取点赞记录"""
-    service = ContentService(db)
-    return service.get_user_likes(str(current_user.id), page, page_size)
-
-
-@router.get(
-    "/my/comments",
-    response_model=ApiResponse[dict],
-    summary="评论记录",
-    description="获取当前用户的评论记录"
-)
-async def get_my_comments(
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """获取评论记录"""
-    service = ContentService(db)
-    return service.get_user_comments(str(current_user.id), page, page_size)
-
+# ==================== 内容可见性相关接口 ====================
 
 @router.post(
     "/{content_id}/hide",
@@ -501,18 +520,5 @@ async def show_content(
     return service.toggle_content_visibility(content_id, str(current_user.id), is_public=True)
 
 
-@router.delete(
-    "/my/views/{content_id}",
-    response_model=MessageResponse,
-    summary="删除浏览记录",
-    description="删除指定的浏览记录"
-)
-async def delete_view_record(
-    content_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """删除浏览记录"""
-    service = ContentService(db)
-    return service.delete_view_record(content_id, str(current_user.id))
+
 
