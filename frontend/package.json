@@ -22,6 +22,7 @@
     "react-dom": "^18.2.0",
     "react-lazy-load-image-component": "^1.6.3",
     "swiper": "^12.1.0",
+    "xgplayer": "^3.0.23",
     "zustand": "^4.4.7"
   },
   "devDependencies": {

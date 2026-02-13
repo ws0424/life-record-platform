@@ -1,0 +1,53 @@
+/* 视频播放器容器样式 */
+.videoPlayerContainer {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  margin: 16px 0;
+}
+
+/* 自定义播放器样式 */
+.videoPlayerContainer :global(.xgplayer) {
+  border-radius: 12px;
+}
+
+/* 播放器控制栏样式 */
+.videoPlayerContainer :global(.xgplayer-controls) {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+}
+
+/* 播放按钮样式 */
+.videoPlayerContainer :global(.xgplayer-play) {
+  color: var(--color-primary);
+}
+
+/* 进度条样式 */
+.videoPlayerContainer :global(.xgplayer-progress-played) {
+  background: var(--color-primary);
+}
+
+/* 音量条样式 */
+.videoPlayerContainer :global(.xgplayer-volume-progress) {
+  background: var(--color-primary);
+}
+
+/* 加载动画样式 */
+.videoPlayerContainer :global(.xgplayer-loading) {
+  color: var(--color-primary);
+}
+
+/* 错误提示样式 */
+.videoPlayerContainer :global(.xgplayer-error) {
+  color: #ff4d4f;
+  font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .videoPlayerContainer {
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+}
+

@@ -11,6 +11,8 @@ import { getContent, toggleLike, toggleSave, createComment, getComments } from '
 import type { Content, Comment as CommentType } from '@/lib/api/content';
 import { formatDate, formatDateTime } from '@/lib/utils/date';
 import { ContentCover } from '@/components/ContentCover';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { LazyImage } from '@/components/LazyImage';
 import styles from './page.module.css';
 
 const { TextArea } = Input;
@@ -226,13 +228,39 @@ export default function PostDetailPage() {
           {/* 媒体展示 */}
           {(content.images.length > 0 || content.videos.length > 0) && (
             <div className={styles.mediaWrapper}>
-              <ContentCover
-                images={content.images}
-                videos={content.videos}
-                videoThumbnails={content.video_thumbnails}
-                title={content.title}
-                height={400}
-              />
+              {/* 视频播放器 */}
+              {content.videos.length > 0 && (
+                <div className={styles.videosSection}>
+                  {content.videos.map((videoUrl, index) => (
+                    <VideoPlayer
+                      key={index}
+                      url={videoUrl}
+                      poster={content.video_thumbnails?.[index]}
+                      width="100%"
+                      height="auto"
+                      autoplay={false}
+                      loop={false}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* 图片展示 */}
+              {content.images.length > 0 && (
+                <div className={styles.imagesSection}>
+                  {content.images.map((imageUrl, index) => (
+                    <div key={index} className={styles.imageItem}>
+                      <LazyImage
+                        src={imageUrl}
+                        alt={`${content.title} - 图片 ${index + 1}`}
+                        width="100%"
+                        height="auto"
+                        style={{ borderRadius: '12px' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
