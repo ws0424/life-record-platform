@@ -828,17 +828,29 @@ class ContentService:
             # 构建响应
             items = []
             for comment in comments:
-                comment_data = CommentResponse.from_orm(comment)
-                comment_data.user = UserBrief.from_orm(comment.user) if comment.user else None
+                # 先转换为字典，避免 Pydantic 验证问题
+                comment_dict = {
+                    "id": str(comment.id),
+                    "content_id": str(comment.content_id),
+                    "user_id": str(comment.user_id),
+                    "comment_text": comment.comment_text,
+                    "parent_id": str(comment.parent_id) if comment.parent_id else None,
+                    "like_count": comment.like_count,
+                    "created_at": comment.created_at,
+                    "updated_at": comment.updated_at,
+                    "user": UserBrief.from_orm(comment.user) if comment.user else None,
+                }
                 
                 # 添加内容信息
                 if comment.content:
-                    comment_data.content = {
+                    comment_dict["content"] = {
                         "id": str(comment.content.id),
                         "title": comment.content.title,
                         "type": comment.content.type,
                     }
                 
+                # 使用字典创建 CommentResponse
+                comment_data = CommentResponse(**comment_dict)
                 items.append(comment_data)
             
             total_pages = (total + page_size - 1) // page_size
