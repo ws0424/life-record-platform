@@ -15,6 +15,17 @@ import styles from './page.module.css';
 
 const { Meta } = Card;
 
+// 缓存键
+const CACHE_KEY = 'daily_page_cache';
+const SCROLL_KEY = 'daily_page_scroll';
+
+interface CacheData {
+  contents: ContentListItem[];
+  page: number;
+  hasMore: boolean;
+  timestamp: number;
+}
+
 export default function DailyPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
@@ -28,6 +39,73 @@ export default function DailyPage() {
 
   // 用于检测滚动到底部的 ref
   const observerTarget = useRef<HTMLDivElement>(null);
+  const isRestoringScroll = useRef(false);
+
+  // 从缓存加载数据
+  const loadFromCache = useCallback(() => {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const data: CacheData = JSON.parse(cached);
+        // 缓存有效期 5 分钟
+        const isValid = Date.now() - data.timestamp < 5 * 60 * 1000;
+        
+        if (isValid && data.contents.length > 0) {
+          setContents(data.contents);
+          setPage(data.page);
+          setHasMore(data.hasMore);
+          setLoading(false);
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('加载缓存失败:', error);
+    }
+    return false;
+  }, []);
+
+  // 保存到缓存
+  const saveToCache = useCallback((data: Omit<CacheData, 'timestamp'>) => {
+    try {
+      const cacheData: CacheData = {
+        ...data,
+        timestamp: Date.now(),
+      };
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+    } catch (error) {
+      console.error('保存缓存失败:', error);
+    }
+  }, []);
+
+  // 保存滚动位置
+  const saveScrollPosition = useCallback(() => {
+    try {
+      const scrollY = window.scrollY;
+      sessionStorage.setItem(SCROLL_KEY, scrollY.toString());
+    } catch (error) {
+      console.error('保存滚动位置失败:', error);
+    }
+  }, []);
+
+  // 恢复滚动位置
+  const restoreScrollPosition = useCallback(() => {
+    try {
+      const scrollY = sessionStorage.getItem(SCROLL_KEY);
+      if (scrollY) {
+        isRestoringScroll.current = true;
+        // 使用 setTimeout 确保 DOM 已渲染
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(scrollY, 10));
+          // 恢复完成后清除标记
+          setTimeout(() => {
+            isRestoringScroll.current = false;
+          }, 100);
+        }, 100);
+      }
+    } catch (error) {
+      console.error('恢复滚动位置失败:', error);
+    }
+  }, []);
 
   // 获取日常记录列表
   const fetchDailyList = useCallback(async (pageNum: number, isLoadMore: boolean = false) => {
@@ -44,17 +122,28 @@ export default function DailyPage() {
         page_size: pageSize,
       });
 
+      let newContents: ContentListItem[];
       if (isLoadMore) {
         // 加载更多：追加到现有列表
-        setContents(prev => [...prev, ...response.items]);
+        newContents = [...contents, ...response.items];
+        setContents(newContents);
       } else {
         // 首次加载：替换列表
-        setContents(response.items);
+        newContents = response.items;
+        setContents(newContents);
       }
 
       // 检查是否还有更多数据
       const totalPages = Math.ceil(response.total / pageSize);
-      setHasMore(pageNum < totalPages);
+      const hasMoreData = pageNum < totalPages;
+      setHasMore(hasMoreData);
+
+      // 保存到缓存
+      saveToCache({
+        contents: newContents,
+        page: pageNum,
+        hasMore: hasMoreData,
+      });
 
     } catch (err: any) {
       console.error('获取日常记录失败:', err);
@@ -63,17 +152,55 @@ export default function DailyPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [contents, saveToCache]);
 
   // 首次加载
   useEffect(() => {
-    fetchDailyList(1, false);
-  }, [fetchDailyList]);
+    // 尝试从缓存加载
+    const hasCache = loadFromCache();
+    
+    if (hasCache) {
+      // 有缓存，恢复滚动位置
+      restoreScrollPosition();
+    } else {
+      // 无缓存，加载第一页
+      fetchDailyList(1, false);
+    }
+  }, [loadFromCache, restoreScrollPosition, fetchDailyList]);
+
+  // 监听页面离开，保存滚动位置
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveScrollPosition();
+    };
+
+    // 监听路由变化（点击链接）
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      if (link && link.href.includes('/daily/')) {
+        saveScrollPosition();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('click', handleClick);
+    };
+  }, [saveScrollPosition]);
 
   // 使用 Intersection Observer 监听滚动到底部
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        // 如果正在恢复滚动位置，不触发加载
+        if (isRestoringScroll.current) {
+          return;
+        }
+
         // 当目标元素进入视口且还有更多数据且不在加载中
         if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
           const nextPage = page + 1;
@@ -110,6 +237,16 @@ export default function DailyPage() {
     }
   };
 
+  // 刷新数据（清除缓存）
+  const handleRefresh = () => {
+    sessionStorage.removeItem(CACHE_KEY);
+    sessionStorage.removeItem(SCROLL_KEY);
+    setPage(1);
+    setContents([]);
+    setHasMore(true);
+    fetchDailyList(1, false);
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -121,14 +258,16 @@ export default function DailyPage() {
         >
           <h1 className={styles.title}>日常记录</h1>
           <p className={styles.subtitle}>记录生活的点点滴滴</p>
-          <Button
-            type="primary"
-            size="large"
-            icon={<PlusOutlined />}
-            onClick={handleCreateClick}
-          >
-            {isAuthenticated ? '创建记录' : '登录后创建'}
-          </Button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              onClick={handleCreateClick}
+            >
+              {isAuthenticated ? '创建记录' : '登录后创建'}
+            </Button>
+          </div>
         </motion.div>
 
         {/* 首次加载状态 */}
@@ -144,7 +283,7 @@ export default function DailyPage() {
             description={error}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
-            <Button type="primary" onClick={() => fetchDailyList(1, false)}>
+            <Button type="primary" onClick={handleRefresh}>
               重试
             </Button>
           </Empty>
@@ -175,7 +314,7 @@ export default function DailyPage() {
                   key={content.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  transition={{ duration: 0.5, delay: Math.min(index * 0.05, 1) }}
                 >
                   <Link href={`/daily/${content.id}`} style={{ textDecoration: 'none' }}>
                     <Card
