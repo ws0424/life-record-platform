@@ -181,6 +181,7 @@ export default function DailyPage() {
         restoreScrollPosition();
       } else {
         // 无缓存，加载第一页
+        hasRestoredScroll.current = true; // 标记为已恢复
         fetchDailyList(1, false);
       }
       
@@ -192,6 +193,7 @@ export default function DailyPage() {
       sessionStorage.removeItem(SCROLL_KEY);
       setPage(1);
       setHasMore(true);
+      hasRestoredScroll.current = true; // 标记为已恢复（无需恢复）
       fetchDailyList(1, false);
       window.scrollTo(0, 0);
     }
