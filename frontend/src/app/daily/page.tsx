@@ -18,6 +18,7 @@ const { Meta } = Card;
 // 缓存键
 const CACHE_KEY = 'daily_page_cache';
 const SCROLL_KEY = 'daily_page_scroll';
+const FROM_DETAIL_KEY = 'daily_from_detail'; // 标记是否从详情页返回
 
 interface CacheData {
   contents: ContentListItem[];
@@ -168,15 +169,31 @@ export default function DailyPage() {
 
   // 首次加载
   useEffect(() => {
-    // 尝试从缓存加载
-    const hasCache = loadFromCache();
+    // 检查是否从详情页返回
+    const fromDetail = sessionStorage.getItem(FROM_DETAIL_KEY);
     
-    if (hasCache) {
-      // 有缓存，恢复滚动位置
-      restoreScrollPosition();
+    if (fromDetail === 'true') {
+      // 从详情页返回：尝试从缓存加载
+      const hasCache = loadFromCache();
+      
+      if (hasCache) {
+        // 有缓存，恢复滚动位置
+        restoreScrollPosition();
+      } else {
+        // 无缓存，加载第一页
+        fetchDailyList(1, false);
+      }
+      
+      // 清除标记
+      sessionStorage.removeItem(FROM_DETAIL_KEY);
     } else {
-      // 无缓存，加载第一页
+      // 直接访问或刷新：清除缓存，从第一页开始
+      sessionStorage.removeItem(CACHE_KEY);
+      sessionStorage.removeItem(SCROLL_KEY);
+      setPage(1);
+      setHasMore(true);
       fetchDailyList(1, false);
+      window.scrollTo(0, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -192,6 +209,9 @@ export default function DailyPage() {
       const target = e.target as HTMLElement;
       const link = target.closest('a');
       if (link && link.href.includes('/daily/')) {
+        // 设置标记：从详情页返回
+        sessionStorage.setItem(FROM_DETAIL_KEY, 'true');
+        // 保存滚动位置
         saveScrollPosition();
       }
     };
