@@ -229,20 +229,23 @@ export default function DailyPage() {
 
   // 使用 Intersection Observer 监听滚动到底部
   useEffect(() => {
+    // 等待初始加载完成
+    if (loading) {
+      return;
+    }
+
+    // 如果没有内容，不创建 Observer
+    if (contents.length === 0) {
+      return;
+    }
+
     // 如果还没有恢复滚动，延迟创建 Observer
-    if (!hasRestoredScroll.current && contents.length > 0) {
+    if (!hasRestoredScroll.current) {
       const timer = setTimeout(() => {
         hasRestoredScroll.current = true;
       }, 1000);
       return () => clearTimeout(timer);
     }
-
-    // 使用 ref 来存储最新的状态，避免闭包问题
-    const stateRef = {
-      hasMore,
-      loadingMore,
-      loading,
-    };
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -251,56 +254,61 @@ export default function DailyPage() {
           return;
         }
 
-        // 当目标元素进入视口且还有更多数据且不在加载中
-        if (entries[0].isIntersecting && stateRef.hasMore && !stateRef.loadingMore && !stateRef.loading) {
-          // 立即更新 ref 防止重复触发
-          stateRef.loadingMore = true;
-          setLoadingMore(true);
-          
-          setPage(prevPage => {
-            const nextPage = prevPage + 1;
-            
-            // 异步加载数据
-            getDailyList({
-              page: nextPage,
-              page_size: pageSize,
-            }).then(response => {
-              setContents(prevContents => {
-                const newContents = [...prevContents, ...response.items];
-                const totalPages = Math.ceil(response.total / pageSize);
-                const hasMoreData = nextPage < totalPages;
+        // 当目标元素进入视口时
+        if (entries[0].isIntersecting) {
+          // 使用 setTimeout 避免在 Observer 回调中直接更新状态
+          setTimeout(() => {
+            setLoadingMore(prev => {
+              // 如果已经在加载，不重复触发
+              if (prev) return prev;
+              
+              setHasMore(currentHasMore => {
+                // 如果没有更多数据，不触发加载
+                if (!currentHasMore) return currentHasMore;
                 
-                // 更新 ref
-                stateRef.hasMore = hasMoreData;
-                stateRef.loadingMore = false;
-                
-                // 更新状态
-                setHasMore(hasMoreData);
-                setLoadingMore(false);
-                
-                // 保存到缓存
-                try {
-                  const cacheData: CacheData = {
-                    contents: newContents,
+                setPage(prevPage => {
+                  const nextPage = prevPage + 1;
+                  
+                  // 异步加载数据
+                  getDailyList({
                     page: nextPage,
-                    hasMore: hasMoreData,
-                    timestamp: Date.now(),
-                  };
-                  sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-                } catch (error) {
-                  console.error('保存缓存失败:', error);
-                }
+                    page_size: pageSize,
+                  }).then(response => {
+                    setContents(prevContents => [...prevContents, ...response.items]);
+                    
+                    const totalPages = Math.ceil(response.total / pageSize);
+                    const hasMoreData = nextPage < totalPages;
+                    setHasMore(hasMoreData);
+                    
+                    // 保存到缓存
+                    try {
+                      const newContents = [...contents, ...response.items];
+                      const cacheData: CacheData = {
+                        contents: newContents,
+                        page: nextPage,
+                        hasMore: hasMoreData,
+                        timestamp: Date.now(),
+                      };
+                      sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                    } catch (error) {
+                      console.error('保存缓存失败:', error);
+                    }
+                    
+                    setLoadingMore(false);
+                  }).catch(err => {
+                    console.error('获取日常记录失败:', err);
+                    setLoadingMore(false);
+                  });
+                  
+                  return nextPage;
+                });
                 
-                return newContents;
+                return currentHasMore;
               });
-            }).catch(err => {
-              console.error('获取日常记录失败:', err);
-              stateRef.loadingMore = false;
-              setLoadingMore(false);
+              
+              return true; // 开始加载
             });
-            
-            return nextPage;
-          });
+          }, 0);
         }
       },
       {
@@ -311,7 +319,7 @@ export default function DailyPage() {
     );
 
     const currentTarget = observerTarget.current;
-    if (currentTarget && hasRestoredScroll.current) {
+    if (currentTarget) {
       observer.observe(currentTarget);
     }
 
@@ -320,9 +328,9 @@ export default function DailyPage() {
         observer.unobserve(currentTarget);
       }
     };
-    // 只在初始化和内容长度变化时重建 Observer
+    // 只在初始加载完成后创建一次
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contents.length]);
+  }, [loading]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
