@@ -73,6 +73,7 @@ export interface ContentListItem {
   videos: string[];
   video_thumbnails: string[];
   location?: string;
+  is_public: boolean;
   is_featured: boolean;
   view_count: number;
   like_count: number;

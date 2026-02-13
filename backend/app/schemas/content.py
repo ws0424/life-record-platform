@@ -111,6 +111,7 @@ class ContentListItem(BaseModel):
     videos: List[str]
     video_thumbnails: List[str]
     location: Optional[str]
+    is_public: bool
     is_featured: bool
     view_count: int
     like_count: int
