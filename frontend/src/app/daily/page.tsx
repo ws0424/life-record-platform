@@ -42,6 +42,8 @@ export default function DailyPage() {
   const observerTarget = useRef<HTMLDivElement>(null);
   const isRestoringScroll = useRef(false);
   const hasRestoredScroll = useRef(false);
+  const hasInitialized = useRef(false); // 防止重复初始化
+  const isLoadingMore = useRef(false); // 防止重复加载
 
   // 从缓存加载数据
   const loadFromCache = useCallback(() => {
@@ -169,6 +171,12 @@ export default function DailyPage() {
 
   // 首次加载
   useEffect(() => {
+    // 防止 React Strict Mode 导致的重复执行
+    if (hasInitialized.current) {
+      return;
+    }
+    hasInitialized.current = true;
+    
     // 检查是否从详情页返回
     const fromDetail = sessionStorage.getItem(FROM_DETAIL_KEY);
     
@@ -247,9 +255,6 @@ export default function DailyPage() {
       return () => clearTimeout(timer);
     }
 
-    // 使用 ref 存储加载状态，避免闭包问题
-    const loadingRef = { current: false };
-
     const observer = new IntersectionObserver(
       (entries) => {
         // 如果正在恢复滚动位置，不触发加载
@@ -257,9 +262,14 @@ export default function DailyPage() {
           return;
         }
 
+        // 如果正在加载，不重复触发
+        if (isLoadingMore.current) {
+          return;
+        }
+
         // 当目标元素进入视口时
-        if (entries[0].isIntersecting && !loadingRef.current) {
-          loadingRef.current = true;
+        if (entries[0].isIntersecting && !loadingMore && hasMore) {
+          isLoadingMore.current = true;
           setLoadingMore(true);
           
           setPage(prevPage => {
@@ -296,11 +306,11 @@ export default function DailyPage() {
               // 更新其他状态
               setHasMore(hasMoreData);
               setLoadingMore(false);
-              loadingRef.current = false;
+              isLoadingMore.current = false;
             }).catch(err => {
               console.error('获取日常记录失败:', err);
-              loadingRef.current = false;
               setLoadingMore(false);
+              isLoadingMore.current = false;
             });
             
             return nextPage;
