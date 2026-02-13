@@ -1,304 +1,115 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Spin, message, Avatar, Button, Input, Empty } from 'antd';
-import { HeartOutlined, HeartFilled, StarOutlined, StarFilled, ShareAltOutlined, EyeOutlined, MessageOutlined, UserOutlined, LikeOutlined, LikeFilled } from '@ant-design/icons';
+import { motion } from 'framer-motion';
+import { Button, Spin, message, Avatar, Tag, Divider } from 'antd';
+import { 
+  ArrowLeftOutlined, 
+  HeartOutlined, 
+  HeartFilled,
+  MessageOutlined,
+  EyeOutlined,
+  StarOutlined,
+  StarFilled,
+  EnvironmentOutlined,
+  CalendarOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
-import { getContent, toggleLike, toggleSave, createComment, getComments, toggleCommentLike, getCommentReplies } from '@/lib/api/content';
-import type { Content, Comment as CommentType } from '@/lib/api/content';
-import { formatDate, formatDateTime } from '@/lib/utils/date';
-import { VideoPlayer } from '@/components/VideoPlayer';
-import { LazyImage } from '@/components/LazyImage';
+import { getContent, toggleLike, toggleSave } from '@/lib/api/content';
+import type { ContentDetail } from '@/lib/api/content';
+import { formatDate } from '@/lib/utils/date';
 import styles from './page.module.css';
 
-const { TextArea } = Input;
-
-export default function PostDetailPage() {
+export default function DailyDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const contentId = params.id as string;
-  
-  const [content, setContent] = useState<Content | null>(null);
+  const [content, setContent] = useState<ContentDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState<CommentType[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentText, setCommentText] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
-  const [loadingReplies, setLoadingReplies] = useState<Set<string>>(new Set());
+  const [liking, setLiking] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // 获取内容详情
+  const contentId = params.id as string;
+
   useEffect(() => {
-    fetchContent();
-    fetchComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadContent();
   }, [contentId]);
 
-  const fetchContent = async () => {
+  const loadContent = async () => {
     try {
       setLoading(true);
-      const response = await getContent(contentId);
-      setContent(response);
+      const data = await getContent(contentId);
+      setContent(data);
     } catch (error: any) {
-      console.error('获取内容失败:', error);
-      message.error(error.message || '获取内容失败');
+      console.error('加载失败:', error);
+      message.error(error.message || '加载失败');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchComments = async () => {
-    try {
-      setCommentsLoading(true);
-      const response = await getComments(contentId, { page: 1, page_size: 50 });
-      setComments(response.items);
-    } catch (error: any) {
-      console.error('获取评论失败:', error);
-    } finally {
-      setCommentsLoading(false);
     }
   };
 
   const handleLike = async () => {
     if (!isAuthenticated) {
       message.warning('请先登录');
-      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
       return;
     }
 
     try {
-      const response = await toggleLike(contentId);
+      setLiking(true);
+      const result = await toggleLike(contentId);
       setContent(prev => prev ? {
         ...prev,
-        is_liked: response.is_liked,
-        like_count: response.like_count,
+        is_liked: result.is_liked,
+        like_count: result.like_count,
       } : null);
-      message.success(response.is_liked ? '点赞成功' : '取消点赞');
     } catch (error: any) {
-      console.error('点赞失败:', error);
       message.error(error.message || '操作失败');
+    } finally {
+      setLiking(false);
     }
   };
 
   const handleSave = async () => {
     if (!isAuthenticated) {
       message.warning('请先登录');
-      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
       return;
     }
 
     try {
-      const response = await toggleSave(contentId);
+      setSaving(true);
+      const result = await toggleSave(contentId);
       setContent(prev => prev ? {
         ...prev,
-        is_saved: response.is_saved,
-        save_count: response.save_count,
+        is_saved: result.is_saved,
+        save_count: result.save_count,
       } : null);
-      message.success(response.is_saved ? '收藏成功' : '取消收藏');
+      message.success(result.is_saved ? '已收藏' : '已取消收藏');
     } catch (error: any) {
-      console.error('收藏失败:', error);
       message.error(error.message || '操作失败');
-    }
-  };
-
-  const handleShare = () => {
-    const url = window.location.href;
-    if (navigator.share) {
-      navigator.share({
-        title: content?.title,
-        text: content?.description,
-        url: url,
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(url);
-      message.success('链接已复制到剪贴板');
-    }
-  };
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isAuthenticated) {
-      message.warning('请先登录');
-      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
-      return;
-    }
-
-    if (!commentText.trim()) {
-      message.warning('请输入评论内容');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await createComment(contentId, { comment_text: commentText });
-      message.success('评论成功');
-      setCommentText('');
-      fetchComments();
-      // 更新评论数
-      setContent(prev => prev ? {
-        ...prev,
-        comment_count: prev.comment_count + 1,
-      } : null);
-    } catch (error: any) {
-      console.error('评论失败:', error);
-      message.error(error.message || '评论失败');
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
-  };
-
-  // 评论点赞
-  const handleCommentLike = async (commentId: string) => {
-    if (!isAuthenticated) {
-      message.warning('请先登录');
-      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
-      return;
-    }
-
-    try {
-      const response = await toggleCommentLike(commentId);
-      
-      // 更新评论列表中的点赞状态
-      setComments(prev => prev.map(comment => {
-        if (comment.id === commentId) {
-          return {
-            ...comment,
-            is_liked: response.is_liked,
-            like_count: response.like_count,
-          };
-        }
-        // 更新回复中的点赞状态
-        if (comment.replies) {
-          return {
-            ...comment,
-            replies: comment.replies.map(reply => 
-              reply.id === commentId 
-                ? { ...reply, is_liked: response.is_liked, like_count: response.like_count }
-                : reply
-            ),
-          };
-        }
-        return comment;
-      }));
-    } catch (error: any) {
-      console.error('点赞失败:', error);
-      message.error(error.message || '操作失败');
-    }
-  };
-
-  // 回复评论
-  const handleReplySubmit = async (parentId: string) => {
-    if (!isAuthenticated) {
-      message.warning('请先登录');
-      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
-      return;
-    }
-
-    if (!replyText.trim()) {
-      message.warning('请输入回复内容');
-      return;
-    }
-
-    try {
-      await createComment(contentId, { comment_text: replyText, parent_id: parentId });
-      message.success('回复成功');
-      setReplyText('');
-      setReplyingTo(null);
-      fetchComments();
-      // 更新评论数
-      setContent(prev => prev ? {
-        ...prev,
-        comment_count: prev.comment_count + 1,
-      } : null);
-    } catch (error: any) {
-      console.error('回复失败:', error);
-      message.error(error.message || '回复失败');
-    }
-  };
-
-  // 加载更多回复
-  const handleLoadMoreReplies = async (commentId: string) => {
-    if (loadingReplies.has(commentId)) return;
-
-    try {
-      setLoadingReplies(prev => new Set(prev).add(commentId));
-      
-      const comment = comments.find(c => c.id === commentId);
-      const currentRepliesCount = comment?.replies?.length || 0;
-      const page = Math.floor(currentRepliesCount / 10) + 1;
-      
-      const response = await getCommentReplies(commentId, { page, page_size: 10 });
-      
-      // 更新评论列表，追加新的回复
-      setComments(prev => prev.map(c => {
-        if (c.id === commentId) {
-          return {
-            ...c,
-            replies: [...(c.replies || []), ...response.items],
-          };
-        }
-        return c;
-      }));
-      
-      // 如果没有更多回复了，标记为已展开
-      if (response.items.length === 0 || response.page >= response.total_pages) {
-        setExpandedComments(prev => new Set(prev).add(commentId));
-      }
-    } catch (error: any) {
-      console.error('加载回复失败:', error);
-      message.error(error.message || '加载回复失败');
-    } finally {
-      setLoadingReplies(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(commentId);
-        return newSet;
-      });
-    }
-  };
-
-  // 折叠回复
-  const handleCollapseReplies = (commentId: string) => {
-    setComments(prev => prev.map(c => {
-      if (c.id === commentId) {
-        return {
-          ...c,
-          replies: c.replies?.slice(0, 3) || [],
-        };
-      }
-      return c;
-    }));
-    setExpandedComments(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(commentId);
-      return newSet;
-    });
   };
 
   if (loading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <div style={{ textAlign: 'center', padding: '100px 0' }}>
-            <Spin size="large" tip="加载中..." />
-          </div>
-        </div>
+      <div className={styles.loading}>
+        <Spin size="large" />
+        <div style={{ marginTop: 16, color: 'var(--text-secondary)' }}>加载中...</div>
       </div>
     );
   }
 
   if (!content) {
     return (
-      <div className={styles.page}>
-        <div className={styles.container}>
-          <Empty description="内容不存在" />
-        </div>
+      <div className={styles.loading}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>😕</div>
+        <div style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>内容不存在</div>
+        <Button type="primary" onClick={() => router.push('/daily')}>
+          返回列表
+        </Button>
       </div>
     );
   }
@@ -306,321 +117,135 @@ export default function PostDetailPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <motion.article
-          className={styles.article}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        {/* 返回按钮 */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ marginBottom: 24 }}
         >
-          {/* 返回按钮 */}
-          <button className={styles.backBtn} onClick={() => router.back()}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => router.back()}
+          >
             返回
-          </button>
+          </Button>
+        </motion.div>
 
-          {/* 文章头部 */}
-          <header className={styles.header}>
-            <h1 className={styles.title}>{content.title}</h1>
-            
-            <div className={styles.meta}>
-              <div className={styles.author}>
-                <Avatar 
-                  size="large" 
-                  icon={<UserOutlined />}
-                  style={{
+        {/* 内容区域 */}
+        <motion.div
+          className={styles.content}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* 标题 */}
+          <h1 className={styles.title}>{content.title}</h1>
+
+          {/* 元信息 */}
+          <div className={styles.meta}>
+            <div className={styles.author}>
+              {content.user ? (
+                <>
+                  <Avatar style={{
                     background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-                  }}
-                >
-                  {content.user?.username.charAt(0).toUpperCase()}
-                </Avatar>
-                <div className={styles.authorInfo}>
-                  <span className={styles.authorName}>{content.user?.username || '匿名用户'}</span>
-                  <span className={styles.date}>{formatDate(content.created_at)}</span>
-                </div>
-              </div>
-
-              <div className={styles.stats}>
-                <span>
-                  <EyeOutlined />
-                  {content.view_count} 浏览
-                </span>
-                <span>
-                  <MessageOutlined />
-                  {content.comment_count} 评论
-                </span>
-              </div>
+                  }}>
+                    {content.user.username.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <span>{content.user.username}</span>
+                </>
+              ) : (
+                <Avatar icon={<UserOutlined />} />
+              )}
             </div>
-          </header>
+            <div className={styles.info}>
+              <span>
+                <CalendarOutlined /> {formatDate(content.created_at)}
+              </span>
+              <span>
+                <EyeOutlined /> {content.view_count} 浏览
+              </span>
+            </div>
+          </div>
 
-          {/* 媒体展示 */}
-          {(content.images.length > 0 || content.videos.length > 0) && (
-            <div className={styles.mediaWrapper}>
-              {/* 视频播放器 */}
-              {content.videos.length > 0 && (
-                <div className={styles.videosSection}>
-                  {content.videos.map((videoUrl, index) => (
-                    <VideoPlayer
-                      key={index}
-                      url={videoUrl}
-                      poster={content.video_thumbnails?.[index]}
-                      width="100%"
-                      height="auto"
-                      autoplay={false}
-                      loop={false}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* 图片展示 */}
-              {content.images.length > 0 && (
-                <div className={styles.imagesSection}>
-                  {content.images.map((imageUrl, index) => (
-                    <div key={index} className={styles.imageItem}>
-                      <LazyImage
-                        src={imageUrl}
-                        alt={`${content.title} - 图片 ${index + 1}`}
-                        width="100%"
-                        height="auto"
-                        style={{ borderRadius: '12px' }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* 位置 */}
+          {content.location && (
+            <div className={styles.location}>
+              <EnvironmentOutlined />
+              <span>{content.location}</span>
             </div>
           )}
-
-          {/* 文章内容 */}
-          <div className={styles.content}>
-            {content.content.split('\n').map((paragraph, index) => (
-              paragraph.trim() && <p key={index}>{paragraph}</p>
-            ))}
-          </div>
 
           {/* 标签 */}
           {content.tags && content.tags.length > 0 && (
             <div className={styles.tags}>
-              {content.tags.map((tag) => (
-                <Link key={tag} href={`/explore?tag=${tag}`} className={styles.tag}>
-                  #{tag}
-                </Link>
+              {content.tags.map(tag => (
+                <Tag key={tag} color="blue">#{tag}</Tag>
               ))}
             </div>
           )}
 
-          {/* 操作按钮 */}
+          <Divider />
+
+          {/* 图片 */}
+          {content.images && content.images.length > 0 && (
+            <div className={styles.images}>
+              {content.images.map((image, index) => (
+                <img
+                  key={index}
+                  src={image}
+                  alt={`${content.title} - ${index + 1}`}
+                  className={styles.image}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 视频 */}
+          {content.videos && content.videos.length > 0 && (
+            <div className={styles.videos}>
+              {content.videos.map((video, index) => (
+                <video
+                  key={index}
+                  src={video}
+                  controls
+                  className={styles.video}
+                  poster={content.video_thumbnails?.[index]}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* 正文 */}
+          <div className={styles.body}>
+            {content.content}
+          </div>
+
+          <Divider />
+
+          {/* 操作栏 */}
           <div className={styles.actions}>
             <Button
               type={content.is_liked ? 'primary' : 'default'}
               icon={content.is_liked ? <HeartFilled /> : <HeartOutlined />}
+              loading={liking}
               onClick={handleLike}
-              size="large"
             >
-              {content.like_count}
+              {content.is_liked ? '已点赞' : '点赞'} ({content.like_count})
             </Button>
-
             <Button
               type={content.is_saved ? 'primary' : 'default'}
               icon={content.is_saved ? <StarFilled /> : <StarOutlined />}
+              loading={saving}
               onClick={handleSave}
-              size="large"
             >
-              {content.is_saved ? '已收藏' : '收藏'}
+              {content.is_saved ? '已收藏' : '收藏'} ({content.save_count})
             </Button>
-
-            <Button
-              icon={<ShareAltOutlined />}
-              onClick={handleShare}
-              size="large"
-            >
-              分享
+            <Button icon={<MessageOutlined />}>
+              评论 ({content.comment_count})
             </Button>
           </div>
-        </motion.article>
-
-        {/* 评论区 */}
-        <motion.section
-          className={styles.commentsSection}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <h2 className={styles.commentsTitle}>评论 ({content.comment_count})</h2>
-
-          {/* 评论表单 */}
-          <form className={styles.commentForm} onSubmit={handleCommentSubmit}>
-            <TextArea
-              placeholder="写下你的评论..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              rows={3}
-              maxLength={500}
-              showCount
-            />
-            <Button 
-              type="primary" 
-              htmlType="submit" 
-              loading={submitting}
-              disabled={!commentText.trim()}
-              style={{ marginTop: 12 }}
-            >
-              发表评论
-            </Button>
-          </form>
-
-          {/* 评论列表 */}
-          {commentsLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <Spin tip="加载评论中..." />
-            </div>
-          ) : comments.length === 0 ? (
-            <Empty description="暂无评论" style={{ padding: '40px 0' }} />
-          ) : (
-            <div className={styles.commentsList}>
-              {comments.map((comment, index) => (
-                <motion.div
-                  key={comment.id}
-                  className={styles.commentItem}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Avatar 
-                    icon={<UserOutlined />}
-                    style={{
-                      background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-                    }}
-                  >
-                    {comment.user?.username.charAt(0).toUpperCase()}
-                  </Avatar>
-                  <div className={styles.commentContent}>
-                    <div className={styles.commentHeader}>
-                      <span className={styles.commentAuthor}>{comment.user?.username || '匿名用户'}</span>
-                      <span className={styles.commentDate}>{formatDateTime(comment.created_at)}</span>
-                    </div>
-                    <p className={styles.commentText}>{comment.comment_text}</p>
-                    
-                    {/* 评论操作 */}
-                    <div className={styles.commentActions}>
-                      <Button
-                        type="text"
-                        size="small"
-                        icon={comment.is_liked ? <LikeFilled /> : <LikeOutlined />}
-                        onClick={() => handleCommentLike(comment.id)}
-                      >
-                        {comment.like_count > 0 && comment.like_count}
-                      </Button>
-                      <Button
-                        type="text"
-                        size="small"
-                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                      >
-                        回复
-                      </Button>
-                    </div>
-
-                    {/* 回复表单 */}
-                    {replyingTo === comment.id && (
-                      <div className={styles.replyForm}>
-                        <TextArea
-                          placeholder={`回复 @${comment.user?.username}...`}
-                          value={replyText}
-                          onChange={(e) => setReplyText(e.target.value)}
-                          rows={2}
-                          maxLength={500}
-                        />
-                        <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                          <Button 
-                            type="primary" 
-                            size="small"
-                            onClick={() => handleReplySubmit(comment.id)}
-                            disabled={!replyText.trim()}
-                          >
-                            发送
-                          </Button>
-                          <Button 
-                            size="small"
-                            onClick={() => {
-                              setReplyingTo(null);
-                              setReplyText('');
-                            }}
-                          >
-                            取消
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* 回复列表 */}
-                    {comment.replies && comment.replies.length > 0 && (
-                      <div className={styles.replies}>
-                        {comment.replies.map((reply) => (
-                          <div key={reply.id} className={styles.replyItem}>
-                            <Avatar 
-                              size="small"
-                              icon={<UserOutlined />}
-                              style={{
-                                background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-                              }}
-                            >
-                              {reply.user?.username.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <div className={styles.replyContent}>
-                              <div className={styles.replyHeader}>
-                                <span className={styles.replyAuthor}>{reply.user?.username || '匿名用户'}</span>
-                                <span className={styles.replyDate}>{formatDateTime(reply.created_at)}</span>
-                              </div>
-                              <span className={styles.replyText}>{reply.comment_text}</span>
-                              <div className={styles.replyActions}>
-                                <Button
-                                  type="text"
-                                  size="small"
-                                  icon={reply.is_liked ? <LikeFilled /> : <LikeOutlined />}
-                                  onClick={() => handleCommentLike(reply.id)}
-                                >
-                                  {reply.like_count > 0 && reply.like_count}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {/* 加载更多回复按钮 */}
-                        {comment.reply_count && comment.reply_count > (comment.replies?.length || 0) && (
-                          <Button
-                            type="link"
-                            size="small"
-                            loading={loadingReplies.has(comment.id)}
-                            onClick={() => handleLoadMoreReplies(comment.id)}
-                            className={styles.loadMoreBtn}
-                          >
-                            查看更多回复 ({comment.reply_count - (comment.replies?.length || 0)} 条)
-                          </Button>
-                        )}
-                        
-                        {/* 折叠回复按钮 */}
-                        {expandedComments.has(comment.id) && comment.replies.length > 3 && (
-                          <Button
-                            type="link"
-                            size="small"
-                            onClick={() => handleCollapseReplies(comment.id)}
-                            className={styles.loadMoreBtn}
-                          >
-                            收起回复
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.section>
+        </motion.div>
       </div>
     </div>
   );

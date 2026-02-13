@@ -59,6 +59,9 @@ export interface Content {
   is_saved?: boolean;
 }
 
+// 内容详情类型别名
+export type ContentDetail = Content;
+
 export interface ContentListItem {
   id: string;
   user_id: string;
