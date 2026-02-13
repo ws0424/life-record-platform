@@ -132,3 +132,21 @@ class CommentLike(Base):
     def __repr__(self):
         return f"<CommentLike comment_id={self.comment_id} user_id={self.user_id}>"
 
+
+class ContentView(Base):
+    """内容浏览记录"""
+    __tablename__ = "content_views"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content_id = Column(UUID(as_uuid=True), ForeignKey("contents.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # 最后浏览时间
+    
+    # 关系
+    content = relationship("Content")
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<ContentView content_id={self.content_id} user_id={self.user_id}>"
+

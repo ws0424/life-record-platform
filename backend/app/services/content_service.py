@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 import logging
 
-from app.models.content import Content, ContentType, ContentLike, ContentSave, Comment, CommentLike
+from app.models.content import Content, ContentType, ContentLike, ContentSave, Comment, CommentLike, ContentView
 from app.models.user import User
 from app.schemas.content import (
     ContentCreate, ContentUpdate, ContentResponse, ContentListResponse,
@@ -88,6 +88,21 @@ class ContentService:
             
             # 增加浏览次数
             content.view_count += 1
+            
+            # 记录浏览历史（如果用户已登录）
+            if user_id:
+                existing_view = self.db.query(ContentView).filter(
+                    and_(ContentView.content_id == content_id, ContentView.user_id == user_id)
+                ).first()
+                
+                if existing_view:
+                    # 更新浏览时间
+                    existing_view.updated_at = func.now()
+                else:
+                    # 创建新的浏览记录
+                    new_view = ContentView(content_id=content_id, user_id=user_id)
+                    self.db.add(new_view)
+            
             self.db.commit()
             
             # 构建响应
@@ -685,5 +700,236 @@ class ContentService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"获取评论回复失败: {str(e)}"
+            )
+    
+    def get_user_views(self, user_id: str, page: int = 1, page_size: int = 20) -> ApiResponse[ContentListResponse]:
+        """获取用户的浏览记录"""
+        try:
+            logger.info(f"📋 获取浏览记录 - 用户ID: {user_id}, 页码: {page}")
+            
+            # 查询浏览记录，按最后浏览时间倒序
+            query = self.db.query(ContentView).filter(
+                ContentView.user_id == user_id
+            ).order_by(desc(ContentView.updated_at))
+            
+            total = query.count()
+            offset = (page - 1) * page_size
+            views = query.offset(offset).limit(page_size).all()
+            
+            # 获取内容详情
+            content_ids = [str(view.content_id) for view in views]
+            contents = self.db.query(Content).options(
+                joinedload(Content.user)
+            ).filter(Content.id.in_(content_ids)).all()
+            
+            # 按浏览时间排序
+            content_dict = {str(c.id): c for c in contents}
+            sorted_contents = [content_dict[cid] for cid in content_ids if cid in content_dict]
+            
+            # 构建响应
+            items = []
+            for content in sorted_contents:
+                item = ContentListItem.from_orm(content)
+                item.user = UserBrief.from_orm(content.user) if content.user else None
+                items.append(item)
+            
+            total_pages = (total + page_size - 1) // page_size
+            
+            logger.info(f"✅ 获取浏览记录成功 - 总数: {total}")
+            
+            return ApiResponse(
+                code=200,
+                data=ContentListResponse(
+                    items=items,
+                    total=total,
+                    page=page,
+                    page_size=page_size,
+                    total_pages=total_pages,
+                ),
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 获取浏览记录失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"获取浏览记录失败: {str(e)}"
+            )
+    
+    def get_user_likes(self, user_id: str, page: int = 1, page_size: int = 20) -> ApiResponse[ContentListResponse]:
+        """获取用户点赞的内容"""
+        try:
+            logger.info(f"📋 获取点赞记录 - 用户ID: {user_id}, 页码: {page}")
+            
+            # 查询点赞记录
+            query = self.db.query(ContentLike).filter(
+                ContentLike.user_id == user_id
+            ).order_by(desc(ContentLike.created_at))
+            
+            total = query.count()
+            offset = (page - 1) * page_size
+            likes = query.offset(offset).limit(page_size).all()
+            
+            # 获取内容详情
+            content_ids = [str(like.content_id) for like in likes]
+            contents = self.db.query(Content).options(
+                joinedload(Content.user)
+            ).filter(Content.id.in_(content_ids)).all()
+            
+            # 按点赞时间排序
+            content_dict = {str(c.id): c for c in contents}
+            sorted_contents = [content_dict[cid] for cid in content_ids if cid in content_dict]
+            
+            # 构建响应
+            items = []
+            for content in sorted_contents:
+                item = ContentListItem.from_orm(content)
+                item.user = UserBrief.from_orm(content.user) if content.user else None
+                items.append(item)
+            
+            total_pages = (total + page_size - 1) // page_size
+            
+            logger.info(f"✅ 获取点赞记录成功 - 总数: {total}")
+            
+            return ApiResponse(
+                code=200,
+                data=ContentListResponse(
+                    items=items,
+                    total=total,
+                    page=page,
+                    page_size=page_size,
+                    total_pages=total_pages,
+                ),
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 获取点赞记录失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"获取点赞记录失败: {str(e)}"
+            )
+    
+    def get_user_comments(self, user_id: str, page: int = 1, page_size: int = 20) -> ApiResponse[dict]:
+        """获取用户的评论记录"""
+        try:
+            logger.info(f"📋 获取评论记录 - 用户ID: {user_id}, 页码: {page}")
+            
+            # 查询评论记录
+            query = self.db.query(Comment).options(
+                joinedload(Comment.content),
+                joinedload(Comment.user)
+            ).filter(Comment.user_id == user_id).order_by(desc(Comment.created_at))
+            
+            total = query.count()
+            offset = (page - 1) * page_size
+            comments = query.offset(offset).limit(page_size).all()
+            
+            # 构建响应
+            items = []
+            for comment in comments:
+                comment_data = CommentResponse.from_orm(comment)
+                comment_data.user = UserBrief.from_orm(comment.user) if comment.user else None
+                
+                # 添加内容信息
+                if comment.content:
+                    comment_data.content = {
+                        "id": str(comment.content.id),
+                        "title": comment.content.title,
+                        "type": comment.content.type,
+                    }
+                
+                items.append(comment_data)
+            
+            total_pages = (total + page_size - 1) // page_size
+            
+            logger.info(f"✅ 获取评论记录成功 - 总数: {total}")
+            
+            return ApiResponse(
+                code=200,
+                data={
+                    "items": items,
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": total_pages,
+                },
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 获取评论记录失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"获取评论记录失败: {str(e)}"
+            )
+    
+    def toggle_content_visibility(self, content_id: str, user_id: str, is_public: bool) -> ApiResponse[None]:
+        """切换内容可见性"""
+        try:
+            action = "公开" if is_public else "隐藏"
+            logger.info(f"👁️  {action}内容 - ID: {content_id}, 用户ID: {user_id}")
+            
+            content = self.db.query(Content).filter(Content.id == content_id).first()
+            
+            if not content:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="内容不存在")
+            
+            # 检查权限
+            if str(content.user_id) != user_id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作此内容")
+            
+            content.is_public = is_public
+            self.db.commit()
+            
+            logger.info(f"✅ 内容{action}成功 - ID: {content_id}")
+            
+            return ApiResponse(
+                code=200,
+                data=None,
+                msg=f"内容已{action}",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 切换内容可见性失败 - 错误: {str(e)}", exc_info=True)
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"操作失败: {str(e)}"
+            )
+    
+    def delete_view_record(self, content_id: str, user_id: str) -> ApiResponse[None]:
+        """删除浏览记录"""
+        try:
+            logger.info(f"🗑️  删除浏览记录 - 内容ID: {content_id}, 用户ID: {user_id}")
+            
+            view = self.db.query(ContentView).filter(
+                and_(ContentView.content_id == content_id, ContentView.user_id == user_id)
+            ).first()
+            
+            if not view:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="浏览记录不存在")
+            
+            self.db.delete(view)
+            self.db.commit()
+            
+            logger.info(f"✅ 浏览记录删除成功")
+            
+            return ApiResponse(
+                code=200,
+                data=None,
+                msg="浏览记录已删除",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 删除浏览记录失败 - 错误: {str(e)}", exc_info=True)
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"删除失败: {str(e)}"
             )
 
