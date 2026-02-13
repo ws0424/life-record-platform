@@ -476,8 +476,23 @@ export default function MyWorksPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className={styles.title}>我的创作</h1>
-          <p className={styles.subtitle}>管理你的作品、浏览记录、点赞和评论</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <h1 className={styles.title}>我的创作</h1>
+              <p className={styles.subtitle}>管理你的作品、浏览记录、点赞和评论</p>
+            </div>
+            <Button
+              type="primary"
+              size="large"
+              onClick={() => router.push('/my-works/stats')}
+              style={{
+                background: 'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)',
+                border: 'none',
+              }}
+            >
+              📊 查看统计
+            </Button>
+          </div>
         </motion.div>
 
         {/* 统计卡片 */}
