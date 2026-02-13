@@ -132,27 +132,29 @@ export default function DailyPage() {
         page_size: pageSize,
       });
 
-      let newContents: ContentListItem[];
-      if (isLoadMore) {
-        // 加载更多：追加到现有列表
-        newContents = [...contents, ...response.items];
-        setContents(newContents);
-      } else {
-        // 首次加载：替换列表
-        newContents = response.items;
-        setContents(newContents);
-      }
+      setContents(prevContents => {
+        let newContents: ContentListItem[];
+        if (isLoadMore) {
+          // 加载更多：追加到现有列表
+          newContents = [...prevContents, ...response.items];
+        } else {
+          // 首次加载：替换列表
+          newContents = response.items;
+        }
 
-      // 检查是否还有更多数据
-      const totalPages = Math.ceil(response.total / pageSize);
-      const hasMoreData = pageNum < totalPages;
-      setHasMore(hasMoreData);
+        // 检查是否还有更多数据
+        const totalPages = Math.ceil(response.total / pageSize);
+        const hasMoreData = pageNum < totalPages;
+        setHasMore(hasMoreData);
 
-      // 保存到缓存
-      saveToCache({
-        contents: newContents,
-        page: pageNum,
-        hasMore: hasMoreData,
+        // 保存到缓存
+        saveToCache({
+          contents: newContents,
+          page: pageNum,
+          hasMore: hasMoreData,
+        });
+
+        return newContents;
       });
 
     } catch (err: any) {
@@ -162,7 +164,7 @@ export default function DailyPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [contents, saveToCache]);
+  }, [saveToCache]);
 
   // 首次加载
   useEffect(() => {
@@ -176,7 +178,8 @@ export default function DailyPage() {
       // 无缓存，加载第一页
       fetchDailyList(1, false);
     }
-  }, [loadFromCache, restoreScrollPosition, fetchDailyList]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 监听页面离开，保存滚动位置
   useEffect(() => {
@@ -291,7 +294,8 @@ export default function DailyPage() {
         {/* 首次加载状态 */}
         {loading && contents.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <Spin size="large" tip="加载中..." />
+            <Spin size="large" />
+            <div style={{ marginTop: 16, color: 'var(--text-secondary)' }}>加载中...</div>
           </div>
         )}
 
@@ -484,7 +488,10 @@ export default function DailyPage() {
               }}
             >
               {loadingMore && (
-                <Spin tip="加载更多..." />
+                <div>
+                  <Spin />
+                  <div style={{ marginTop: 12, color: 'var(--text-secondary)', fontSize: 14 }}>加载更多...</div>
+                </div>
               )}
               {!loadingMore && !hasMore && contents.length > 0 && (
                 <div style={{ 
