@@ -224,15 +224,49 @@ export default function DailyPage() {
 
         // 当目标元素进入视口且还有更多数据且不在加载中
         if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
-          const nextPage = page + 1;
-          setPage(nextPage);
-          fetchDailyList(nextPage, true);
+          setPage(prevPage => {
+            const nextPage = prevPage + 1;
+            // 直接调用 fetchDailyList，不依赖它
+            getDailyList({
+              page: nextPage,
+              page_size: pageSize,
+            }).then(response => {
+              setContents(prevContents => {
+                const newContents = [...prevContents, ...response.items];
+                const totalPages = Math.ceil(response.total / pageSize);
+                const hasMoreData = nextPage < totalPages;
+                setHasMore(hasMoreData);
+                
+                // 保存到缓存
+                try {
+                  const cacheData: CacheData = {
+                    contents: newContents,
+                    page: nextPage,
+                    hasMore: hasMoreData,
+                    timestamp: Date.now(),
+                  };
+                  sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                } catch (error) {
+                  console.error('保存缓存失败:', error);
+                }
+                
+                return newContents;
+              });
+              setLoadingMore(false);
+            }).catch(err => {
+              console.error('获取日常记录失败:', err);
+              setLoadingMore(false);
+            });
+            
+            setLoadingMore(true);
+            return nextPage;
+          });
         }
       },
       {
-        root: null, // 使用视口作为根
-        rootMargin: '100px', // 提前 100px 触发加载
-        threshold: 0.1, // 10% 可见时触发
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1,
       }
     );
 
@@ -246,7 +280,7 @@ export default function DailyPage() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loadingMore, loading, page, fetchDailyList, contents.length]);
+  }, [hasMore, loadingMore, loading, contents.length]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
