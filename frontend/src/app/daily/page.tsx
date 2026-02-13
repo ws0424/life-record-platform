@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, Pagination, Empty, Spin, Button, Tag, Avatar, Tooltip } from 'antd';
+import { Card, Empty, Spin, Button, Tag, Avatar, Tooltip } from 'antd';
 import { PlusOutlined, EyeOutlined, HeartOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { getDailyList } from '@/lib/api/content';
@@ -20,34 +20,85 @@ export default function DailyPage() {
   const { isAuthenticated } = useAuthStore();
   const [contents, setContents] = useState<ContentListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const pageSize = 12;
 
-  // 获取日常记录列表
-  useEffect(() => {
-    fetchDailyList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  // 用于检测滚动到底部的 ref
+  const observerTarget = useRef<HTMLDivElement>(null);
 
-  const fetchDailyList = async () => {
+  // 获取日常记录列表
+  const fetchDailyList = useCallback(async (pageNum: number, isLoadMore: boolean = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
+
       const response = await getDailyList({
-        page,
+        page: pageNum,
         page_size: pageSize,
       });
-      setContents(response.items);
-      setTotal(response.total);
+
+      if (isLoadMore) {
+        // 加载更多：追加到现有列表
+        setContents(prev => [...prev, ...response.items]);
+      } else {
+        // 首次加载：替换列表
+        setContents(response.items);
+      }
+
+      // 检查是否还有更多数据
+      const totalPages = Math.ceil(response.total / pageSize);
+      setHasMore(pageNum < totalPages);
+
     } catch (err: any) {
       console.error('获取日常记录失败:', err);
       setError(err.message || '获取日常记录失败');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, []);
+
+  // 首次加载
+  useEffect(() => {
+    fetchDailyList(1, false);
+  }, [fetchDailyList]);
+
+  // 使用 Intersection Observer 监听滚动到底部
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 当目标元素进入视口且还有更多数据且不在加载中
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          fetchDailyList(nextPage, true);
+        }
+      },
+      {
+        root: null, // 使用视口作为根
+        rootMargin: '100px', // 提前 100px 触发加载
+        threshold: 0.1, // 10% 可见时触发
+      }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasMore, loadingMore, loading, page, fetchDailyList]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
@@ -80,20 +131,20 @@ export default function DailyPage() {
           </Button>
         </motion.div>
 
-        {/* 加载状态 */}
-        {loading && (
+        {/* 首次加载状态 */}
+        {loading && contents.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <Spin size="large" tip="加载中..." />
           </div>
         )}
 
         {/* 错误状态 */}
-        {error && !loading && (
+        {error && !loading && contents.length === 0 && (
           <Empty
             description={error}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           >
-            <Button type="primary" onClick={fetchDailyList}>
+            <Button type="primary" onClick={() => fetchDailyList(1, false)}>
               重试
             </Button>
           </Empty>
@@ -116,7 +167,7 @@ export default function DailyPage() {
         )}
 
         {/* 内容列表 */}
-        {!loading && !error && contents.length > 0 && (
+        {contents.length > 0 && (
           <>
             <div className={styles.grid}>
               {contents.map((content, index) => (
@@ -124,7 +175,7 @@ export default function DailyPage() {
                   key={content.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
                 >
                   <Link href={`/daily/${content.id}`} style={{ textDecoration: 'none' }}>
                     <Card
@@ -266,23 +317,30 @@ export default function DailyPage() {
               ))}
             </div>
 
-            {/* 分页 */}
-            {total > pageSize && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 48 }}>
-                <Pagination
-                  current={page}
-                  total={total}
-                  pageSize={pageSize}
-                  onChange={setPage}
-                  showSizeChanger={false}
-                  showTotal={(total) => `共 ${total} 条记录`}
-                />
-              </div>
-            )}
+            {/* 加载更多指示器 */}
+            <div 
+              ref={observerTarget}
+              style={{ 
+                textAlign: 'center', 
+                padding: '40px 0',
+                minHeight: 100,
+              }}
+            >
+              {loadingMore && (
+                <Spin tip="加载更多..." />
+              )}
+              {!loadingMore && !hasMore && contents.length > 0 && (
+                <div style={{ 
+                  color: 'var(--text-tertiary)', 
+                  fontSize: 14,
+                }}>
+                  已加载全部 {contents.length} 条记录
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
     </div>
   );
 }
-
