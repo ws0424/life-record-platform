@@ -1,4 +1,4 @@
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
@@ -6,33 +6,26 @@ from app.core.config import settings
 import hashlib
 import base64
 
-# 配置 bcrypt，设置 truncate_error=False 和 ident="2b" 来避免初始化错误
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__ident="2b",  # 使用 2b 版本，避免 wrap bug 检测
-    bcrypt__default_rounds=12  # 设置默认轮次
-)
 
-
-def _truncate_password(password: str) -> str:
+def _truncate_password(password: str) -> bytes:
     """
     安全地截断密码到 72 字节以内
     使用 SHA256 哈希确保：
     1. 任意长度的密码都能处理
-    2. 输出固定为 44 字节（base64 编码后）
+    2. 输出固定长度
     3. 保持密码的熵值
     """
     # 检查密码字节长度
     password_bytes = password.encode('utf-8')
     
-    # 如果密码小于 72 字节，直接返回
+    # 如果密码小于等于 72 字节，直接返回
     if len(password_bytes) <= 72:
-        return password
+        return password_bytes
     
     # 如果超过 72 字节，使用 SHA256 哈希
     password_hash = hashlib.sha256(password_bytes).digest()
-    return base64.b64encode(password_hash).decode('utf-8')
+    # 返回 base64 编码的哈希值（44字节）
+    return base64.b64encode(password_hash)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -40,7 +33,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         # 先对明文密码进行截断处理
         processed_password = _truncate_password(plain_password)
-        return pwd_context.verify(processed_password, hashed_password)
+        # bcrypt.checkpw 需要 bytes 类型
+        return bcrypt.checkpw(processed_password, hashed_password.encode('utf-8'))
     except Exception as e:
         # 如果验证失败，记录错误但返回 False 而不是抛出异常
         import logging
@@ -54,13 +48,17 @@ def get_password_hash(password: str) -> str:
     try:
         # 先对密码进行截断处理，确保不超过 72 字节
         processed_password = _truncate_password(password)
-        return pwd_context.hash(processed_password)
+        # 生成 salt 并哈希密码
+        salt = bcrypt.gensalt(rounds=12)
+        hashed = bcrypt.hashpw(processed_password, salt)
+        # 返回字符串格式
+        return hashed.decode('utf-8')
     except Exception as e:
         # 如果哈希失败，记录错误并抛出更友好的异常
         import logging
         logger = logging.getLogger(__name__)
         logger.error(f"密码哈希失败: {str(e)}")
-        raise ValueError(f"密码处理失败，请使用更简单的密码")
+        raise ValueError(f"密码处理失败，请联系管理员")
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

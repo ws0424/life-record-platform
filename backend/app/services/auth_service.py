@@ -185,24 +185,16 @@ class AuthService:
             # 如果密码验证失败，尝试使用旧的哈希方法验证（兼容性处理）
             if not password_valid:
                 try:
-                    from app.utils.security import _truncate_password
                     import hashlib
                     import base64
-                    from passlib.context import CryptContext
+                    import bcrypt
                     
                     # 旧的截断方法：总是使用 SHA256
                     old_password = base64.b64encode(
                         hashlib.sha256(login_data.password.encode('utf-8')).digest()
-                    ).decode('utf-8')
-                    
-                    pwd_context = CryptContext(
-                        schemes=["bcrypt"],
-                        deprecated="auto",
-                        bcrypt__ident="2b",
-                        bcrypt__default_rounds=12
                     )
                     
-                    if pwd_context.verify(old_password, user.password_hash):
+                    if bcrypt.checkpw(old_password, user.password_hash.encode('utf-8')):
                         password_valid = True
                         # 自动迁移到新的哈希方式
                         logger.info(f"🔄 自动迁移密码 - 用户ID: {user.id}")
