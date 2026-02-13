@@ -7,8 +7,8 @@ import { Spin, Button, message } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { myWorksApi } from '@/lib/api/myWorks';
-import { BarChart, PieChart, StatsOverview } from './charts';
-import styles from './page.module.css';
+import { BarChart, PieChart, StatsOverview } from '../charts';
+import styles from '../stats.module.css';
 
 interface ContentItem {
   id: string;

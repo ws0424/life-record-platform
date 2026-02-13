@@ -1,4 +1,8 @@
+'use client';
+
 import { motion } from 'framer-motion';
+import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
 import styles from './stats.module.css';
 
 interface ChartData {
@@ -13,38 +17,99 @@ interface BarChartProps {
 }
 
 export function BarChart({ data, title }: BarChartProps) {
-  const maxValue = Math.max(...data.map(d => d.value));
+  const option: EChartsOption = {
+    title: {
+      text: title,
+      left: 'center',
+      textStyle: {
+        color: 'var(--text-primary)',
+        fontSize: 16,
+        fontWeight: 600,
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow',
+      },
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderColor: 'transparent',
+      textStyle: {
+        color: '#fff',
+      },
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'value',
+      axisLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+        },
+      },
+      axisLabel: {
+        color: 'var(--text-tertiary)',
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+          opacity: 0.3,
+        },
+      },
+    },
+    yAxis: {
+      type: 'category',
+      data: data.map(item => item.label),
+      axisLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+        },
+      },
+      axisLabel: {
+        color: 'var(--text-secondary)',
+      },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: data.map(item => ({
+          value: item.value,
+          itemStyle: {
+            color: item.color,
+            borderRadius: [0, 4, 4, 0],
+          },
+        })),
+        barWidth: '60%',
+        label: {
+          show: true,
+          position: 'right',
+          color: 'var(--text-secondary)',
+          fontSize: 12,
+        },
+        animationDuration: 1000,
+        animationEasing: 'cubicOut',
+      },
+    ],
+  };
 
   return (
-    <div className={styles.chartContainer}>
-      <h3 className={styles.chartTitle}>{title}</h3>
-      <div className={styles.barChart}>
-        {data.map((item, index) => (
-          <motion.div
-            key={item.label}
-            className={styles.barItem}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <div className={styles.barLabel}>{item.label}</div>
-            <div className={styles.barWrapper}>
-              <motion.div
-                className={styles.bar}
-                style={{ 
-                  background: item.color,
-                  width: `${(item.value / maxValue) * 100}%`,
-                }}
-                initial={{ width: 0 }}
-                animate={{ width: `${(item.value / maxValue) * 100}%` }}
-                transition={{ duration: 0.8, delay: index * 0.1 + 0.2 }}
-              />
-              <span className={styles.barValue}>{item.value}</span>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </div>
+    <motion.div
+      className={styles.chartContainer}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <ReactECharts
+        option={option}
+        style={{ height: '400px', width: '100%' }}
+        opts={{ renderer: 'svg' }}
+      />
+    </motion.div>
   );
 }
 
@@ -54,77 +119,90 @@ interface PieChartProps {
 }
 
 export function PieChart({ data, title }: PieChartProps) {
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-  let currentAngle = 0;
-
-  const segments = data.map(item => {
-    const percentage = (item.value / total) * 100;
-    const angle = (item.value / total) * 360;
-    const segment = {
-      ...item,
-      percentage,
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-    };
-    currentAngle += angle;
-    return segment;
-  });
+  const option: EChartsOption = {
+    title: {
+      text: title,
+      left: 'center',
+      textStyle: {
+        color: 'var(--text-primary)',
+        fontSize: 16,
+        fontWeight: 600,
+      },
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} ({d}%)',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderColor: 'transparent',
+      textStyle: {
+        color: '#fff',
+      },
+    },
+    legend: {
+      orient: 'vertical',
+      right: '10%',
+      top: 'center',
+      textStyle: {
+        color: 'var(--text-secondary)',
+      },
+      itemGap: 12,
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['35%', '50%'],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: 'var(--bg-primary)',
+          borderWidth: 2,
+        },
+        label: {
+          show: true,
+          formatter: '{b}\n{d}%',
+          color: 'var(--text-secondary)',
+          fontSize: 12,
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold',
+          },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)',
+          },
+        },
+        data: data.map(item => ({
+          name: item.label,
+          value: item.value,
+          itemStyle: {
+            color: item.color,
+          },
+        })),
+        animationType: 'scale',
+        animationEasing: 'elasticOut',
+        animationDuration: 1000,
+      },
+    ],
+  };
 
   return (
-    <div className={styles.chartContainer}>
-      <h3 className={styles.chartTitle}>{title}</h3>
-      <div className={styles.pieChart}>
-        <svg viewBox="0 0 200 200" className={styles.pieSvg}>
-          {segments.map((segment, index) => {
-            const startAngle = (segment.startAngle - 90) * (Math.PI / 180);
-            const endAngle = (segment.endAngle - 90) * (Math.PI / 180);
-            const largeArc = segment.endAngle - segment.startAngle > 180 ? 1 : 0;
-
-            const x1 = 100 + 80 * Math.cos(startAngle);
-            const y1 = 100 + 80 * Math.sin(startAngle);
-            const x2 = 100 + 80 * Math.cos(endAngle);
-            const y2 = 100 + 80 * Math.sin(endAngle);
-
-            const pathData = [
-              `M 100 100`,
-              `L ${x1} ${y1}`,
-              `A 80 80 0 ${largeArc} 1 ${x2} ${y2}`,
-              `Z`,
-            ].join(' ');
-
-            return (
-              <motion.path
-                key={segment.label}
-                d={pathData}
-                fill={segment.color}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-              />
-            );
-          })}
-        </svg>
-        <div className={styles.pieLegend}>
-          {segments.map((segment, index) => (
-            <motion.div
-              key={segment.label}
-              className={styles.legendItem}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <div
-                className={styles.legendColor}
-                style={{ background: segment.color }}
-              />
-              <span className={styles.legendLabel}>
-                {segment.label}: {segment.value} ({segment.percentage.toFixed(1)}%)
-              </span>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <motion.div
+      className={styles.chartContainer}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <ReactECharts
+        option={option}
+        style={{ height: '400px', width: '100%' }}
+        opts={{ renderer: 'svg' }}
+      />
+    </motion.div>
   );
 }
 
@@ -135,82 +213,202 @@ interface LineChartProps {
 }
 
 export function LineChart({ data, title, color }: LineChartProps) {
-  const maxValue = Math.max(...data.map(d => d.value));
-  const width = 600;
-  const height = 300;
-  const padding = 40;
-
-  const points = data.map((item, index) => {
-    const x = padding + (index / (data.length - 1)) * (width - 2 * padding);
-    const y = height - padding - (item.value / maxValue) * (height - 2 * padding);
-    return { x, y, ...item };
-  });
-
-  const pathData = points
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ');
+  const option: EChartsOption = {
+    title: {
+      text: title,
+      left: 'center',
+      textStyle: {
+        color: 'var(--text-primary)',
+        fontSize: 16,
+        fontWeight: 600,
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderColor: 'transparent',
+      textStyle: {
+        color: '#fff',
+      },
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '15%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map(item => item.date),
+      boundaryGap: false,
+      axisLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+        },
+      },
+      axisLabel: {
+        color: 'var(--text-tertiary)',
+      },
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+        },
+      },
+      axisLabel: {
+        color: 'var(--text-tertiary)',
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+          opacity: 0.3,
+        },
+      },
+    },
+    series: [
+      {
+        type: 'line',
+        data: data.map(item => item.value),
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: {
+          color: color,
+          width: 3,
+        },
+        itemStyle: {
+          color: color,
+          borderWidth: 2,
+          borderColor: '#fff',
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              {
+                offset: 0,
+                color: color + '40', // 透明度 25%
+              },
+              {
+                offset: 1,
+                color: color + '00', // 完全透明
+              },
+            ],
+          },
+        },
+        animationDuration: 1500,
+        animationEasing: 'cubicOut',
+      },
+    ],
+  };
 
   return (
-    <div className={styles.chartContainer}>
-      <h3 className={styles.chartTitle}>{title}</h3>
-      <svg viewBox={`0 0 ${width} ${height}`} className={styles.lineSvg}>
-        {/* 网格线 */}
-        {[0, 1, 2, 3, 4].map(i => {
-          const y = padding + (i / 4) * (height - 2 * padding);
-          return (
-            <line
-              key={i}
-              x1={padding}
-              y1={y}
-              x2={width - padding}
-              y2={y}
-              stroke="var(--border-secondary)"
-              strokeWidth="1"
-              opacity="0.3"
-            />
-          );
-        })}
+    <motion.div
+      className={styles.chartContainer}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <ReactECharts
+        option={option}
+        style={{ height: '400px', width: '100%' }}
+        opts={{ renderer: 'svg' }}
+      />
+    </motion.div>
+  );
+}
 
-        {/* 折线 */}
-        <motion.path
-          d={pathData}
-          fill="none"
-          stroke={color}
-          strokeWidth="3"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.5, ease: 'easeInOut' }}
-        />
+interface RadarChartProps {
+  data: {
+    name: string;
+    values: number[];
+  }[];
+  indicators: string[];
+  title: string;
+}
 
-        {/* 数据点 */}
-        {points.map((point, index) => (
-          <motion.circle
-            key={index}
-            cx={point.x}
-            cy={point.y}
-            r="5"
-            fill={color}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          />
-        ))}
+export function RadarChart({ data, indicators, title }: RadarChartProps) {
+  const option: EChartsOption = {
+    title: {
+      text: title,
+      left: 'center',
+      textStyle: {
+        color: 'var(--text-primary)',
+        fontSize: 16,
+        fontWeight: 600,
+      },
+    },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderColor: 'transparent',
+      textStyle: {
+        color: '#fff',
+      },
+    },
+    legend: {
+      bottom: '5%',
+      textStyle: {
+        color: 'var(--text-secondary)',
+      },
+    },
+    radar: {
+      indicator: indicators.map(name => ({ name, max: 100 })),
+      center: ['50%', '50%'],
+      radius: '60%',
+      axisName: {
+        color: 'var(--text-secondary)',
+        fontSize: 12,
+      },
+      splitArea: {
+        areaStyle: {
+          color: ['rgba(124, 58, 237, 0.05)', 'rgba(124, 58, 237, 0.1)'],
+        },
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'var(--border-secondary)',
+        },
+      },
+    },
+    series: [
+      {
+        type: 'radar',
+        data: data.map((item, index) => ({
+          name: item.name,
+          value: item.values,
+          areaStyle: {
+            opacity: 0.3,
+          },
+          lineStyle: {
+            width: 2,
+          },
+        })),
+        animationDuration: 1000,
+      },
+    ],
+  };
 
-        {/* X 轴标签 */}
-        {points.map((point, index) => (
-          <text
-            key={index}
-            x={point.x}
-            y={height - 10}
-            textAnchor="middle"
-            fontSize="12"
-            fill="var(--text-tertiary)"
-          >
-            {point.date}
-          </text>
-        ))}
-      </svg>
-    </div>
+  return (
+    <motion.div
+      className={styles.chartContainer}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <ReactECharts
+        option={option}
+        style={{ height: '400px', width: '100%' }}
+        opts={{ renderer: 'svg' }}
+      />
+    </motion.div>
   );
 }
 
@@ -260,3 +458,105 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
   );
 }
 
+interface GaugeChartProps {
+  value: number;
+  title: string;
+  max?: number;
+}
+
+export function GaugeChart({ value, title, max = 100 }: GaugeChartProps) {
+  const option: EChartsOption = {
+    title: {
+      text: title,
+      left: 'center',
+      textStyle: {
+        color: 'var(--text-primary)',
+        fontSize: 16,
+        fontWeight: 600,
+      },
+    },
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 180,
+        endAngle: 0,
+        min: 0,
+        max: max,
+        center: ['50%', '70%'],
+        radius: '90%',
+        splitNumber: 8,
+        axisLine: {
+          lineStyle: {
+            width: 6,
+            color: [
+              [0.3, '#10B981'],
+              [0.7, '#F59E0B'],
+              [1, '#EF4444'],
+            ],
+          },
+        },
+        pointer: {
+          icon: 'path://M12.8,0.7l12,40.1H0.7L12.8,0.7z',
+          length: '12%',
+          width: 20,
+          offsetCenter: [0, '-60%'],
+          itemStyle: {
+            color: 'auto',
+          },
+        },
+        axisTick: {
+          length: 12,
+          lineStyle: {
+            color: 'auto',
+            width: 2,
+          },
+        },
+        splitLine: {
+          length: 20,
+          lineStyle: {
+            color: 'auto',
+            width: 5,
+          },
+        },
+        axisLabel: {
+          color: 'var(--text-tertiary)',
+          fontSize: 12,
+          distance: -60,
+        },
+        title: {
+          offsetCenter: [0, '-10%'],
+          fontSize: 14,
+          color: 'var(--text-secondary)',
+        },
+        detail: {
+          fontSize: 30,
+          offsetCenter: [0, '0%'],
+          valueAnimation: true,
+          formatter: '{value}',
+          color: 'auto',
+        },
+        data: [
+          {
+            value: value,
+            name: '',
+          },
+        ],
+      },
+    ],
+  };
+
+  return (
+    <motion.div
+      className={styles.chartContainer}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <ReactECharts
+        option={option}
+        style={{ height: '300px', width: '100%' }}
+        opts={{ renderer: 'svg' }}
+      />
+    </motion.div>
+  );
+}
