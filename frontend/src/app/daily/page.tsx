@@ -40,6 +40,7 @@ export default function DailyPage() {
   // 用于检测滚动到底部的 ref
   const observerTarget = useRef<HTMLDivElement>(null);
   const isRestoringScroll = useRef(false);
+  const hasRestoredScroll = useRef(false);
 
   // 从缓存加载数据
   const loadFromCache = useCallback(() => {
@@ -91,19 +92,28 @@ export default function DailyPage() {
   const restoreScrollPosition = useCallback(() => {
     try {
       const scrollY = sessionStorage.getItem(SCROLL_KEY);
-      if (scrollY) {
+      if (scrollY && !hasRestoredScroll.current) {
         isRestoringScroll.current = true;
-        // 使用 setTimeout 确保 DOM 已渲染
-        setTimeout(() => {
-          window.scrollTo(0, parseInt(scrollY, 10));
-          // 恢复完成后清除标记
-          setTimeout(() => {
-            isRestoringScroll.current = false;
-          }, 100);
-        }, 100);
+        hasRestoredScroll.current = true;
+        
+        // 使用 requestAnimationFrame 确保 DOM 已完全渲染
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.scrollTo({
+              top: parseInt(scrollY, 10),
+              behavior: 'instant' as ScrollBehavior,
+            });
+            
+            // 延迟清除标记，确保不会触发 Observer
+            setTimeout(() => {
+              isRestoringScroll.current = false;
+            }, 500);
+          });
+        });
       }
     } catch (error) {
       console.error('恢复滚动位置失败:', error);
+      isRestoringScroll.current = false;
     }
   }, []);
 
@@ -194,6 +204,14 @@ export default function DailyPage() {
 
   // 使用 Intersection Observer 监听滚动到底部
   useEffect(() => {
+    // 如果还没有恢复滚动，延迟创建 Observer
+    if (!hasRestoredScroll.current && contents.length > 0) {
+      const timer = setTimeout(() => {
+        hasRestoredScroll.current = true;
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         // 如果正在恢复滚动位置，不触发加载
@@ -216,7 +234,7 @@ export default function DailyPage() {
     );
 
     const currentTarget = observerTarget.current;
-    if (currentTarget) {
+    if (currentTarget && hasRestoredScroll.current) {
       observer.observe(currentTarget);
     }
 
@@ -225,7 +243,7 @@ export default function DailyPage() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loadingMore, loading, page, fetchDailyList]);
+  }, [hasMore, loadingMore, loading, page, fetchDailyList, contents.length]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
