@@ -215,6 +215,13 @@ export default function DailyPage() {
       return () => clearTimeout(timer);
     }
 
+    // 使用 ref 来存储最新的状态，避免闭包问题
+    const stateRef = {
+      hasMore,
+      loadingMore,
+      loading,
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         // 如果正在恢复滚动位置，不触发加载
@@ -223,10 +230,15 @@ export default function DailyPage() {
         }
 
         // 当目标元素进入视口且还有更多数据且不在加载中
-        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+        if (entries[0].isIntersecting && stateRef.hasMore && !stateRef.loadingMore && !stateRef.loading) {
+          // 立即更新 ref 防止重复触发
+          stateRef.loadingMore = true;
+          setLoadingMore(true);
+          
           setPage(prevPage => {
             const nextPage = prevPage + 1;
-            // 直接调用 fetchDailyList，不依赖它
+            
+            // 异步加载数据
             getDailyList({
               page: nextPage,
               page_size: pageSize,
@@ -235,7 +247,14 @@ export default function DailyPage() {
                 const newContents = [...prevContents, ...response.items];
                 const totalPages = Math.ceil(response.total / pageSize);
                 const hasMoreData = nextPage < totalPages;
+                
+                // 更新 ref
+                stateRef.hasMore = hasMoreData;
+                stateRef.loadingMore = false;
+                
+                // 更新状态
                 setHasMore(hasMoreData);
+                setLoadingMore(false);
                 
                 // 保存到缓存
                 try {
@@ -252,13 +271,12 @@ export default function DailyPage() {
                 
                 return newContents;
               });
-              setLoadingMore(false);
             }).catch(err => {
               console.error('获取日常记录失败:', err);
+              stateRef.loadingMore = false;
               setLoadingMore(false);
             });
             
-            setLoadingMore(true);
             return nextPage;
           });
         }
@@ -280,7 +298,9 @@ export default function DailyPage() {
         observer.unobserve(currentTarget);
       }
     };
-  }, [hasMore, loadingMore, loading, contents.length]);
+    // 只在初始化和内容长度变化时重建 Observer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contents.length]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
