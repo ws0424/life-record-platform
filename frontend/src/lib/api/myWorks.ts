@@ -1,6 +1,7 @@
 import { ContentListItem } from './content';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+// 使用相对路径，Next.js 会自动代理到后端
+const API_BASE_URL = '';
 
 interface ApiResponse<T> {
   code: number;
