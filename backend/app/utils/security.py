@@ -37,16 +37,30 @@ def _truncate_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """验证密码"""
-    # 先对明文密码进行截断处理
-    processed_password = _truncate_password(plain_password)
-    return pwd_context.verify(processed_password, hashed_password)
+    try:
+        # 先对明文密码进行截断处理
+        processed_password = _truncate_password(plain_password)
+        return pwd_context.verify(processed_password, hashed_password)
+    except Exception as e:
+        # 如果验证失败，记录错误但返回 False 而不是抛出异常
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"密码验证异常: {str(e)}")
+        return False
 
 
 def get_password_hash(password: str) -> str:
     """生成密码哈希"""
-    # 先对密码进行截断处理，确保不超过 72 字节
-    processed_password = _truncate_password(password)
-    return pwd_context.hash(processed_password)
+    try:
+        # 先对密码进行截断处理，确保不超过 72 字节
+        processed_password = _truncate_password(password)
+        return pwd_context.hash(processed_password)
+    except Exception as e:
+        # 如果哈希失败，记录错误并抛出更友好的异常
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"密码哈希失败: {str(e)}")
+        raise ValueError(f"密码处理失败，请使用更简单的密码")
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
