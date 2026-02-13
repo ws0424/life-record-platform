@@ -5,12 +5,11 @@ import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Spin, message, Avatar, Button, Input, Empty } from 'antd';
-import { HeartOutlined, HeartFilled, StarOutlined, StarFilled, ShareAltOutlined, EyeOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
+import { HeartOutlined, HeartFilled, StarOutlined, StarFilled, ShareAltOutlined, EyeOutlined, MessageOutlined, UserOutlined, LikeOutlined, LikeFilled } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
-import { getContent, toggleLike, toggleSave, createComment, getComments } from '@/lib/api/content';
+import { getContent, toggleLike, toggleSave, createComment, getComments, toggleCommentLike, getCommentReplies } from '@/lib/api/content';
 import type { Content, Comment as CommentType } from '@/lib/api/content';
 import { formatDate, formatDateTime } from '@/lib/utils/date';
-import { ContentCover } from '@/components/ContentCover';
 import { VideoPlayer } from '@/components/VideoPlayer';
 import { LazyImage } from '@/components/LazyImage';
 import styles from './page.module.css';
@@ -29,6 +28,10 @@ export default function PostDetailPage() {
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set());
+  const [loadingReplies, setLoadingReplies] = useState<Set<string>>(new Set());
 
   // 获取内容详情
   useEffect(() => {
@@ -149,6 +152,133 @@ export default function PostDetailPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // 评论点赞
+  const handleCommentLike = async (commentId: string) => {
+    if (!isAuthenticated) {
+      message.warning('请先登录');
+      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
+      return;
+    }
+
+    try {
+      const response = await toggleCommentLike(commentId);
+      
+      // 更新评论列表中的点赞状态
+      setComments(prev => prev.map(comment => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            is_liked: response.is_liked,
+            like_count: response.like_count,
+          };
+        }
+        // 更新回复中的点赞状态
+        if (comment.replies) {
+          return {
+            ...comment,
+            replies: comment.replies.map(reply => 
+              reply.id === commentId 
+                ? { ...reply, is_liked: response.is_liked, like_count: response.like_count }
+                : reply
+            ),
+          };
+        }
+        return comment;
+      }));
+    } catch (error: any) {
+      console.error('点赞失败:', error);
+      message.error(error.message || '操作失败');
+    }
+  };
+
+  // 回复评论
+  const handleReplySubmit = async (parentId: string) => {
+    if (!isAuthenticated) {
+      message.warning('请先登录');
+      router.push('/login?redirect=' + encodeURIComponent(`/daily/${contentId}`));
+      return;
+    }
+
+    if (!replyText.trim()) {
+      message.warning('请输入回复内容');
+      return;
+    }
+
+    try {
+      await createComment(contentId, { comment_text: replyText, parent_id: parentId });
+      message.success('回复成功');
+      setReplyText('');
+      setReplyingTo(null);
+      fetchComments();
+      // 更新评论数
+      setContent(prev => prev ? {
+        ...prev,
+        comment_count: prev.comment_count + 1,
+      } : null);
+    } catch (error: any) {
+      console.error('回复失败:', error);
+      message.error(error.message || '回复失败');
+    }
+  };
+
+  // 加载更多回复
+  const handleLoadMoreReplies = async (commentId: string) => {
+    if (loadingReplies.has(commentId)) return;
+
+    try {
+      setLoadingReplies(prev => new Set(prev).add(commentId));
+      
+      const comment = comments.find(c => c.id === commentId);
+      const currentRepliesCount = comment?.replies?.length || 0;
+      const page = Math.floor(currentRepliesCount / 10) + 1;
+      
+      const response = await getCommentReplies(commentId, { page, page_size: 10 });
+      
+      // 更新评论列表，追加新的回复
+      setComments(prev => prev.map(c => {
+        if (c.id === commentId) {
+          return {
+            ...c,
+            replies: [...(c.replies || []), ...response.items],
+          };
+        }
+        return c;
+      }));
+      
+      // 如果没有更多回复了，标记为已展开
+      if (response.items.length === 0 || response.page >= response.total_pages) {
+        setExpandedComments(prev => new Set(prev).add(commentId));
+      }
+    } catch (error: any) {
+      console.error('加载回复失败:', error);
+      message.error(error.message || '加载回复失败');
+    } finally {
+      setLoadingReplies(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(commentId);
+        return newSet;
+      });
+    }
+  };
+
+  // 折叠回复
+  const handleCollapseReplies = (commentId: string) => {
+    setComments(prev => prev.map(c => {
+      if (c.id === commentId) {
+        return {
+          ...c,
+          replies: c.replies?.slice(0, 3) || [],
+        };
+      }
+      return c;
+    }));
+    setExpandedComments(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(commentId);
+      return newSet;
+    });
   };
 
   if (loading) {
@@ -374,6 +504,57 @@ export default function PostDetailPage() {
                     </div>
                     <p className={styles.commentText}>{comment.comment_text}</p>
                     
+                    {/* 评论操作 */}
+                    <div className={styles.commentActions}>
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={comment.is_liked ? <LikeFilled /> : <LikeOutlined />}
+                        onClick={() => handleCommentLike(comment.id)}
+                      >
+                        {comment.like_count > 0 && comment.like_count}
+                      </Button>
+                      <Button
+                        type="text"
+                        size="small"
+                        onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                      >
+                        回复
+                      </Button>
+                    </div>
+
+                    {/* 回复表单 */}
+                    {replyingTo === comment.id && (
+                      <div className={styles.replyForm}>
+                        <TextArea
+                          placeholder={`回复 @${comment.user?.username}...`}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          rows={2}
+                          maxLength={500}
+                        />
+                        <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                          <Button 
+                            type="primary" 
+                            size="small"
+                            onClick={() => handleReplySubmit(comment.id)}
+                            disabled={!replyText.trim()}
+                          >
+                            发送
+                          </Button>
+                          <Button 
+                            size="small"
+                            onClick={() => {
+                              setReplyingTo(null);
+                              setReplyText('');
+                            }}
+                          >
+                            取消
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* 回复列表 */}
                     {comment.replies && comment.replies.length > 0 && (
                       <div className={styles.replies}>
@@ -389,12 +570,49 @@ export default function PostDetailPage() {
                               {reply.user?.username.charAt(0).toUpperCase()}
                             </Avatar>
                             <div className={styles.replyContent}>
-                              <span className={styles.replyAuthor}>{reply.user?.username || '匿名用户'}</span>
+                              <div className={styles.replyHeader}>
+                                <span className={styles.replyAuthor}>{reply.user?.username || '匿名用户'}</span>
+                                <span className={styles.replyDate}>{formatDateTime(reply.created_at)}</span>
+                              </div>
                               <span className={styles.replyText}>{reply.comment_text}</span>
-                              <span className={styles.replyDate}>{formatDateTime(reply.created_at)}</span>
+                              <div className={styles.replyActions}>
+                                <Button
+                                  type="text"
+                                  size="small"
+                                  icon={reply.is_liked ? <LikeFilled /> : <LikeOutlined />}
+                                  onClick={() => handleCommentLike(reply.id)}
+                                >
+                                  {reply.like_count > 0 && reply.like_count}
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         ))}
+                        
+                        {/* 加载更多回复按钮 */}
+                        {comment.reply_count && comment.reply_count > (comment.replies?.length || 0) && (
+                          <Button
+                            type="link"
+                            size="small"
+                            loading={loadingReplies.has(comment.id)}
+                            onClick={() => handleLoadMoreReplies(comment.id)}
+                            className={styles.loadMoreBtn}
+                          >
+                            查看更多回复 ({comment.reply_count - (comment.replies?.length || 0)} 条)
+                          </Button>
+                        )}
+                        
+                        {/* 折叠回复按钮 */}
+                        {expandedComments.has(comment.id) && comment.replies.length > 3 && (
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={() => handleCollapseReplies(comment.id)}
+                            className={styles.loadMoreBtn}
+                          >
+                            收起回复
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -407,4 +625,3 @@ export default function PostDetailPage() {
     </div>
   );
 }
-

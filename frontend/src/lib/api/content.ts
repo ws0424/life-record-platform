@@ -103,6 +103,8 @@ export interface Comment {
   updated_at: string;
   user?: UserBrief;
   replies?: Comment[];
+  is_liked?: boolean;
+  reply_count?: number;
 }
 
 export interface CommentListResponse {
@@ -111,6 +113,11 @@ export interface CommentListResponse {
   page: number;
   page_size: number;
   total_pages: number;
+}
+
+export interface CommentLikeResponse {
+  is_liked: boolean;
+  like_count: number;
 }
 
 export interface LikeResponse {
@@ -274,5 +281,24 @@ export async function getComments(contentId: string, params?: {
 export async function getHotTags(limit: number = 10): Promise<{ name: string; count: number }[]> {
   const response = await apiClient.get('/content/tags/hot', { params: { limit } });
   return response.data.tags;
+}
+
+/**
+ * 切换评论点赞
+ */
+export async function toggleCommentLike(commentId: string): Promise<CommentLikeResponse> {
+  const response = await apiClient.post(`/content/comments/${commentId}/like`);
+  return response.data;
+}
+
+/**
+ * 获取评论回复列表
+ */
+export async function getCommentReplies(commentId: string, params?: {
+  page?: number;
+  page_size?: number;
+}): Promise<CommentListResponse> {
+  const response = await apiClient.get(`/content/comments/${commentId}/replies`, { params });
+  return response.data;
 }
 

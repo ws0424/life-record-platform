@@ -4,11 +4,11 @@ from typing import List, Optional
 from fastapi import HTTPException, status
 import logging
 
-from app.models.content import Content, ContentType, ContentLike, ContentSave, Comment
+from app.models.content import Content, ContentType, ContentLike, ContentSave, Comment, CommentLike
 from app.models.user import User
 from app.schemas.content import (
     ContentCreate, ContentUpdate, ContentResponse, ContentListResponse,
-    CommentCreate, CommentResponse, LikeResponse, SaveResponse, UserBrief, ContentListItem
+    CommentCreate, CommentResponse, LikeResponse, SaveResponse, UserBrief, ContentListItem, CommentLikeResponse
 )
 from app.schemas import ApiResponse
 
@@ -441,7 +441,7 @@ class ContentService:
             )
     
     def get_comments(
-        self, content_id: str, page: int = 1, page_size: int = 20
+        self, content_id: str, page: int = 1, page_size: int = 20, user_id: Optional[str] = None
     ) -> ApiResponse[dict]:
         """获取评论列表"""
         try:
@@ -464,15 +464,34 @@ class ContentService:
                 comment_data = CommentResponse.from_orm(comment)
                 comment_data.user = UserBrief.from_orm(comment.user) if comment.user else None
                 
-                # 获取回复
+                # 检查当前用户是否点赞
+                if user_id:
+                    is_liked = self.db.query(CommentLike).filter(
+                        and_(CommentLike.comment_id == comment.id, CommentLike.user_id == user_id)
+                    ).first() is not None
+                    comment_data.is_liked = is_liked
+                
+                # 获取回复数量（只获取前3条回复用于预览）
+                reply_count = self.db.query(Comment).filter(Comment.parent_id == comment.id).count()
+                comment_data.reply_count = reply_count
+                
+                # 获取前3条回复作为预览
                 replies = self.db.query(Comment).options(
                     joinedload(Comment.user)
-                ).filter(Comment.parent_id == comment.id).order_by(Comment.created_at).all()
+                ).filter(Comment.parent_id == comment.id).order_by(Comment.created_at).limit(3).all()
                 
                 comment_data.replies = []
                 for reply in replies:
                     reply_data = CommentResponse.from_orm(reply)
                     reply_data.user = UserBrief.from_orm(reply.user) if reply.user else None
+                    
+                    # 检查当前用户是否点赞回复
+                    if user_id:
+                        is_liked = self.db.query(CommentLike).filter(
+                            and_(CommentLike.comment_id == reply.id, CommentLike.user_id == user_id)
+                        ).first() is not None
+                        reply_data.is_liked = is_liked
+                    
                     comment_data.replies.append(reply_data)
                 
                 items.append(comment_data)
@@ -559,5 +578,112 @@ class ContentService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"获取热门标签失败: {str(e)}"
+            )
+    
+    def toggle_comment_like(self, comment_id: str, user_id: str) -> ApiResponse[CommentLikeResponse]:
+        """切换评论点赞状态"""
+        try:
+            logger.info(f"👍 切换评论点赞 - 评论ID: {comment_id}, 用户ID: {user_id}")
+            
+            comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
+            if not comment:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="评论不存在")
+            
+            # 检查是否已点赞
+            existing_like = self.db.query(CommentLike).filter(
+                and_(CommentLike.comment_id == comment_id, CommentLike.user_id == user_id)
+            ).first()
+            
+            if existing_like:
+                # 取消点赞
+                self.db.delete(existing_like)
+                comment.like_count = max(0, comment.like_count - 1)
+                is_liked = False
+            else:
+                # 添加点赞
+                new_like = CommentLike(comment_id=comment_id, user_id=user_id)
+                self.db.add(new_like)
+                comment.like_count += 1
+                is_liked = True
+            
+            self.db.commit()
+            
+            logger.info(f"✅ 评论点赞状态更新 - 是否点赞: {is_liked}")
+            
+            return ApiResponse(
+                code=200,
+                data=CommentLikeResponse(is_liked=is_liked, like_count=comment.like_count),
+                msg="操作成功",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 评论点赞操作失败 - 错误: {str(e)}", exc_info=True)
+            self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"评论点赞操作失败: {str(e)}"
+            )
+    
+    def get_comment_replies(
+        self, comment_id: str, page: int = 1, page_size: int = 10, user_id: Optional[str] = None
+    ) -> ApiResponse[dict]:
+        """获取评论的回复列表（分页）"""
+        try:
+            logger.info(f"📋 获取评论回复 - 评论ID: {comment_id}, 页码: {page}")
+            
+            # 检查评论是否存在
+            comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
+            if not comment:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="评论不存在")
+            
+            # 查询回复
+            query = self.db.query(Comment).options(
+                joinedload(Comment.user)
+            ).filter(Comment.parent_id == comment_id)
+            
+            total = query.count()
+            offset = (page - 1) * page_size
+            replies = query.order_by(Comment.created_at).offset(offset).limit(page_size).all()
+            
+            # 构建响应
+            items = []
+            for reply in replies:
+                reply_data = CommentResponse.from_orm(reply)
+                reply_data.user = UserBrief.from_orm(reply.user) if reply.user else None
+                
+                # 检查当前用户是否点赞
+                if user_id:
+                    is_liked = self.db.query(CommentLike).filter(
+                        and_(CommentLike.comment_id == reply.id, CommentLike.user_id == user_id)
+                    ).first() is not None
+                    reply_data.is_liked = is_liked
+                
+                items.append(reply_data)
+            
+            total_pages = (total + page_size - 1) // page_size
+            
+            logger.info(f"✅ 获取评论回复成功 - 总数: {total}")
+            
+            return ApiResponse(
+                code=200,
+                data={
+                    "items": items,
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": total_pages,
+                },
+                msg="获取成功",
+                errMsg=None
+            )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"❌ 获取评论回复失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"获取评论回复失败: {str(e)}"
             )
 

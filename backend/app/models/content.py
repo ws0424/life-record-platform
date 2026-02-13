@@ -110,7 +110,25 @@ class Comment(Base):
     content = relationship("Content", back_populates="comments")
     user = relationship("User")
     parent = relationship("Comment", remote_side=[id], backref="replies")
+    likes = relationship("CommentLike", back_populates="comment", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Comment id={self.id} content_id={self.content_id}>"
+
+
+class CommentLike(Base):
+    """评论点赞"""
+    __tablename__ = "comment_likes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    comment_id = Column(UUID(as_uuid=True), ForeignKey("comments.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # 关系
+    comment = relationship("Comment", back_populates="likes")
+    user = relationship("User")
+
+    def __repr__(self):
+        return f"<CommentLike comment_id={self.comment_id} user_id={self.user_id}>"
 

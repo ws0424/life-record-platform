@@ -389,6 +389,30 @@
   gap: var(--spacing-lg);
 }
 
+/* 评论操作 */
+.commentActions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.commentActions button {
+  color: var(--text-secondary);
+  padding: 0 var(--spacing-xs);
+}
+
+.commentActions button:hover {
+  color: var(--primary-color);
+}
+
+/* 回复表单 */
+.replyForm {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+}
+
 .commentLike,
 .commentReply {
   display: flex;
@@ -434,6 +458,12 @@
   gap: var(--spacing-xs);
 }
 
+.replyHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 .replyAuthor {
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
@@ -449,6 +479,28 @@
 .replyDate {
   font-size: var(--font-size-xs);
   color: var(--text-tertiary);
+}
+
+.replyActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-xs);
+}
+
+.replyActions button {
+  color: var(--text-secondary);
+  padding: 0 var(--spacing-xs);
+  font-size: var(--font-size-xs);
+}
+
+.replyActions button:hover {
+  color: var(--primary-color);
+}
+
+.loadMoreBtn {
+  margin-top: var(--spacing-sm);
+  padding: 0;
+  font-size: var(--font-size-sm);
 }
 
 /* 响应式 */

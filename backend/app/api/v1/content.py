@@ -15,6 +15,7 @@ from app.schemas.content import (
     CommentResponse,
     LikeResponse,
     SaveResponse,
+    CommentLikeResponse,
 )
 from app.schemas import ApiResponse, MessageResponse
 from app.services.content_service import ContentService
@@ -334,7 +335,8 @@ async def get_comments(
 ):
     """获取评论列表（允许未登录访问）"""
     service = ContentService(db)
-    return service.get_comments(content_id, page, page_size)
+    user_id = str(current_user.id) if current_user else None
+    return service.get_comments(content_id, page, page_size, user_id)
 
 
 # ==================== 标签相关接口 ====================
@@ -352,4 +354,41 @@ async def get_hot_tags(
     """获取热门标签"""
     service = ContentService(db)
     return service.get_hot_tags(limit)
+
+
+# ==================== 评论点赞相关接口 ====================
+
+@router.post(
+    "/comments/{comment_id}/like",
+    response_model=ApiResponse[CommentLikeResponse],
+    summary="切换评论点赞",
+    description="点赞或取消点赞评论"
+)
+async def toggle_comment_like(
+    comment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """切换评论点赞"""
+    service = ContentService(db)
+    return service.toggle_comment_like(comment_id, str(current_user.id))
+
+
+@router.get(
+    "/comments/{comment_id}/replies",
+    response_model=ApiResponse[dict],
+    summary="获取评论回复",
+    description="获取评论的回复列表（分页）"
+)
+async def get_comment_replies(
+    comment_id: str,
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(10, ge=1, le=50, description="每页数量"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """获取评论回复"""
+    service = ContentService(db)
+    user_id = str(current_user.id) if current_user else None
+    return service.get_comment_replies(comment_id, page, page_size, user_id)
 

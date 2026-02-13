@@ -162,6 +162,8 @@ class CommentResponse(BaseModel):
     # 关联数据
     user: Optional[UserBrief] = None
     replies: Optional[List["CommentResponse"]] = None
+    is_liked: Optional[bool] = None  # 当前用户是否点赞
+    reply_count: Optional[int] = 0  # 回复数量
 
     @field_validator('id', 'content_id', 'user_id', 'parent_id', mode='before')
     @classmethod
@@ -173,6 +175,12 @@ class CommentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CommentLikeResponse(BaseModel):
+    """评论点赞响应"""
+    is_liked: bool
+    like_count: int
 
 
 class LikeResponse(BaseModel):
