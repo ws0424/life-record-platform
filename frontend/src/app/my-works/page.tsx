@@ -54,6 +54,11 @@ export default function MyWorksPage() {
     commentsCount: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const pageSize = 12;
 
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -257,6 +262,200 @@ export default function MyWorksPage() {
     }
   };
 
+  // 切换选择模式
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedIds(new Set());
+  };
+
+  // 切换选择项
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedIds.size === contents.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(contents.map(item => item.id)));
+    }
+  };
+
+  // 批量删除
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) {
+      message.warning('请先选择要删除的项目');
+      return;
+    }
+
+    Modal.confirm({
+      title: '批量删除',
+      content: `确定要删除选中的 ${selectedIds.size} 个项目吗？删除后无法恢复。`,
+      okText: '确定',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          const deletePromises = Array.from(selectedIds).map(id => {
+            if (activeTab === 'views') {
+              return myWorksApi.deleteViewRecord(id);
+            } else {
+              return myWorksApi.deleteContent(id);
+            }
+          });
+
+          await Promise.all(deletePromises);
+          
+          message.success(`成功删除 ${selectedIds.size} 个项目`);
+          
+          // 从列表中移除
+          setContents(prev => prev.filter(item => !selectedIds.has(item.id)));
+          
+          // 更新统计
+          if (activeTab === 'works') {
+            setStats(prev => ({ ...prev, worksCount: prev.worksCount - selectedIds.size }));
+          } else if (activeTab === 'views') {
+            setStats(prev => ({ ...prev, viewsCount: prev.viewsCount - selectedIds.size }));
+          }
+          
+          // 清空选择
+          setSelectedIds(new Set());
+          setIsSelectionMode(false);
+        } catch (error) {
+          console.error('批量删除失败:', error);
+          message.error('批量删除失败，请重试');
+        }
+      },
+    });
+  };
+
+  // 批量隐藏
+  const handleBatchHide = async () => {
+    if (selectedIds.size === 0) {
+      message.warning('请先选择要隐藏的作品');
+      return;
+    }
+
+    try {
+      const hidePromises = Array.from(selectedIds).map(id => 
+        myWorksApi.hideContent(id)
+      );
+
+      await Promise.all(hidePromises);
+      
+      message.success(`成功隐藏 ${selectedIds.size} 个作品`);
+      
+      // 更新本地状态
+      setContents(prev => prev.map(item => 
+        selectedIds.has(item.id) ? { ...item, is_public: false } : item
+      ));
+      
+      // 清空选择
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+    } catch (error) {
+      console.error('批量隐藏失败:', error);
+      message.error('批量隐藏失败，请重试');
+    }
+  };
+
+  // 批量公开
+  const handleBatchShow = async () => {
+    if (selectedIds.size === 0) {
+      message.warning('请先选择要公开的作品');
+      return;
+    }
+
+    try {
+      const showPromises = Array.from(selectedIds).map(id => 
+        myWorksApi.showContent(id)
+      );
+
+      await Promise.all(showPromises);
+      
+      message.success(`成功公开 ${selectedIds.size} 个作品`);
+      
+      // 更新本地状态
+      setContents(prev => prev.map(item => 
+        selectedIds.has(item.id) ? { ...item, is_public: true } : item
+      ));
+      
+      // 清空选择
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+    } catch (error) {
+      console.error('批量公开失败:', error);
+      message.error('批量公开失败，请重试');
+    }
+  };
+
+  // 导出数据
+  const handleExport = () => {
+    const dataToExport = {
+      exportTime: new Date().toISOString(),
+      tab: activeTab,
+      total: activeTab === 'comments' ? comments.length : contents.length,
+      data: activeTab === 'comments' ? comments : contents,
+    };
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], {
+      type: 'application/json',
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `my-works-${activeTab}-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    message.success('导出成功');
+  };
+
+  // 筛选内容
+  const filteredContents = contents.filter(item => {
+    // 类型筛选
+    if (filterType !== 'all' && item.type !== filterType) {
+      return false;
+    }
+    
+    // 搜索关键词
+    if (searchKeyword) {
+      const keyword = searchKeyword.toLowerCase();
+      return (
+        item.title.toLowerCase().includes(keyword) ||
+        item.description?.toLowerCase().includes(keyword)
+      );
+    }
+    
+    return true;
+  });
+
+  // 排序内容
+  const sortedContents = [...filteredContents].sort((a, b) => {
+    switch (sortBy) {
+      case 'created_at':
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case 'view_count':
+        return b.view_count - a.view_count;
+      case 'like_count':
+        return b.like_count - a.like_count;
+      case 'comment_count':
+        return b.comment_count - a.comment_count;
+      default:
+        return 0;
+    }
+  });
+
   const tabs = [
     { key: 'works' as TabType, label: '我的作品', icon: '📝' },
     { key: 'views' as TabType, label: '浏览记录', icon: '👀' },
@@ -306,8 +505,127 @@ export default function MyWorksPage() {
           <SkeletonGrid count={6} />
         )}
 
+        {/* 筛选和批量操作栏 */}
+        {(activeTab === 'works' || activeTab === 'views' || activeTab === 'likes') && contents.length > 0 && (
+          <div style={{ 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+            padding: 16,
+            background: 'var(--bg-secondary)',
+            borderRadius: 12,
+            border: '1px solid var(--border-primary)',
+            flexWrap: 'wrap',
+            gap: 16,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              {/* 搜索 */}
+              <input
+                type="text"
+                placeholder="搜索..."
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid var(--border-primary)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  fontSize: 14,
+                  width: 200,
+                  fontFamily: 'Fira Sans, sans-serif',
+                }}
+              />
+              
+              {/* 类型筛选 */}
+              {activeTab === 'works' && (
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border-primary)',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    fontFamily: 'Fira Sans, sans-serif',
+                  }}
+                >
+                  <option value="all">全部类型</option>
+                  <option value="daily">日常记录</option>
+                  <option value="album">相册</option>
+                  <option value="travel">旅游路线</option>
+                </select>
+              )}
+              
+              {/* 排序 */}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid var(--border-primary)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  fontFamily: 'Fira Sans, sans-serif',
+                }}
+              >
+                <option value="created_at">最新创建</option>
+                <option value="view_count">浏览最多</option>
+                <option value="like_count">点赞最多</option>
+                <option value="comment_count">评论最多</option>
+              </select>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* 选择模式 */}
+              <Button
+                type={isSelectionMode ? 'primary' : 'default'}
+                onClick={toggleSelectionMode}
+              >
+                {isSelectionMode ? '取消选择' : '批量操作'}
+              </Button>
+              
+              {/* 批量操作按钮 */}
+              {isSelectionMode && (
+                <>
+                  <Button onClick={toggleSelectAll}>
+                    {selectedIds.size === contents.length ? '取消全选' : '全选'}
+                  </Button>
+                  
+                  {activeTab === 'works' && (
+                    <>
+                      <Button onClick={handleBatchHide}>
+                        批量隐藏
+                      </Button>
+                      <Button onClick={handleBatchShow}>
+                        批量公开
+                      </Button>
+                    </>
+                  )}
+                  
+                  <Button danger onClick={handleBatchDelete}>
+                    批量删除 ({selectedIds.size})
+                  </Button>
+                </>
+              )}
+              
+              {/* 导出 */}
+              <Button onClick={handleExport}>
+                导出数据
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* 空状态 */}
-        {!loading && contents.length === 0 && comments.length === 0 && (
+        {!loading && sortedContents.length === 0 && comments.length === 0 && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
               {activeTab === 'works' && '📝'}
@@ -316,30 +634,76 @@ export default function MyWorksPage() {
               {activeTab === 'comments' && '💬'}
             </div>
             <div className={styles.emptyText}>
-              {activeTab === 'works' && '还没有创作任何作品'}
-              {activeTab === 'views' && '还没有浏览记录'}
-              {activeTab === 'likes' && '还没有点赞记录'}
-              {activeTab === 'comments' && '还没有评论记录'}
+              {searchKeyword ? `没有找到包含"${searchKeyword}"的内容` : (
+                <>
+                  {activeTab === 'works' && '还没有创作任何作品'}
+                  {activeTab === 'views' && '还没有浏览记录'}
+                  {activeTab === 'likes' && '还没有点赞记录'}
+                  {activeTab === 'comments' && '还没有评论记录'}
+                </>
+              )}
             </div>
-            {activeTab === 'works' && (
+            {activeTab === 'works' && !searchKeyword && (
               <Button type="primary" size="large" onClick={() => router.push('/create')}>
                 创建作品
+              </Button>
+            )}
+            {searchKeyword && (
+              <Button type="primary" size="large" onClick={() => setSearchKeyword('')}>
+                清除搜索
               </Button>
             )}
           </div>
         )}
 
         {/* 内容列表 */}
-        {activeTab !== 'comments' && contents.length > 0 && (
+        {activeTab !== 'comments' && sortedContents.length > 0 && (
           <>
             <div className={styles.grid}>
-              {contents.map((content, index) => (
+              {sortedContents.map((content, index) => (
                 <motion.div
                   key={content.id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: Math.min(index * 0.05, 1) }}
+                  style={{ position: 'relative' }}
                 >
+                  {/* 选择框 */}
+                  {isSelectionMode && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(content.id)}
+                      onChange={() => toggleSelection(content.id)}
+                      style={{
+                        position: 'absolute',
+                        top: 12,
+                        left: 12,
+                        width: 20,
+                        height: 20,
+                        cursor: 'pointer',
+                        zIndex: 10,
+                      }}
+                    />
+                  )}
+                  
+                  {/* 选中标记 */}
+                  {isSelectionMode && selectedIds.has(content.id) && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 12,
+                      right: 12,
+                      background: '#7C3AED',
+                      color: 'white',
+                      padding: '4px 8px',
+                      borderRadius: 4,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      zIndex: 10,
+                    }}>
+                      已选
+                    </div>
+                  )}
+                  
                   <div className={styles.card}>
                     <Link href={`/${content.type}/${content.id}`}>
                       <ContentCover
@@ -469,7 +833,7 @@ export default function MyWorksPage() {
         )}
 
         {/* 加载更多指示器 */}
-        {(contents.length > 0 || comments.length > 0) && (
+        {(sortedContents.length > 0 || comments.length > 0) && (
           <div ref={observerTarget} className={styles.loadMore}>
             {loadingMore && (
               <div>
@@ -479,7 +843,9 @@ export default function MyWorksPage() {
             )}
             {!loadingMore && !hasMore && (
               <div style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
-                已加载全部 {activeTab === 'comments' ? comments.length : contents.length} 条记录
+                已加载全部 {activeTab === 'comments' ? comments.length : sortedContents.length} 条记录
+                {searchKeyword && ` (搜索: "${searchKeyword}")`}
+                {filterType !== 'all' && ` (类型: ${filterType})`}
               </div>
             )}
           </div>
