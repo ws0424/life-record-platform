@@ -18,7 +18,7 @@ const { Meta } = Card;
 // 缓存键
 const CACHE_KEY = 'daily_page_cache';
 const SCROLL_KEY = 'daily_page_scroll';
-const FROM_DETAIL_KEY = 'daily_from_detail'; // 标记是否从详情页返回
+const FROM_DETAIL_KEY = 'daily_from_detail';
 
 interface CacheData {
   contents: ContentListItem[];
@@ -38,23 +38,82 @@ export default function DailyPage() {
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 12;
 
-  // 用于检测滚动到底部的 ref
+  // Refs
   const observerTarget = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const isInitialized = useRef(false);
+  const isLoadingRef = useRef(false);
   const isRestoringScroll = useRef(false);
-  const hasRestoredScroll = useRef(false);
-  const hasInitialized = useRef(false); // 防止重复初始化
-  const isLoadingMore = useRef(false); // 防止重复加载
 
-  // 从缓存加载数据
+  // 加载数据
+  const loadData = useCallback(async (pageNum: number, append: boolean = false) => {
+    // 防止重复请求
+    if (isLoadingRef.current) {
+      console.log('已有请求在进行中，跳过');
+      return;
+    }
+
+    try {
+      isLoadingRef.current = true;
+      
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      console.log(`加载第 ${pageNum} 页数据`);
+      const response = await getDailyList({
+        page: pageNum,
+        page_size: pageSize,
+      });
+
+      const totalPages = Math.ceil(response.total / pageSize);
+      const hasMoreData = pageNum < totalPages;
+
+      setContents(prev => {
+        const newContents = append ? [...prev, ...response.items] : response.items;
+        
+        // 保存到缓存
+        try {
+          const cacheData: CacheData = {
+            contents: newContents,
+            page: pageNum,
+            hasMore: hasMoreData,
+            timestamp: Date.now(),
+          };
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        } catch (err) {
+          console.error('保存缓存失败:', err);
+        }
+        
+        return newContents;
+      });
+
+      setPage(pageNum);
+      setHasMore(hasMoreData);
+
+    } catch (err: any) {
+      console.error('获取日常记录失败:', err);
+      setError(err.message || '获取日常记录失败');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+      isLoadingRef.current = false;
+    }
+  }, []);
+
+  // 从缓存加载
   const loadFromCache = useCallback(() => {
     try {
       const cached = sessionStorage.getItem(CACHE_KEY);
       if (cached) {
         const data: CacheData = JSON.parse(cached);
-        // 缓存有效期 5 分钟
         const isValid = Date.now() - data.timestamp < 5 * 60 * 1000;
         
         if (isValid && data.contents.length > 0) {
+          console.log('从缓存加载数据');
           setContents(data.contents);
           setPage(data.page);
           setHasMore(data.hasMore);
@@ -68,38 +127,13 @@ export default function DailyPage() {
     return false;
   }, []);
 
-  // 保存到缓存
-  const saveToCache = useCallback((data: Omit<CacheData, 'timestamp'>) => {
-    try {
-      const cacheData: CacheData = {
-        ...data,
-        timestamp: Date.now(),
-      };
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-    } catch (error) {
-      console.error('保存缓存失败:', error);
-    }
-  }, []);
-
-  // 保存滚动位置
-  const saveScrollPosition = useCallback(() => {
-    try {
-      const scrollY = window.scrollY;
-      sessionStorage.setItem(SCROLL_KEY, scrollY.toString());
-    } catch (error) {
-      console.error('保存滚动位置失败:', error);
-    }
-  }, []);
-
   // 恢复滚动位置
-  const restoreScrollPosition = useCallback(() => {
+  const restoreScroll = useCallback(() => {
     try {
       const scrollY = sessionStorage.getItem(SCROLL_KEY);
-      if (scrollY && !hasRestoredScroll.current) {
+      if (scrollY) {
         isRestoringScroll.current = true;
-        hasRestoredScroll.current = true;
         
-        // 使用 requestAnimationFrame 确保 DOM 已完全渲染
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             window.scrollTo({
@@ -107,7 +141,6 @@ export default function DailyPage() {
               behavior: 'instant' as ScrollBehavior,
             });
             
-            // 延迟清除标记，确保不会触发 Observer
             setTimeout(() => {
               isRestoringScroll.current = false;
             }, 500);
@@ -120,201 +153,68 @@ export default function DailyPage() {
     }
   }, []);
 
-  // 获取日常记录列表
-  const fetchDailyList = useCallback(async (pageNum: number, isLoadMore: boolean = false) => {
+  // 保存滚动位置
+  const saveScroll = useCallback(() => {
     try {
-      if (isLoadMore) {
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-
-      const response = await getDailyList({
-        page: pageNum,
-        page_size: pageSize,
-      });
-
-      setContents(prevContents => {
-        let newContents: ContentListItem[];
-        if (isLoadMore) {
-          // 加载更多：追加到现有列表
-          newContents = [...prevContents, ...response.items];
-        } else {
-          // 首次加载：替换列表
-          newContents = response.items;
-        }
-
-        // 检查是否还有更多数据
-        const totalPages = Math.ceil(response.total / pageSize);
-        const hasMoreData = pageNum < totalPages;
-        setHasMore(hasMoreData);
-
-        // 保存到缓存
-        saveToCache({
-          contents: newContents,
-          page: pageNum,
-          hasMore: hasMoreData,
-        });
-
-        return newContents;
-      });
-
-    } catch (err: any) {
-      console.error('获取日常记录失败:', err);
-      setError(err.message || '获取日常记录失败');
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      sessionStorage.setItem(SCROLL_KEY, window.scrollY.toString());
+    } catch (error) {
+      console.error('保存滚动位置失败:', error);
     }
-  }, [saveToCache]);
+  }, []);
 
-  // 首次加载
+  // 初始化
   useEffect(() => {
-    // 防止 React Strict Mode 导致的重复执行
-    if (hasInitialized.current) {
-      return;
-    }
-    hasInitialized.current = true;
-    
-    // 检查是否从详情页返回
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
     const fromDetail = sessionStorage.getItem(FROM_DETAIL_KEY);
     
     if (fromDetail === 'true') {
-      // 从详情页返回：尝试从缓存加载
-      const hasCache = loadFromCache();
-      
-      if (hasCache) {
-        // 有缓存，恢复滚动位置
-        restoreScrollPosition();
-      } else {
-        // 无缓存，加载第一页
-        hasRestoredScroll.current = true; // 标记为已恢复
-        fetchDailyList(1, false);
-      }
-      
-      // 清除标记
+      console.log('从详情页返回');
       sessionStorage.removeItem(FROM_DETAIL_KEY);
+      
+      const hasCache = loadFromCache();
+      if (hasCache) {
+        restoreScroll();
+      } else {
+        loadData(1, false);
+      }
     } else {
-      // 直接访问或刷新：清除缓存，从第一页开始
+      console.log('首次访问或刷新');
       sessionStorage.removeItem(CACHE_KEY);
       sessionStorage.removeItem(SCROLL_KEY);
-      setPage(1);
-      setHasMore(true);
-      hasRestoredScroll.current = true; // 标记为已恢复（无需恢复）
-      fetchDailyList(1, false);
+      loadData(1, false);
       window.scrollTo(0, 0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData, loadFromCache, restoreScroll]);
 
-  // 监听页面离开，保存滚动位置
+  // 设置 Intersection Observer
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      saveScrollPosition();
-    };
-
-    // 监听路由变化（点击链接）
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const link = target.closest('a');
-      if (link && link.href.includes('/daily/')) {
-        // 设置标记：从详情页返回
-        sessionStorage.setItem(FROM_DETAIL_KEY, 'true');
-        // 保存滚动位置
-        saveScrollPosition();
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('click', handleClick);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('click', handleClick);
-    };
-  }, [saveScrollPosition]);
-
-  // 使用 Intersection Observer 监听滚动到底部
-  useEffect(() => {
-    // 等待初始加载完成
-    if (loading) {
+    if (loading || contents.length === 0) {
       return;
     }
 
-    // 如果没有内容，不创建 Observer
-    if (contents.length === 0) {
-      return;
+    // 清理旧的 observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
     }
 
-    // 如果还没有恢复滚动，延迟创建 Observer
-    if (!hasRestoredScroll.current) {
-      const timer = setTimeout(() => {
-        hasRestoredScroll.current = true;
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-
-    const observer = new IntersectionObserver(
+    // 创建新的 observer
+    observerRef.current = new IntersectionObserver(
       (entries) => {
-        // 如果正在恢复滚动位置，不触发加载
-        if (isRestoringScroll.current) {
-          return;
-        }
-
-        // 如果正在加载，不重复触发
-        if (isLoadingMore.current) {
-          return;
-        }
-
-        // 当目标元素进入视口时
-        if (entries[0].isIntersecting && !loadingMore && hasMore) {
-          isLoadingMore.current = true;
-          setLoadingMore(true);
-          
-          setPage(prevPage => {
-            const nextPage = prevPage + 1;
-            
-            // 异步加载数据
-            getDailyList({
-              page: nextPage,
-              page_size: pageSize,
-            }).then(response => {
-              const totalPages = Math.ceil(response.total / pageSize);
-              const hasMoreData = nextPage < totalPages;
-              
-              // 更新内容并保存到缓存
-              setContents(prevContents => {
-                const newContents = [...prevContents, ...response.items];
-                
-                // 在同一个更新中保存缓存
-                try {
-                  const cacheData: CacheData = {
-                    contents: newContents,
-                    page: nextPage,
-                    hasMore: hasMoreData,
-                    timestamp: Date.now(),
-                  };
-                  sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-                } catch (error) {
-                  console.error('保存缓存失败:', error);
-                }
-                
-                return newContents;
-              });
-              
-              // 更新其他状态
-              setHasMore(hasMoreData);
-              setLoadingMore(false);
-              isLoadingMore.current = false;
-            }).catch(err => {
-              console.error('获取日常记录失败:', err);
-              setLoadingMore(false);
-              isLoadingMore.current = false;
-            });
-            
-            return nextPage;
-          });
+        const target = entries[0];
+        
+        // 检查是否应该加载更多
+        if (
+          target.isIntersecting &&
+          !isLoadingRef.current &&
+          !loadingMore &&
+          !loading &&
+          hasMore &&
+          !isRestoringScroll.current
+        ) {
+          console.log('触发加载更多');
+          loadData(page + 1, true);
         }
       },
       {
@@ -324,19 +224,33 @@ export default function DailyPage() {
       }
     );
 
-    const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
+    // 开始观察
+    if (observerTarget.current) {
+      observerRef.current.observe(observerTarget.current);
     }
 
+    // 清理
     return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
     };
-    // 只在初始加载完成后创建一次
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+  }, [loading, loadingMore, hasMore, page, contents.length, loadData]);
+
+  // 监听页面离开
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+      if (link && link.href.includes('/daily/')) {
+        sessionStorage.setItem(FROM_DETAIL_KEY, 'true');
+        saveScroll();
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [saveScroll]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
@@ -348,14 +262,13 @@ export default function DailyPage() {
     }
   };
 
-  // 刷新数据（清除缓存）
   const handleRefresh = () => {
     sessionStorage.removeItem(CACHE_KEY);
     sessionStorage.removeItem(SCROLL_KEY);
-    setPage(1);
     setContents([]);
+    setPage(1);
     setHasMore(true);
-    fetchDailyList(1, false);
+    loadData(1, false);
   };
 
   return (
