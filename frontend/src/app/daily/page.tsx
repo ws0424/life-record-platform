@@ -247,6 +247,9 @@ export default function DailyPage() {
       return () => clearTimeout(timer);
     }
 
+    // 使用 ref 存储加载状态，避免闭包问题
+    const loadingRef = { current: false };
+
     const observer = new IntersectionObserver(
       (entries) => {
         // 如果正在恢复滚动位置，不触发加载
@@ -255,60 +258,51 @@ export default function DailyPage() {
         }
 
         // 当目标元素进入视口时
-        if (entries[0].isIntersecting) {
-          // 使用 setTimeout 避免在 Observer 回调中直接更新状态
-          setTimeout(() => {
-            setLoadingMore(prev => {
-              // 如果已经在加载，不重复触发
-              if (prev) return prev;
-              
-              setHasMore(currentHasMore => {
-                // 如果没有更多数据，不触发加载
-                if (!currentHasMore) return currentHasMore;
+        if (entries[0].isIntersecting && !loadingRef.current) {
+          loadingRef.current = true;
+          setLoadingMore(true);
+          
+          setPage(prevPage => {
+            const nextPage = prevPage + 1;
+            
+            // 异步加载数据
+            getDailyList({
+              page: nextPage,
+              page_size: pageSize,
+            }).then(response => {
+              setContents(prevContents => {
+                const newContents = [...prevContents, ...response.items];
                 
-                setPage(prevPage => {
-                  const nextPage = prevPage + 1;
-                  
-                  // 异步加载数据
-                  getDailyList({
+                const totalPages = Math.ceil(response.total / pageSize);
+                const hasMoreData = nextPage < totalPages;
+                setHasMore(hasMoreData);
+                
+                // 保存到缓存
+                try {
+                  const cacheData: CacheData = {
+                    contents: newContents,
                     page: nextPage,
-                    page_size: pageSize,
-                  }).then(response => {
-                    setContents(prevContents => [...prevContents, ...response.items]);
-                    
-                    const totalPages = Math.ceil(response.total / pageSize);
-                    const hasMoreData = nextPage < totalPages;
-                    setHasMore(hasMoreData);
-                    
-                    // 保存到缓存
-                    try {
-                      const newContents = [...contents, ...response.items];
-                      const cacheData: CacheData = {
-                        contents: newContents,
-                        page: nextPage,
-                        hasMore: hasMoreData,
-                        timestamp: Date.now(),
-                      };
-                      sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-                    } catch (error) {
-                      console.error('保存缓存失败:', error);
-                    }
-                    
-                    setLoadingMore(false);
-                  }).catch(err => {
-                    console.error('获取日常记录失败:', err);
-                    setLoadingMore(false);
-                  });
-                  
-                  return nextPage;
-                });
+                    hasMore: hasMoreData,
+                    timestamp: Date.now(),
+                  };
+                  sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+                } catch (error) {
+                  console.error('保存缓存失败:', error);
+                }
                 
-                return currentHasMore;
+                loadingRef.current = false;
+                setLoadingMore(false);
+                
+                return newContents;
               });
-              
-              return true; // 开始加载
+            }).catch(err => {
+              console.error('获取日常记录失败:', err);
+              loadingRef.current = false;
+              setLoadingMore(false);
             });
-          }, 0);
+            
+            return nextPage;
+          });
         }
       },
       {
