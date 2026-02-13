@@ -16,6 +16,8 @@ import {
 import { useAuthStore } from '@/lib/store/authStore';
 import { ContentCover } from '@/components/ContentCover';
 import { formatDate } from '@/lib/utils/date';
+import { myWorksApi, type CommentItem } from '@/lib/api/myWorks';
+import { StatsGrid, SkeletonGrid } from './components';
 import styles from './page.module.css';
 
 interface ContentItem {
@@ -33,18 +35,6 @@ interface ContentItem {
   created_at: string;
 }
 
-interface CommentItem {
-  id: string;
-  comment_text: string;
-  created_at: string;
-  like_count: number;
-  content: {
-    id: string;
-    title: string;
-    type: string;
-  };
-}
-
 type TabType = 'works' | 'views' | 'likes' | 'comments';
 
 export default function MyWorksPage() {
@@ -57,6 +47,13 @@ export default function MyWorksPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [stats, setStats] = useState({
+    worksCount: 0,
+    viewsCount: 0,
+    likesCount: 0,
+    commentsCount: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
   const pageSize = 12;
 
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -72,6 +69,25 @@ export default function MyWorksPage() {
     }
   }, [isAuthenticated, router]);
 
+  // 加载统计数据
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const loadStats = async () => {
+      try {
+        setLoadingStats(true);
+        const data = await myWorksApi.getStats();
+        setStats(data);
+      } catch (error) {
+        console.error('加载统计数据失败:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    loadStats();
+  }, [isAuthenticated]);
+
   // 加载数据
   const loadData = useCallback(async (pageNum: number, append: boolean = false) => {
     if (isLoadingRef.current) return;
@@ -85,34 +101,22 @@ export default function MyWorksPage() {
         setLoading(true);
       }
 
-      const token = localStorage.getItem('access_token');
-      let endpoint = '';
+      let data;
       
       switch (activeTab) {
         case 'works':
-          endpoint = `/api/content/my/works?page=${pageNum}&page_size=${pageSize}`;
+          data = await myWorksApi.getMyWorks(pageNum, pageSize);
           break;
         case 'views':
-          endpoint = `/api/content/my/views?page=${pageNum}&page_size=${pageSize}`;
+          data = await myWorksApi.getMyViews(pageNum, pageSize);
           break;
         case 'likes':
-          endpoint = `/api/content/my/likes?page=${pageNum}&page_size=${pageSize}`;
+          data = await myWorksApi.getMyLikes(pageNum, pageSize);
           break;
         case 'comments':
-          endpoint = `/api/content/my/comments?page=${pageNum}&page_size=${pageSize}`;
+          data = await myWorksApi.getMyComments(pageNum, pageSize);
           break;
       }
-
-      const response = await fetch(`http://localhost:3000${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('加载失败');
-
-      const result = await response.json();
-      const data = result.data;
 
       if (activeTab === 'comments') {
         const newComments = data.items || [];
@@ -192,17 +196,11 @@ export default function MyWorksPage() {
   // 隐藏/显示作品
   const handleToggleVisibility = async (contentId: string, isPublic: boolean) => {
     try {
-      const token = localStorage.getItem('access_token');
-      const endpoint = isPublic ? 'hide' : 'show';
-      
-      const response = await fetch(`http://localhost:3000/api/content/${contentId}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('操作失败');
+      if (isPublic) {
+        await myWorksApi.hideContent(contentId);
+      } else {
+        await myWorksApi.showContent(contentId);
+      }
 
       message.success(isPublic ? '已隐藏' : '已公开');
       
@@ -226,21 +224,14 @@ export default function MyWorksPage() {
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
-          const token = localStorage.getItem('access_token');
-          
-          const response = await fetch(`http://localhost:3000/api/content/${contentId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-
-          if (!response.ok) throw new Error('删除失败');
-
+          await myWorksApi.deleteContent(contentId);
           message.success('删除成功');
           
           // 从列表中移除
           setContents(prev => prev.filter(item => item.id !== contentId));
+          
+          // 更新统计
+          setStats(prev => ({ ...prev, worksCount: prev.worksCount - 1 }));
         } catch (error) {
           console.error('删除失败:', error);
           message.error('删除失败，请重试');
@@ -252,21 +243,14 @@ export default function MyWorksPage() {
   // 删除浏览记录
   const handleDeleteView = async (contentId: string) => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      const response = await fetch(`http://localhost:3000/api/content/my/views/${contentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('删除失败');
-
+      await myWorksApi.deleteViewRecord(contentId);
       message.success('已删除');
       
       // 从列表中移除
       setContents(prev => prev.filter(item => item.id !== contentId));
+      
+      // 更新统计
+      setStats(prev => ({ ...prev, viewsCount: prev.viewsCount - 1 }));
     } catch (error) {
       console.error('删除失败:', error);
       message.error('删除失败，请重试');
@@ -297,6 +281,9 @@ export default function MyWorksPage() {
           <p className={styles.subtitle}>管理你的作品、浏览记录、点赞和评论</p>
         </motion.div>
 
+        {/* 统计卡片 */}
+        {!loadingStats && <StatsGrid stats={stats} />}
+
         {/* 标签页 */}
         <div className={styles.tabs}>
           <ul className={styles.tabList}>
@@ -316,10 +303,7 @@ export default function MyWorksPage() {
 
         {/* 加载状态 */}
         {loading && contents.length === 0 && comments.length === 0 && (
-          <div className={styles.loadingState}>
-            <Spin size="large" />
-            <div className={styles.loadingText}>加载中...</div>
-          </div>
+          <SkeletonGrid count={6} />
         )}
 
         {/* 空状态 */}
