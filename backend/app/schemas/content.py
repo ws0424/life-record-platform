@@ -164,6 +164,7 @@ class CommentResponse(BaseModel):
     replies: Optional[List["CommentResponse"]] = None
     is_liked: Optional[bool] = None  # 当前用户是否点赞
     reply_count: Optional[int] = 0  # 回复数量
+    content: Optional[Dict[str, Any]] = None  # 评论所属的内容信息（用于我的评论列表）
 
     @field_validator('id', 'content_id', 'user_id', 'parent_id', mode='before')
     @classmethod
