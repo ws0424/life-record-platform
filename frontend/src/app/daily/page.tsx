@@ -273,27 +273,30 @@ export default function DailyPage() {
               const totalPages = Math.ceil(response.total / pageSize);
               const hasMoreData = nextPage < totalPages;
               
-              // 批量更新状态
-              setContents(prevContents => [...prevContents, ...response.items]);
-              setHasMore(hasMoreData);
-              setLoadingMore(false);
-              loadingRef.current = false;
-              
-              // 保存到缓存
-              try {
-                setContents(currentContents => {
+              // 更新内容并保存到缓存
+              setContents(prevContents => {
+                const newContents = [...prevContents, ...response.items];
+                
+                // 在同一个更新中保存缓存
+                try {
                   const cacheData: CacheData = {
-                    contents: currentContents,
+                    contents: newContents,
                     page: nextPage,
                     hasMore: hasMoreData,
                     timestamp: Date.now(),
                   };
                   sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-                  return currentContents;
-                });
-              } catch (error) {
-                console.error('保存缓存失败:', error);
-              }
+                } catch (error) {
+                  console.error('保存缓存失败:', error);
+                }
+                
+                return newContents;
+              });
+              
+              // 更新其他状态
+              setHasMore(hasMoreData);
+              setLoadingMore(false);
+              loadingRef.current = false;
             }).catch(err => {
               console.error('获取日常记录失败:', err);
               loadingRef.current = false;
