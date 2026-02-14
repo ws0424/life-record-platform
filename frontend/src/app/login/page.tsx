@@ -43,9 +43,10 @@ export default function LoginPage() {
       
       message.success('登录成功！');
       
-      // 获取 redirect 参数
+      // 获取 redirect 参数并解码
       const searchParams = new URLSearchParams(window.location.search);
-      const redirect = searchParams.get('redirect') || '/dashboard';
+      const redirectParam = searchParams.get('redirect');
+      const redirect = redirectParam ? decodeURIComponent(redirectParam) : '/dashboard';
       
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {

@@ -70,7 +70,7 @@ export default function MyWorksPage() {
   useEffect(() => {
     if (!isAuthenticated) {
       message.warning('请先登录');
-      router.push('/login?redirect=/my-works');
+      router.push('/login?redirect=' + encodeURIComponent('/my-works'));
     }
   }, [isAuthenticated, router]);
 
@@ -81,8 +81,13 @@ export default function MyWorksPage() {
     const loadStats = async () => {
       try {
         setLoadingStats(true);
-        const data = await myWorksApi.getStats();
-        setStats(data);
+        const stats = await myWorksApi.getStats();
+        setStats(stats || {
+          worksCount: 0,
+          viewsCount: 0,
+          likesCount: 0,
+          commentsCount: 0,
+        });
       } catch (error) {
         console.error('加载统计数据失败:', error);
       } finally {
@@ -121,6 +126,11 @@ export default function MyWorksPage() {
         case 'comments':
           data = await myWorksApi.getMyComments(pageNum, pageSize);
           break;
+      }
+
+      // myWorksApi 已经返回了 data，不需要再访问 .data
+      if (!data) {
+        data = { items: [], total_pages: 0 };
       }
 
       if (activeTab === 'comments') {

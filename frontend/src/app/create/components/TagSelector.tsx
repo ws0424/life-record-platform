@@ -44,10 +44,11 @@ export const TagSelector = memo<TagSelectorProps>(({
   const fetchHotTags = async () => {
     try {
       setLoading(true);
-      const tags = await getHotTags(10);
-      setHotTags(tags);
+      const response = await getHotTags(10);
+      setHotTags(response?.data || []);
     } catch (error) {
       console.error('获取热门标签失败:', error);
+      setHotTags([]);
     } finally {
       setLoading(false);
     }
@@ -183,7 +184,7 @@ export const TagSelector = memo<TagSelectorProps>(({
           </div>
         ) : (
           <Space size={[8, 8]} wrap>
-            {hotTags.map((hotTag) => {
+            {(hotTags || []).map((hotTag) => {
               const isSelected = tags.includes(hotTag.name);
               const isDisabled = tags.length >= maxCount && !isSelected;
               

@@ -105,13 +105,13 @@ export default function VideoUpload({
 
       // 4. 上传成功，更新本地状态
       const updatedVideos = videos.map(v =>
-        v.uid === videoItem.uid
+          v.uid === videoItem.uid
           ? { ...v, status: 'done' as const, url: result.url, thumbnail: thumbnailUrl, progress: 100 }
-          : v
+            : v
       );
       const newVideo = { ...videoItem, status: 'done' as const, url: result.url, thumbnail: thumbnailUrl, progress: 100 };
       const allVideos = [...videos.filter(v => v.uid !== videoItem.uid), newVideo];
-      
+
       setVideos(allVideos);
 
       // 5. 更新父组件 - 视频 URL 列表
@@ -218,7 +218,7 @@ export default function VideoUpload({
                       }} 
                     />
                   ) : (
-                    <PlayCircleOutlined style={{ fontSize: 32, color: 'var(--color-primary)' }} />
+                  <PlayCircleOutlined style={{ fontSize: 32, color: 'var(--color-primary)' }} />
                   )}
                 </div>
                 <div className={styles.videoDetails}>

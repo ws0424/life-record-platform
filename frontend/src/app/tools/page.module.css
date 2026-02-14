@@ -43,7 +43,7 @@
   gap: var(--spacing-xl);
 }
 
-/* ===== 卡片样式 - 与 Albums 页面一致 ===== */
+/* ===== 卡片样式 - 简洁设计 ===== */
 .toolCard {
   background: var(--bg-secondary);
   border-radius: var(--radius-xl);
@@ -54,10 +54,11 @@
   cursor: pointer;
 }
 
-/* 悬停效果 - 与 Albums 一致 */
+/* 悬停效果 - 微交互 */
 .toolCard:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .toolLink {
@@ -125,18 +126,17 @@
   border-top: 1px solid var(--border-primary);
 }
 
-/* 分类标签 - Badge 样式 */
+/* 分类标签 - 简洁样式 */
 .category {
   font-size: var(--font-size-xs);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-weight: var(--font-weight-medium);
   padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--bg-primary);
+  background: var(--bg-tertiary);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-primary);
 }
 
-/* 箭头按钮 */
+/* 箭头按钮 - 简化设计 */
 .arrow {
   display: flex;
   align-items: center;
@@ -144,8 +144,7 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
+  background: transparent;
   transition: all var(--transition-normal);
 }
 
@@ -153,17 +152,12 @@
   width: 16px;
   height: 16px;
   stroke-width: 2;
-  color: var(--text-secondary);
-  transition: transform var(--transition-normal);
-}
-
-.toolCard:hover .arrow {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  color: var(--text-tertiary);
+  transition: all var(--transition-normal);
 }
 
 .toolCard:hover .arrow svg {
-  color: white;
+  color: var(--color-primary);
   transform: translateX(2px);
 }
 
@@ -259,19 +253,10 @@
 }
 
 /* ===== 焦点状态 (键盘导航) ===== */
-.toolLink:focus {
-  outline: 2px solid #0D9488;
-  outline-offset: 4px;
-  border-radius: 12px;
-}
-
-[data-theme="dark"] .toolLink:focus {
-  outline-color: #14B8A6;
-}
-
 .toolLink:focus-visible {
-  outline: 2px solid #0D9488;
+  outline: 2px solid var(--color-primary);
   outline-offset: 4px;
+  border-radius: var(--radius-xl);
 }
 
 /* ===== 加载动画 (可选) ===== */

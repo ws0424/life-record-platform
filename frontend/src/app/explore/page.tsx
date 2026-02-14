@@ -40,7 +40,7 @@ export default function ExplorePage() {
         category: activeCategory,
         keyword: searchQuery || undefined,
       });
-      setContents(response.items);
+      setContents(response.data?.items || []);
     } catch (error) {
       console.error('获取内容失败:', error);
     } finally {

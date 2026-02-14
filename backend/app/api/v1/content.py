@@ -23,6 +23,35 @@ from app.services.content_service import ContentService
 router = APIRouter()
 
 
+# ==================== 搜索相关接口 ====================
+# 注意：必须放在 /{content_id} 之前，避免路由冲突
+
+@router.get(
+    "/search",
+    response_model=ApiResponse[ContentListResponse],
+    summary="搜索内容",
+    description="支持按标题、作者名称模糊搜索内容（允许未登录访问）"
+)
+async def search_contents(
+    keyword: Optional[str] = Query(None, description="标题关键词"),
+    author: Optional[str] = Query(None, description="作者名称"),
+    type: Optional[ContentType] = Query(None, description="内容类型"),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """搜索内容（允许未登录访问）"""
+    service = ContentService(db)
+    return service.search_contents(
+        keyword=keyword,
+        author=author,
+        content_type=type,
+        page=page,
+        page_size=page_size,
+    )
+
+
 @router.post(
     "",
     response_model=ApiResponse[ContentResponse],
@@ -518,6 +547,72 @@ async def show_content(
     """公开作品"""
     service = ContentService(db)
     return service.toggle_content_visibility(content_id, str(current_user.id), is_public=True)
+
+
+# ==================== 相册统计相关接口 ====================
+
+@router.get(
+    "/albums/stats/location",
+    response_model=ApiResponse[dict],
+    summary="按地点统计相册",
+    description="统计相册按地点的分布情况"
+)
+async def get_album_stats_by_location(
+    user_id: Optional[str] = Query(None, description="用户ID（不传则统计所有公开相册）"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """按地点统计相册"""
+    service = ContentService(db)
+    # 如果传了 user_id，检查权限
+    if user_id and current_user and str(current_user.id) != user_id:
+        # 只能查看自己的私密统计
+        user_id = None
+    return service.get_album_stats_by_location(user_id)
+
+
+@router.get(
+    "/albums/stats/tag",
+    response_model=ApiResponse[dict],
+    summary="按标签统计相册",
+    description="统计相册按标签的分布情况"
+)
+async def get_album_stats_by_tag(
+    user_id: Optional[str] = Query(None, description="用户ID（不传则统计所有公开相册）"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """按标签统计相册"""
+    service = ContentService(db)
+    # 如果传了 user_id，检查权限
+    if user_id and current_user and str(current_user.id) != user_id:
+        # 只能查看自己的私密统计
+        user_id = None
+    return service.get_album_stats_by_tag(user_id)
+
+
+@router.get(
+    "/albums/stats/timeline",
+    response_model=ApiResponse[dict],
+    summary="按时间轴统计相册",
+    description="统计相册按时间的分布情况"
+)
+async def get_album_stats_by_timeline(
+    user_id: Optional[str] = Query(None, description="用户ID（不传则统计所有公开相册）"),
+    group_by: str = Query("month", description="分组方式：year/month/day"),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """按时间轴统计相册"""
+    service = ContentService(db)
+    # 如果传了 user_id，检查权限
+    if user_id and current_user and str(current_user.id) != user_id:
+        # 只能查看自己的私密统计
+        user_id = None
+    return service.get_album_stats_by_timeline(user_id, group_by)
+
+
+
 
 
 

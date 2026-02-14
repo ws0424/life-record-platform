@@ -8,6 +8,7 @@ import { Card, Empty, Spin, Button, Tag, Avatar, Tooltip } from 'antd';
 import { PlusOutlined, EyeOutlined, HeartOutlined, MessageOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/lib/store/authStore';
 import { getDailyList } from '@/lib/api/content';
+import { searchContents } from '@/lib/api/album';
 import type { ContentListItem } from '@/lib/api/content';
 import { formatDate } from '@/lib/utils/date';
 import { ContentCover } from '@/components/ContentCover';
@@ -36,6 +37,9 @@ export default function DailyPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [keyword, setKeyword] = useState('');
+  const [author, setAuthor] = useState('');
+  const [searchMode, setSearchMode] = useState(false);
   const pageSize = 12;
 
   // Refs
@@ -59,33 +63,59 @@ export default function DailyPage() {
       if (append) {
         setLoadingMore(true);
       } else {
-        setLoading(true);
+      setLoading(true);
       }
       setError(null);
 
       console.log(`加载第 ${pageNum} 页数据`);
-      const response = await getDailyList({
-        page: pageNum,
-        page_size: pageSize,
-      });
+      
+      let response;
+      // 如果有搜索条件，使用搜索接口
+      if (searchMode && (keyword || author)) {
+        response = await searchContents({
+          keyword: keyword || undefined,
+          author: author || undefined,
+          type: 'daily',
+          page: pageNum,
+          page_size: pageSize,
+        });
+      } else {
+        response = await getDailyList({
+          page: pageNum,
+          page_size: pageSize,
+        });
+      }
 
-      const totalPages = Math.ceil(response.total / pageSize);
+      console.log('接口返回数据:', response);
+
+      // 检查返回数据是否有效
+      if (!response || !response.data || !response.data.items) {
+        console.error('接口返回数据格式错误:', response);
+        throw new Error('数据格式错误');
+      }
+
+      const data = response.data;
+      const totalPages = Math.ceil(data.total / pageSize);
       const hasMoreData = pageNum < totalPages;
 
       setContents(prev => {
-        const newContents = append ? [...prev, ...response.items] : response.items;
+        const newContents = append ? [...prev, ...data.items] : data.items;
+        console.log('设置 contents:', newContents);
+        console.log('newContents.length:', newContents?.length || 0);
         
-        // 保存到缓存
-        try {
-          const cacheData: CacheData = {
-            contents: newContents,
-            page: pageNum,
-            hasMore: hasMoreData,
-            timestamp: Date.now(),
-          };
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-        } catch (err) {
-          console.error('保存缓存失败:', err);
+        // 保存到缓存（搜索模式下不缓存）
+        if (!searchMode) {
+          try {
+            const cacheData: CacheData = {
+              contents: newContents,
+              page: pageNum,
+              hasMore: hasMoreData,
+              timestamp: Date.now(),
+            };
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+          } catch (err) {
+            console.error('保存缓存失败:', err);
+          }
         }
         
         return newContents;
@@ -93,6 +123,8 @@ export default function DailyPage() {
 
       setPage(pageNum);
       setHasMore(hasMoreData);
+      
+      console.log('数据加载完成，loading 设置为 false');
 
     } catch (err: any) {
       console.error('获取日常记录失败:', err);
@@ -102,7 +134,7 @@ export default function DailyPage() {
       setLoadingMore(false);
       isLoadingRef.current = false;
     }
-  }, []);
+  }, [searchMode, keyword, author]);
 
   // 从缓存加载
   const loadFromCache = useCallback(() => {
@@ -190,7 +222,7 @@ export default function DailyPage() {
 
   // 设置 Intersection Observer
   useEffect(() => {
-    if (loading || contents.length === 0) {
+    if (loading || !contents || contents.length === 0) {
       return;
     }
 
@@ -235,7 +267,7 @@ export default function DailyPage() {
         observerRef.current.disconnect();
       }
     };
-  }, [loading, loadingMore, hasMore, page, contents.length, loadData]);
+  }, [loading, loadingMore, hasMore, page, contents?.length, loadData]);
 
   // 监听页面离开
   useEffect(() => {
@@ -271,6 +303,29 @@ export default function DailyPage() {
     loadData(1, false);
   };
 
+  const handleSearch = () => {
+    if (!keyword && !author) {
+      // 如果搜索条件为空，退出搜索模式
+      setSearchMode(false);
+    } else {
+      setSearchMode(true);
+    }
+    setContents([]);
+    setPage(1);
+    setHasMore(true);
+    loadData(1, false);
+  };
+
+  const handleClearSearch = () => {
+    setKeyword('');
+    setAuthor('');
+    setSearchMode(false);
+    setContents([]);
+    setPage(1);
+    setHasMore(true);
+    loadData(1, false);
+  };
+
   return (
     <div className={styles.page}>
       <div className={styles.container}>
@@ -282,20 +337,51 @@ export default function DailyPage() {
         >
           <h1 className={styles.title}>日常记录</h1>
           <p className={styles.subtitle}>记录生活的点点滴滴</p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={handleCreateClick}
-            >
-              {isAuthenticated ? '创建记录' : '登录后创建'}
-            </Button>
+          
+          {/* 搜索区域 */}
+          <div className={styles.searchArea}>
+            <div className={styles.searchInputs}>
+              <input
+                type="text"
+                placeholder="搜索标题..."
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className={styles.searchInput}
+              />
+              <input
+                type="text"
+                placeholder="搜索作者..."
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className={styles.searchInput}
+              />
+              <Button type="primary" onClick={handleSearch}>
+                搜索
+              </Button>
+              {searchMode && (
+                <Button onClick={handleClearSearch}>
+                  清除
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={handleCreateClick}
+          >
+            {isAuthenticated ? '创建记录' : '登录后创建'}
+          </Button>
           </div>
         </motion.div>
 
         {/* 首次加载状态 */}
-        {loading && contents.length === 0 && (
+        {loading && (!contents || contents.length === 0) && (
           <div style={{ textAlign: 'center', padding: '60px 0' }}>
             <Spin size="large" />
             <div style={{ marginTop: 16, color: 'var(--text-secondary)' }}>加载中...</div>
@@ -303,7 +389,7 @@ export default function DailyPage() {
         )}
 
         {/* 错误状态 */}
-        {error && !loading && contents.length === 0 && (
+        {error && !loading && (!contents || contents.length === 0) && (
           <Empty
             description={error}
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -315,7 +401,7 @@ export default function DailyPage() {
         )}
 
         {/* 空状态 */}
-        {!loading && !error && contents.length === 0 && (
+        {!loading && !error && (!contents || contents.length === 0) && (
           <Empty
             description="还没有日常记录"
             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -331,7 +417,7 @@ export default function DailyPage() {
         )}
 
         {/* 内容列表 */}
-        {contents.length > 0 && (
+        {contents && contents.length > 0 && (
           <>
             <div className={styles.grid}>
               {contents.map((content, index) => (
@@ -496,14 +582,14 @@ export default function DailyPage() {
                   <div style={{ marginTop: 12, color: 'var(--text-secondary)', fontSize: 14 }}>加载更多...</div>
                 </div>
               )}
-              {!loadingMore && !hasMore && contents.length > 0 && (
+              {!loadingMore && !hasMore && contents && contents.length > 0 && (
                 <div style={{ 
                   color: 'var(--text-tertiary)', 
                   fontSize: 14,
                 }}>
                   已加载全部 {contents.length} 条记录
-                </div>
-              )}
+              </div>
+            )}
             </div>
           </>
         )}

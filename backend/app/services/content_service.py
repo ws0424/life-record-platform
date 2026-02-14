@@ -434,8 +434,22 @@ class ContentService:
                 joinedload(Comment.user)
             ).filter(Comment.id == comment.id).first()
             
-            response_data = CommentResponse.from_orm(comment_with_user)
-            response_data.user = UserBrief.from_orm(comment_with_user.user) if comment_with_user.user else None
+            # 手动构建响应，避免 content 字段验证问题
+            response_data = CommentResponse(
+                id=str(comment_with_user.id),
+                content_id=str(comment_with_user.content_id),
+                user_id=str(comment_with_user.user_id),
+                comment_text=comment_with_user.comment_text,
+                parent_id=str(comment_with_user.parent_id) if comment_with_user.parent_id else None,
+                like_count=comment_with_user.like_count,
+                created_at=comment_with_user.created_at,
+                updated_at=comment_with_user.updated_at,
+                user=UserBrief.from_orm(comment_with_user.user) if comment_with_user.user else None,
+                replies=None,
+                is_liked=False,
+                reply_count=0,
+                content=None  # 不返回 content 字段
+            )
             
             logger.info(f"✅ 评论创建成功 - ID: {comment.id}")
             
@@ -476,8 +490,22 @@ class ContentService:
             # 构建响应
             items = []
             for comment in comments:
-                comment_data = CommentResponse.from_orm(comment)
-                comment_data.user = UserBrief.from_orm(comment.user) if comment.user else None
+                # 手动构建 CommentResponse，避免 content 字段验证问题
+                comment_data = CommentResponse(
+                    id=str(comment.id),
+                    content_id=str(comment.content_id),
+                    user_id=str(comment.user_id),
+                    comment_text=comment.comment_text,
+                    parent_id=str(comment.parent_id) if comment.parent_id else None,
+                    like_count=comment.like_count,
+                    created_at=comment.created_at,
+                    updated_at=comment.updated_at,
+                    user=UserBrief.from_orm(comment.user) if comment.user else None,
+                    replies=[],
+                    is_liked=False,
+                    reply_count=0,
+                    content=None
+                )
                 
                 # 检查当前用户是否点赞
                 if user_id:
@@ -495,10 +523,22 @@ class ContentService:
                     joinedload(Comment.user)
                 ).filter(Comment.parent_id == comment.id).order_by(Comment.created_at).limit(3).all()
                 
-                comment_data.replies = []
                 for reply in replies:
-                    reply_data = CommentResponse.from_orm(reply)
-                    reply_data.user = UserBrief.from_orm(reply.user) if reply.user else None
+                    reply_data = CommentResponse(
+                        id=str(reply.id),
+                        content_id=str(reply.content_id),
+                        user_id=str(reply.user_id),
+                        comment_text=reply.comment_text,
+                        parent_id=str(reply.parent_id) if reply.parent_id else None,
+                        like_count=reply.like_count,
+                        created_at=reply.created_at,
+                        updated_at=reply.updated_at,
+                        user=UserBrief.from_orm(reply.user) if reply.user else None,
+                        replies=None,
+                        is_liked=False,
+                        reply_count=0,
+                        content=None
+                    )
                     
                     # 检查当前用户是否点赞回复
                     if user_id:
@@ -593,6 +633,270 @@ class ContentService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"获取热门标签失败: {str(e)}"
+            )
+    
+    def get_album_stats_by_location(self, user_id: Optional[str] = None) -> ApiResponse[dict]:
+        """按地点统计相册"""
+        try:
+            logger.info(f"📍 按地点统计相册 - 用户ID: {user_id}")
+            
+            query = self.db.query(Content).filter(Content.type == ContentType.ALBUM)
+            
+            # 如果指定用户，只统计该用户的相册
+            if user_id:
+                query = query.filter(Content.user_id == user_id)
+            else:
+                # 否则只统计公开的相册
+                query = query.filter(Content.is_public == True)
+            
+            albums = query.all()
+            
+            # 统计地点
+            location_stats = {}
+            for album in albums:
+                if album.location:
+                    location = album.location.strip()
+                    if location not in location_stats:
+                        location_stats[location] = {
+                            "location": location,
+                            "count": 0,
+                            "photo_count": 0,
+                            "albums": []
+                        }
+                    
+                    location_stats[location]["count"] += 1
+                    photo_count = len(album.images) if album.images else 0
+                    location_stats[location]["photo_count"] += photo_count
+                    location_stats[location]["albums"].append({
+                        "id": str(album.id),
+                        "title": album.title,
+                        "photo_count": photo_count,
+                        "created_at": album.created_at.isoformat(),
+                    })
+            
+            # 按相册数量排序
+            sorted_stats = sorted(location_stats.values(), key=lambda x: x["count"], reverse=True)
+            
+            logger.info(f"✅ 地点统计成功 - 地点数: {len(sorted_stats)}")
+            
+            return ApiResponse(
+                code=200,
+                data={"locations": sorted_stats},
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 地点统计失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"地点统计失败: {str(e)}"
+            )
+    
+    def get_album_stats_by_tag(self, user_id: Optional[str] = None) -> ApiResponse[dict]:
+        """按标签统计相册"""
+        try:
+            logger.info(f"🏷️  按标签统计相册 - 用户ID: {user_id}")
+            
+            query = self.db.query(Content).filter(Content.type == ContentType.ALBUM)
+            
+            # 如果指定用户，只统计该用户的相册
+            if user_id:
+                query = query.filter(Content.user_id == user_id)
+            else:
+                # 否则只统计公开的相册
+                query = query.filter(Content.is_public == True)
+            
+            albums = query.all()
+            
+            # 统计标签
+            tag_stats = {}
+            for album in albums:
+                if album.tags:
+                    for tag in album.tags:
+                        tag = tag.strip()
+                        if tag not in tag_stats:
+                            tag_stats[tag] = {
+                                "tag": tag,
+                                "count": 0,
+                                "photo_count": 0,
+                                "albums": []
+                            }
+                        
+                        tag_stats[tag]["count"] += 1
+                        photo_count = len(album.images) if album.images else 0
+                        tag_stats[tag]["photo_count"] += photo_count
+                        tag_stats[tag]["albums"].append({
+                            "id": str(album.id),
+                            "title": album.title,
+                            "photo_count": photo_count,
+                            "created_at": album.created_at.isoformat(),
+                        })
+            
+            # 按相册数量排序
+            sorted_stats = sorted(tag_stats.values(), key=lambda x: x["count"], reverse=True)
+            
+            logger.info(f"✅ 标签统计成功 - 标签数: {len(sorted_stats)}")
+            
+            return ApiResponse(
+                code=200,
+                data={"tags": sorted_stats},
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 标签统计失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"标签统计失败: {str(e)}"
+            )
+    
+    def get_album_stats_by_timeline(self, user_id: Optional[str] = None, group_by: str = "month") -> ApiResponse[dict]:
+        """按时间轴统计相册"""
+        try:
+            logger.info(f"📅 按时间轴统计相册 - 用户ID: {user_id}, 分组: {group_by}")
+            
+            query = self.db.query(Content).filter(Content.type == ContentType.ALBUM)
+            
+            # 如果指定用户，只统计该用户的相册
+            if user_id:
+                query = query.filter(Content.user_id == user_id)
+            else:
+                # 否则只统计公开的相册
+                query = query.filter(Content.is_public == True)
+            
+            albums = query.order_by(desc(Content.created_at)).all()
+            
+            # 统计时间轴
+            timeline_stats = {}
+            for album in albums:
+                created_at = album.created_at
+                
+                # 根据分组方式生成时间键
+                if group_by == "year":
+                    time_key = created_at.strftime("%Y")
+                    time_label = f"{created_at.year}年"
+                elif group_by == "month":
+                    time_key = created_at.strftime("%Y-%m")
+                    time_label = f"{created_at.year}年{created_at.month}月"
+                elif group_by == "day":
+                    time_key = created_at.strftime("%Y-%m-%d")
+                    time_label = f"{created_at.year}年{created_at.month}月{created_at.day}日"
+                else:
+                    time_key = created_at.strftime("%Y-%m")
+                    time_label = f"{created_at.year}年{created_at.month}月"
+                
+                if time_key not in timeline_stats:
+                    timeline_stats[time_key] = {
+                        "time_key": time_key,
+                        "time_label": time_label,
+                        "count": 0,
+                        "photo_count": 0,
+                        "albums": []
+                    }
+                
+                timeline_stats[time_key]["count"] += 1
+                photo_count = len(album.images) if album.images else 0
+                timeline_stats[time_key]["photo_count"] += photo_count
+                timeline_stats[time_key]["albums"].append({
+                    "id": str(album.id),
+                    "title": album.title,
+                    "photo_count": photo_count,
+                    "location": album.location,
+                    "tags": album.tags,
+                    "created_at": album.created_at.isoformat(),
+                })
+            
+            # 按时间倒序排序
+            sorted_stats = sorted(timeline_stats.values(), key=lambda x: x["time_key"], reverse=True)
+            
+            logger.info(f"✅ 时间轴统计成功 - 时间段数: {len(sorted_stats)}")
+            
+            return ApiResponse(
+                code=200,
+                data={"timeline": sorted_stats, "group_by": group_by},
+                msg="获取成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 时间轴统计失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"时间轴统计失败: {str(e)}"
+            )
+    
+    def search_contents(
+        self,
+        keyword: Optional[str] = None,
+        author: Optional[str] = None,
+        content_type: Optional[ContentType] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> ApiResponse[ContentListResponse]:
+        """搜索内容（支持标题和作者名称模糊检索）"""
+        try:
+            logger.info(f"🔍 搜索内容 - 关键词: {keyword}, 作者: {author}, 类型: {content_type}")
+            
+            query = self.db.query(Content).options(joinedload(Content.user)).filter(Content.is_public == True)
+            
+            # 内容类型筛选
+            if content_type:
+                query = query.filter(Content.type == content_type)
+            
+            # 标题关键词搜索
+            if keyword:
+                query = query.filter(
+                    or_(
+                        Content.title.ilike(f"%{keyword}%"),
+                        Content.description.ilike(f"%{keyword}%"),
+                        Content.content.ilike(f"%{keyword}%"),
+                    )
+                )
+            
+            # 作者名称模糊搜索
+            if author:
+                query = query.join(User).filter(
+                    or_(
+                        User.username.ilike(f"%{author}%"),
+                        User.email.ilike(f"%{author}%"),
+                    )
+                )
+            
+            # 总数
+            total = query.count()
+            
+            # 分页
+            offset = (page - 1) * page_size
+            contents = query.order_by(desc(Content.created_at)).offset(offset).limit(page_size).all()
+            
+            # 计算总页数
+            total_pages = (total + page_size - 1) // page_size
+            
+            # 构建响应
+            items = []
+            for content in contents:
+                item = ContentListItem.from_orm(content)
+                item.user = UserBrief.from_orm(content.user) if content.user else None
+                items.append(item)
+            
+            logger.info(f"✅ 搜索成功 - 找到 {total} 条结果")
+            
+            return ApiResponse(
+                code=200,
+                data=ContentListResponse(
+                    items=items,
+                    total=total,
+                    page=page,
+                    page_size=page_size,
+                    total_pages=total_pages,
+                ),
+                msg="搜索成功",
+                errMsg=None
+            )
+        except Exception as e:
+            logger.error(f"❌ 搜索失败 - 错误: {str(e)}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"搜索失败: {str(e)}"
             )
     
     def toggle_comment_like(self, comment_id: str, user_id: str) -> ApiResponse[CommentLikeResponse]:

@@ -39,10 +39,10 @@ apiClient.interceptors.response.use(
     // 后端返回统一格式 {code, data, msg, errMsg}
     const apiResponse: ApiResponse = response.data;
     
-    // 如果业务状态码是 401，处理未授权
-    if (apiResponse.code === 401) {
-      handleUnauthorized();
-      const error: any = new Error(apiResponse.errMsg || apiResponse.msg || '未授权，请重新登录');
+    // 如果业务状态码是 401 或 403，处理未授权
+    if (apiResponse.code === 401 || apiResponse.code === 403) {
+      // 不要立即清除 token，让用户有机会重新登录
+      const error: any = new Error(apiResponse.errMsg || apiResponse.msg || '认证失败，请重新登录');
       error.code = apiResponse.code;
       error.response = response;
       return Promise.reject(error);
@@ -56,8 +56,8 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
     
-    // 返回 data 部分
-    return { ...response, data: apiResponse.data };
+    // 返回完整的 apiResponse，而不是只返回 data
+    return { ...response, data: apiResponse };
   },
   async (error) => {
     const originalRequest = error.config;
@@ -76,7 +76,7 @@ apiClient.interceptors.response.use(
         }
 
         const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/refresh`,
           { refresh_token: refreshToken }
         );
 

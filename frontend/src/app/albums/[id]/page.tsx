@@ -1,41 +1,137 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthStore } from '@/lib/store/authStore';
+import { getAlbumDetail, toggleAlbumLike, toggleAlbumSave } from '@/lib/api/album';
 import styles from './page.module.css';
+
+interface Album {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  images: string[];
+  location: string;
+  tags: string[];
+  like_count: number;
+  view_count: number;
+  is_liked: boolean;
+  is_saved: boolean;
+  created_at: string;
+  user: {
+    id: string;
+    username: string;
+    email: string;
+  };
+}
 
 export default function AlbumDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
   const albumId = params.id as string;
   
+  const [album, setAlbum] = useState<Album | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
-  const [isLiked, setIsLiked] = useState(false);
 
-  // TODO: 从 API 获取数据
-  const album = {
-    id: albumId,
-    title: '春日樱花',
-    description: '2024年春天的樱花季，记录了最美的粉色时光',
-    author: {
-      username: 'photographer',
-      name: '摄影师',
-      avatar: 'P',
-    },
-    date: '2024-03-15',
-    location: '日本京都',
-    tags: ['樱花', '春天', '京都', '摄影'],
-    likes: 156,
-    views: 892,
-    photoCount: 24,
-    photos: Array.from({ length: 24 }, (_, i) => ({
-      id: i + 1,
-      title: `照片 ${i + 1}`,
-      description: '美丽的樱花',
-    })),
+  useEffect(() => {
+    loadAlbumDetail();
+  }, [albumId]);
+
+  const loadAlbumDetail = async () => {
+    try {
+      setLoading(true);
+      const response = await getAlbumDetail(albumId);
+      console.log('Album detail 接口返回:', response);
+      
+      // 检查返回数据格式
+      let data;
+      if (response && response.data) {
+        // 新格式：{code, data: {...}}
+        data = response.data;
+      } else {
+        // 旧格式：直接是数据
+        data = response;
+      }
+      
+      console.log('Album data:', data);
+      setAlbum(data);
+    } catch (error) {
+      console.error('获取相册详情失败:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      if (confirm('需要登录后才能点赞，是否前往登录？')) {
+        router.push('/login?redirect=' + encodeURIComponent(`/albums/${albumId}`));
+      }
+      return;
+    }
+
+    try {
+      const response = await toggleAlbumLike(albumId);
+      const result = response.data || response;
+      setAlbum(prev => prev ? {
+        ...prev,
+        is_liked: result.is_liked,
+        like_count: result.like_count,
+      } : null);
+    } catch (error) {
+      console.error('点赞失败:', error);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!isAuthenticated) {
+      if (confirm('需要登录后才能收藏，是否前往登录？')) {
+        router.push('/login?redirect=' + encodeURIComponent(`/albums/${albumId}`));
+      }
+      return;
+    }
+
+    try {
+      const response = await toggleAlbumSave(albumId);
+      const result = response.data || response;
+      setAlbum(prev => prev ? {
+        ...prev,
+        is_saved: result.is_saved,
+      } : null);
+    } catch (error) {
+      console.error('收藏失败:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div className={styles.loading}>加载中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!album) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div className={styles.empty}>相册不存在</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -61,13 +157,23 @@ export default function AlbumDetailPage() {
             <p className={styles.description}>{album.description}</p>
 
             <div className={styles.meta}>
-              <Link href={`/profile/${album.author.username}`} className={styles.author}>
-                <div className={styles.avatar}>{album.author.avatar}</div>
-                <div className={styles.authorInfo}>
-                  <span className={styles.authorName}>{album.author.name}</span>
-                  <span className={styles.date}>{album.date}</span>
+              {album.user ? (
+                <Link href={`/profile/${album.user.username}`} className={styles.author}>
+                  <div className={styles.avatar}>{album.user.username[0].toUpperCase()}</div>
+                  <div className={styles.authorInfo}>
+                    <span className={styles.authorName}>{album.user.username}</span>
+                    <span className={styles.date}>{formatDate(album.created_at)}</span>
+                  </div>
+                </Link>
+              ) : (
+                <div className={styles.author}>
+                  <div className={styles.avatar}>?</div>
+                  <div className={styles.authorInfo}>
+                    <span className={styles.authorName}>未知用户</span>
+                    <span className={styles.date}>{formatDate(album.created_at)}</span>
+                  </div>
                 </div>
-              </Link>
+              )}
 
               <div className={styles.info}>
                 {album.location && (
@@ -85,35 +191,47 @@ export default function AlbumDetailPage() {
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
                   </svg>
-                  {album.photoCount} 张照片
+                  {album.images.length} 张照片
                 </span>
                 <span className={styles.infoItem}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
-                  {album.views} 浏览
+                  {album.view_count} 浏览
                 </span>
               </div>
             </div>
 
-            <div className={styles.tags}>
-              {album.tags.map((tag) => (
-                <Link key={tag} href={`/explore?tag=${tag}`} className={styles.tag}>
-                  #{tag}
-                </Link>
-              ))}
-            </div>
+            {album.tags.length > 0 && (
+              <div className={styles.tags}>
+                {album.tags.map((tag) => (
+                  <Link key={tag} href={`/explore?tag=${tag}`} className={styles.tag}>
+                    #{tag}
+                  </Link>
+                ))}
+              </div>
+            )}
 
             <div className={styles.actions}>
               <button
-                className={`${styles.actionBtn} ${isLiked ? styles.actionBtnActive : ''}`}
-                onClick={() => setIsLiked(!isLiked)}
+                className={`${styles.actionBtn} ${album.is_liked ? styles.actionBtnActive : ''}`}
+                onClick={handleLike}
               >
-                <svg viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor">
+                <svg viewBox="0 0 24 24" fill={album.is_liked ? 'currentColor' : 'none'} stroke="currentColor">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
-                <span>{isLiked ? album.likes + 1 : album.likes}</span>
+                <span>{album.like_count}</span>
+              </button>
+
+              <button
+                className={`${styles.actionBtn} ${album.is_saved ? styles.actionBtnActive : ''}`}
+                onClick={handleSave}
+              >
+                <svg viewBox="0 0 24 24" fill={album.is_saved ? 'currentColor' : 'none'} stroke="currentColor">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+                <span>收藏</span>
               </button>
 
               <button className={styles.actionBtn}>
@@ -132,9 +250,9 @@ export default function AlbumDetailPage() {
 
         {/* 照片网格 */}
         <div className={styles.photoGrid}>
-          {album.photos.map((photo, index) => (
+          {album.images.map((imageUrl, index) => (
             <motion.div
-              key={photo.id}
+              key={index}
               className={styles.photoItem}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -142,13 +260,7 @@ export default function AlbumDetailPage() {
               whileHover={{ scale: 1.05 }}
               onClick={() => setSelectedImage(index)}
             >
-              <div className={styles.photoPlaceholder}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </div>
+              <img src={imageUrl} alt={`${album.title} - ${index + 1}`} className={styles.photoImage} />
               <div className={styles.photoOverlay}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <circle cx="12" cy="12" r="10" />
@@ -179,7 +291,7 @@ export default function AlbumDetailPage() {
               className={styles.navBtn}
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedImage(selectedImage > 0 ? selectedImage - 1 : album.photos.length - 1);
+                setSelectedImage(selectedImage > 0 ? selectedImage - 1 : album.images.length - 1);
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -188,16 +300,14 @@ export default function AlbumDetailPage() {
             </button>
 
             <div className={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
-              <div className={styles.lightboxImage}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </div>
+              <img 
+                src={album.images[selectedImage]} 
+                alt={`${album.title} - ${selectedImage + 1}`}
+                className={styles.lightboxImage}
+              />
               <div className={styles.lightboxInfo}>
-                <h3>{album.photos[selectedImage].title}</h3>
-                <p>{selectedImage + 1} / {album.photos.length}</p>
+                <h3>{album.title}</h3>
+                <p>{selectedImage + 1} / {album.images.length}</p>
               </div>
             </div>
 
@@ -205,7 +315,7 @@ export default function AlbumDetailPage() {
               className={`${styles.navBtn} ${styles.navBtnNext}`}
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedImage(selectedImage < album.photos.length - 1 ? selectedImage + 1 : 0);
+                setSelectedImage(selectedImage < album.images.length - 1 ? selectedImage + 1 : 0);
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">

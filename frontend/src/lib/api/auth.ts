@@ -76,19 +76,19 @@ export interface SendCodeResponse {
 // 发送验证码
 export const sendCode = async (data: SendCodeData): Promise<SendCodeResponse> => {
   const response = await apiClient.post('/auth/send-code', data);
-  return response.data;
+  return response.data.data;
 };
 
 // 用户注册
 export const register = async (data: RegisterData): Promise<AuthResponse> => {
   const response = await apiClient.post('/auth/register', data);
-  return response.data;
+  return response.data.data;
 };
 
 // 用户登录
 export const login = async (data: LoginData): Promise<AuthResponse> => {
   const response = await apiClient.post('/auth/login', data);
-  return response.data;
+  return response.data.data;
 };
 
 // 用户登出
@@ -104,19 +104,19 @@ export const logout = async (): Promise<void> => {
 // 获取当前用户信息
 export const getCurrentUser = async (): Promise<User> => {
   const response = await apiClient.get('/auth/me');
-  return response.data;
+  return response.data.data;
 };
 
 // 更新个人信息
 export const updateProfile = async (data: UpdateProfileData): Promise<User> => {
   const response = await apiClient.put('/auth/profile', data);
-  return response.data;
+  return response.data.data;
 };
 
 // 修改密码
 export const changePassword = async (data: ChangePasswordData): Promise<void> => {
   const response = await apiClient.post('/auth/change-password', data);
-  return response.data;
+  return response.data.data;
 };
 
 // 刷新 token
@@ -124,13 +124,13 @@ export const refreshToken = async (refreshToken: string): Promise<AuthResponse> 
   const response = await apiClient.post('/auth/refresh', {
     refresh_token: refreshToken,
   });
-  return response.data;
+  return response.data.data;
 };
 
 // 重置密码
 export const resetPassword = async (data: ResetPasswordData): Promise<void> => {
   const response = await apiClient.post('/auth/reset-password', data);
-  return response.data;
+  return response.data.data;
 };
 
 // 验证 Token 是否有效
@@ -146,7 +146,7 @@ export const verifyToken = async (): Promise<boolean> => {
 // 获取安全设置信息
 export const getSecuritySettings = async () => {
   const response = await apiClient.get('/auth/security/settings');
-  return response.data;
+  return response.data.data;
 };
 
 // 获取登录日志
@@ -154,25 +154,25 @@ export const getLoginLogs = async (page: number = 1, pageSize: number = 20) => {
   const response = await apiClient.get('/auth/security/login-logs', {
     params: { page, pageSize }
   });
-  return response.data;
+  return response.data.data;
 };
 
 // 获取登录设备
 export const getLoginDevices = async () => {
   const response = await apiClient.get('/auth/security/devices');
-  return response.data;
+  return response.data.data;
 };
 
 // 移除登录设备
 export const removeLoginDevice = async (deviceId: string) => {
   const response = await apiClient.delete(`/auth/security/devices/${deviceId}`);
-  return response.data;
+  return response.data.data;
 };
 
 // 强制设备下线
 export const forceLogoutDevice = async (deviceId: string) => {
   const response = await apiClient.post(`/auth/security/devices/${deviceId}/logout`);
-  return response.data;
+  return response.data.data;
 };
 
 // 换绑邮箱
@@ -182,6 +182,6 @@ export const changeEmail = async (data: {
   password: string;
 }) => {
   const response = await apiClient.post('/auth/change-email', data);
-  return response.data;
+  return response.data.data;
 };
 

@@ -4,6 +4,7 @@ import { ConfigProvider, App } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { antdTheme, antdDarkTheme } from '@/lib/theme/antd';
 import { useEffect, useState } from 'react';
+import '@/lib/dayjs'; // 导入 Day.js 中文配置
 
 export function AntdProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false);

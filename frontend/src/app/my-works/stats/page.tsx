@@ -28,7 +28,7 @@ export default function MyWorksStatsPage() {
   useEffect(() => {
     if (!isAuthenticated) {
       message.warning('请先登录');
-      router.push('/login?redirect=/my-works/stats');
+      router.push('/login?redirect=' + encodeURIComponent('/my-works/stats'));
       return;
     }
 

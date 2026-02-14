@@ -9,7 +9,7 @@ from app.core.exceptions import (
     validation_exception_handler,
     general_exception_handler
 )
-from app.api.v1 import auth, content, upload, chunk_upload
+from app.api.v1 import auth, content, upload, chunk_upload, tools
 import logging
 
 # 配置日志
@@ -158,8 +158,10 @@ app.add_middleware(
 # 注册路由
 app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
 app.include_router(content.router, prefix="/api/content", tags=["内容"])
+app.include_router(content.router, prefix="/api/v1/content", tags=["内容 V1"])  # 兼容前端 v1 路径
 app.include_router(upload.router, prefix="/api/upload", tags=["文件上传"])
 app.include_router(chunk_upload.router, prefix="/api/v1/upload", tags=["切片上传"])
+app.include_router(tools.router, prefix="/api/v1/tools", tags=["生活小工具"])
 
 
 @app.get(

@@ -1,0 +1,135 @@
+.page {
+  min-height: 100vh;
+  padding: var(--spacing-3xl) var(--spacing-md);
+  background: var(--bg-primary);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+
+.title {
+  font-size: clamp(36px, 5vw, 48px);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.expenseList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.expenseCard {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+  border: 1px solid var(--border-primary);
+}
+
+.expenseCard:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.expenseContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.expenseIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.expenseInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.expenseTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  word-break: break-word;
+}
+
+.expenseMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.expenseDate {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
+.expenseDescription {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin-top: var(--spacing-xs);
+}
+
+.expenseAmount {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  margin-right: var(--spacing-md);
+}
+
+.expenseActions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .expenseContent {
+    flex-wrap: wrap;
+  }
+
+  .expenseAmount {
+    order: -1;
+    width: 100%;
+    text-align: right;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .expenseActions {
+    margin-left: auto;
+  }
+}
+
