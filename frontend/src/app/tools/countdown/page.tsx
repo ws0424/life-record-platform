@@ -34,7 +34,7 @@ const typeOptions = countdownTypes.map(type => ({
 
 export default function CountdownPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const [countdowns, setCountdowns] = useState<Countdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -42,12 +42,19 @@ export default function CountdownPage() {
   const [form] = Form.useForm();
 
   useEffect(() => {
+    // 等待初始化完成
+    if (!isInitialized) {
+      return;
+    }
+    
+    // 初始化完成后，检查认证状态
     if (!isAuthenticated) {
       router.push('/login?redirect=' + encodeURIComponent('/tools/countdown'));
       return;
     }
+    
     loadCountdowns();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isInitialized, router]);
 
   const loadCountdowns = async () => {
     try {

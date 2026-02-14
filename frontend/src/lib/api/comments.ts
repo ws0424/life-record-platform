@@ -26,30 +26,30 @@ export interface CreateCommentData {
 // 获取评论列表
 export const getComments = async (postId: string) => {
   const response = await apiClient.get(`/posts/${postId}/comments`);
-  return response.data;
+  return response.data.data;
 };
 
 // 创建评论
 export const createComment = async (data: CreateCommentData) => {
   const response = await apiClient.post(`/posts/${data.post_id}/comments`, data);
-  return response.data;
+  return response.data.data;
 };
 
 // 更新评论
 export const updateComment = async (id: string, content: string) => {
   const response = await apiClient.put(`/comments/${id}`, { content });
-  return response.data;
+  return response.data.data;
 };
 
 // 删除评论
 export const deleteComment = async (id: string) => {
   const response = await apiClient.delete(`/comments/${id}`);
-  return response.data;
+  return response.data.data;
 };
 
 // 点赞评论
 export const likeComment = async (id: string) => {
   const response = await apiClient.post(`/comments/${id}/like`);
-  return response.data;
+  return response.data.data;
 };
 

@@ -13,7 +13,7 @@ export async function uploadImage(file: File): Promise<string> {
     },
   });
 
-  return response.data.url;
+  return response.data.data?.url || response.data.url;
 }
 
 /**
@@ -31,7 +31,7 @@ export async function uploadImages(files: File[]): Promise<string[]> {
     },
   });
 
-  return response.data.urls;
+  return response.data.data?.urls || response.data.urls || [];
 }
 
 /**
@@ -47,7 +47,7 @@ export async function uploadVideo(file: File): Promise<string> {
     },
   });
 
-  return response.data.url;
+  return response.data.data?.url || response.data.url;
 }
 
 /**
@@ -93,7 +93,7 @@ export async function mergeChunks(
     },
   });
 
-  return response.data.url;
+  return response.data.data?.url || response.data.url;
 }
 
 /**

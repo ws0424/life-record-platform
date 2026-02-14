@@ -1,0 +1,167 @@
+/* ===== 单位转换页面 - 与项目主题保持一致 ===== */
+/* 配色: Rose (#E11D48) + Pink (#FB7185) */
+/* 风格: Vibrant & Block-based + Clean Interface */
+
+.page {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  padding: var(--spacing-3xl) var(--spacing-lg);
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+
+.title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-md) 0;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-primary);
+  overflow: hidden;
+}
+
+.converter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-2xl);
+}
+
+.inputGroup {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: stretch;
+}
+
+.input {
+  flex: 1;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  transition: all var(--transition-normal);
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1);
+  background: var(--bg-secondary);
+}
+
+.input:read-only {
+  background: var(--bg-tertiary);
+  cursor: not-allowed;
+}
+
+.select {
+  min-width: 180px;
+}
+
+.swapButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: var(--text-inverse);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-size: var(--font-size-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.swapButton:hover {
+  transform: rotate(180deg) scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.swapButton:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-2xl) var(--spacing-md);
+  }
+
+  .title {
+    font-size: var(--font-size-3xl);
+  }
+
+  .subtitle {
+    font-size: var(--font-size-lg);
+  }
+
+  .converter {
+    padding: var(--spacing-lg);
+  }
+
+  .inputGroup {
+    flex-direction: column;
+  }
+
+  .select {
+    min-width: 100%;
+  }
+
+  .input {
+    font-size: var(--font-size-base);
+  }
+
+  .swapButton {
+    width: 48px;
+    height: 48px;
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* ===== 无障碍 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .swapButton {
+    transition: none !important;
+  }
+
+  .swapButton:hover {
+    transform: none;
+  }
+}
+
+/* ===== 焦点状态 ===== */
+.swapButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+
+.input:focus-visible {
+  outline: none;
+}

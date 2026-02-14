@@ -284,7 +284,7 @@ export async function getComments(contentId: string, params?: {
  */
 export async function getHotTags(limit: number = 10): Promise<{ name: string; count: number }[]> {
   const response = await apiClient.get('/content/tags/hot', { params: { limit } });
-  return response.data.tags;
+  return response.data.tags || [];
 }
 
 /**

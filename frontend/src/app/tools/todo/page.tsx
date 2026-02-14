@@ -46,7 +46,7 @@ const statusLabels = {
 
 export default function TodoPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [stats, setStats] = useState<TodoStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,12 +56,19 @@ export default function TodoPage() {
   const [form] = Form.useForm();
 
   useEffect(() => {
+    // 等待初始化完成
+    if (!isInitialized) {
+      return;
+    }
+    
+    // 初始化完成后，检查认证状态
     if (!isAuthenticated) {
       router.push('/login?redirect=' + encodeURIComponent('/tools/todo'));
       return;
     }
+    
     loadData();
-  }, [isAuthenticated, router, filterStatus]);
+  }, [isAuthenticated, isInitialized, router, filterStatus]);
 
   const loadData = async () => {
     try {

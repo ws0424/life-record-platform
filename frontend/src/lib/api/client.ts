@@ -41,10 +41,13 @@ apiClient.interceptors.response.use(
     
     // 如果业务状态码是 401 或 403，处理未授权
     if (apiResponse.code === 401 || apiResponse.code === 403) {
-      // 不要立即清除 token，让用户有机会重新登录
+      // 创建错误对象，但不立即抛出，让错误拦截器处理
       const error: any = new Error(apiResponse.errMsg || apiResponse.msg || '认证失败，请重新登录');
       error.code = apiResponse.code;
       error.response = response;
+      error.config = response.config;
+      // 标记为业务层 401，触发 token 刷新
+      error.isBusinessAuth = true;
       return Promise.reject(error);
     }
     
@@ -62,8 +65,10 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 如果是 HTTP 401 错误且还没有重试过
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // 如果是 HTTP 401 错误或业务层 401 错误，且还没有重试过
+    const is401Error = error.response?.status === 401 || error.isBusinessAuth;
+    
+    if (is401Error && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -71,10 +76,12 @@ apiClient.interceptors.response.use(
         const refreshToken = localStorage.getItem('refresh_token');
         if (!refreshToken) {
           // 没有 refresh_token，直接退出登录
+          console.log('没有 refresh_token，退出登录');
           handleUnauthorized();
           return Promise.reject(new Error('未授权，请重新登录'));
         }
 
+        console.log('尝试刷新 token...');
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/refresh`,
           { refresh_token: refreshToken }
@@ -82,12 +89,22 @@ apiClient.interceptors.response.use(
 
         const { access_token } = response.data.data;
         localStorage.setItem('access_token', access_token);
+        console.log('Token 刷新成功');
+
+        // 更新 Zustand store 中的 token
+        import('@/lib/store/authStore').then(({ useAuthStore }) => {
+          const state = useAuthStore.getState();
+          if (state.user) {
+            state.setAuth(state.user, access_token);
+          }
+        });
 
         // 重新发送原始请求
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         // 刷新失败，清除 token 并跳转到登录页
+        console.error('Token 刷新失败:', refreshError);
         handleUnauthorized();
         return Promise.reject(refreshError);
       }

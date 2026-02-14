@@ -60,7 +60,7 @@ const categoryMap = [...expenseCategories, ...incomeCategories].reduce((acc, cat
 
 export default function ExpensePage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [stats, setStats] = useState<ExpenseStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +74,12 @@ export default function ExpensePage() {
   const [expenseType, setExpenseType] = useState<'income' | 'expense'>('expense');
 
   useEffect(() => {
+    // 等待初始化完成
+    if (!isInitialized) {
+      return;
+    }
+    
+    // 初始化完成后，检查认证状态
     if (!isAuthenticated) {
       router.push('/login?redirect=' + encodeURIComponent('/tools/expense'));
       return;

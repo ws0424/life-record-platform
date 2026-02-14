@@ -20,7 +20,7 @@ export const uploadImage = async (file: File): Promise<UploadResponse> => {
     },
   });
 
-  return response.data;
+  return response.data.data;
 };
 
 // 上传视频
@@ -40,7 +40,7 @@ export const uploadVideo = async (file: File, onProgress?: (progress: number) =>
     },
   });
 
-  return response.data;
+  return response.data.data;
 };
 
 // 分片上传（大文件）
@@ -62,12 +62,12 @@ export const uploadChunk = async (
     },
   });
 
-  return response.data;
+  return response.data.data;
 };
 
 // 删除媒体文件
 export const deleteMedia = async (id: string) => {
   const response = await apiClient.delete(`/media/${id}`);
-  return response.data;
+  return response.data.data;
 };
 

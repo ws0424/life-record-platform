@@ -169,15 +169,5 @@ const features = [
       </svg>
     ),
   },
-  {
-    title: 'SEO 优化',
-    description: '服务端渲染，搜索引擎友好，让你的内容被更多人发现',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.35-4.35" />
-      </svg>
-    ),
-  },
 ];
 

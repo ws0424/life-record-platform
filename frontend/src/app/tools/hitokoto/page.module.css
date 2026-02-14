@@ -1,0 +1,407 @@
+/* ===== 每日一句页面 ===== */
+/* 配色: Rose (#E11D48) + Pink (#FB7185) */
+/* 风格: 优雅、文艺、简洁 */
+
+.page {
+  min-height: 100vh;
+  padding: var(--spacing-3xl) var(--spacing-lg);
+  background: linear-gradient(135deg, 
+    var(--bg-primary) 0%, 
+    var(--bg-tertiary) 50%, 
+    var(--bg-primary) 100%
+  );
+  transition: background var(--transition-slow);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景装饰 */
+.page::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, 
+    rgba(225, 29, 72, 0.06) 0%, 
+    rgba(251, 113, 133, 0.03) 50%, 
+    transparent 100%
+  );
+  border-radius: 50%;
+  z-index: 0;
+  animation: float 20s ease-in-out infinite;
+}
+
+.page::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, 
+    rgba(251, 113, 133, 0.06) 0%, 
+    rgba(225, 29, 72, 0.03) 50%, 
+    transparent 100%
+  );
+  border-radius: 50%;
+  z-index: 0;
+  animation: float 15s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-30px) rotate(5deg);
+  }
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-3xl);
+}
+
+.title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-md) 0;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
+}
+
+.subtitle {
+  font-size: var(--font-size-xl);
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-3xl);
+  border: 1px solid var(--border-primary);
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* 卡片装饰 */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-3xl) 0;
+}
+
+.loading p {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.quoteContainer {
+  position: relative;
+  padding: var(--spacing-2xl) 0;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.quoteIcon {
+  position: absolute;
+  top: -20px;
+  left: -10px;
+  font-size: 120px;
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.15;
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.quoteIconEnd {
+  position: absolute;
+  bottom: -60px;
+  right: -10px;
+  font-size: 120px;
+  font-weight: var(--font-weight-bold);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.15;
+  line-height: 1;
+  font-family: Georgia, serif;
+}
+
+.quote {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-relaxed);
+  color: var(--text-primary);
+  margin: 0;
+  text-align: center;
+  font-weight: var(--font-weight-medium);
+  position: relative;
+  z-index: 1;
+  padding: 0 var(--spacing-xl);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xl);
+  justify-content: center;
+  padding: var(--spacing-xl) 0;
+  margin-bottom: var(--spacing-xl);
+  border-top: 1px solid var(--border-primary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.metaLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metaValue {
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.actions {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}
+
+.refreshButton,
+.copyButton {
+  min-width: 140px;
+  height: 48px;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.refreshButton:global(.ant-btn-primary) {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-color: transparent;
+}
+
+.refreshButton:global(.ant-btn-primary):hover {
+  background: linear-gradient(135deg, var(--color-primary-hover) 0%, var(--color-secondary-hover) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.copyButton {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+.copyButton:hover {
+  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-3xl) 0;
+}
+
+.error p {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.info {
+  text-align: center;
+  margin-top: var(--spacing-2xl);
+  padding: var(--spacing-lg);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-primary);
+}
+
+.info p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.info a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  transition: color var(--transition-fast);
+}
+
+.info a:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+  .page {
+    padding: var(--spacing-2xl) var(--spacing-md);
+  }
+
+  .page::before,
+  .page::after {
+    display: none;
+  }
+
+  .title {
+    font-size: var(--font-size-3xl);
+  }
+
+  .subtitle {
+    font-size: var(--font-size-lg);
+  }
+
+  .card {
+    padding: var(--spacing-xl);
+    min-height: 350px;
+  }
+
+  .quoteIcon,
+  .quoteIconEnd {
+    font-size: 80px;
+  }
+
+  .quoteIcon {
+    top: -10px;
+    left: -5px;
+  }
+
+  .quoteIconEnd {
+    bottom: -40px;
+    right: -5px;
+  }
+
+  .quote {
+    font-size: var(--font-size-lg);
+    padding: 0 var(--spacing-md);
+  }
+
+  .meta {
+    gap: var(--spacing-md);
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .refreshButton,
+  .copyButton {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* ===== 暗色模式优化 ===== */
+[data-theme="dark"] .page {
+  background: linear-gradient(135deg, 
+    var(--bg-primary) 0%, 
+    var(--bg-secondary) 50%, 
+    var(--bg-primary) 100%
+  );
+}
+
+[data-theme="dark"] .page::before {
+  background: radial-gradient(circle, 
+    rgba(251, 113, 133, 0.1) 0%, 
+    rgba(225, 29, 72, 0.05) 50%, 
+    transparent 100%
+  );
+}
+
+[data-theme="dark"] .page::after {
+  background: radial-gradient(circle, 
+    rgba(225, 29, 72, 0.1) 0%, 
+    rgba(251, 113, 133, 0.05) 50%, 
+    transparent 100%
+  );
+}
+
+[data-theme="dark"] .card {
+  box-shadow: 0 8px 32px rgba(251, 113, 133, 0.15);
+}
+
+/* ===== 无障碍 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .page::before,
+  .page::after,
+  .refreshButton,
+  .copyButton {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .refreshButton:hover,
+  .copyButton:hover {
+    transform: none;
+  }
+}
+
+/* ===== 焦点状态 ===== */
+.refreshButton:focus-visible,
+.copyButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
+}
+

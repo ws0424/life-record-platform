@@ -46,19 +46,26 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, token: null, isAuthenticated: false });
       },
       initialize: () => {
-        // 从 localStorage 和 persist storage 恢复状态
+        // 从 localStorage 恢复状态
         if (typeof window !== 'undefined') {
           const token = localStorage.getItem('access_token');
           const state = get();
           
-          // 如果有 token 且有用户信息，认为已登录
-          if (token && state.user) {
-            set({ token, isAuthenticated: true, isInitialized: true });
-          } else if (token) {
-            // 有 token 但没有用户信息，仍然认为已登录（用户信息可以后续获取）
-            set({ token, isAuthenticated: true, isInitialized: true });
+          // 如果有 token，认为已登录
+          if (token) {
+            // 如果 persist 中有用户信息，使用它
+            if (state.user) {
+              console.log('从 persist 恢复用户信息:', state.user);
+              set({ token, user: state.user, isAuthenticated: true, isInitialized: true });
+            } else {
+              // 没有用户信息，但有 token，仍然认为已登录
+              console.log('有 token 但没有用户信息，设置为已登录');
+              set({ token, isAuthenticated: true, isInitialized: true });
+            }
           } else {
-            set({ isAuthenticated: false, isInitialized: true });
+            // 没有 token，清除状态
+            console.log('没有 token，清除认证状态');
+            set({ user: null, token: null, isAuthenticated: false, isInitialized: true });
           }
         } else {
           set({ isInitialized: true });
@@ -70,7 +77,21 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        isAuthenticated: state.isAuthenticated,
       }),
+      // 添加 onRehydrateStorage 回调
+      onRehydrateStorage: () => (state) => {
+        console.log('Zustand persist 恢复完成:', state);
+        // 恢复完成后，如果有 token，设置为已认证
+        if (state && typeof window !== 'undefined') {
+          const token = localStorage.getItem('access_token');
+          if (token && state.user) {
+            state.isAuthenticated = true;
+            state.token = token;
+            console.log('恢复认证状态成功');
+          }
+        }
+      },
     }
   )
 );

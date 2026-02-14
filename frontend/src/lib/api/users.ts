@@ -21,13 +21,13 @@ export interface UpdateUserData {
 // 获取用户信息
 export const getUser = async (id: string) => {
   const response = await apiClient.get(`/users/${id}`);
-  return response.data;
+  return response.data.data;
 };
 
 // 更新用户信息
 export const updateUser = async (id: string, data: UpdateUserData) => {
   const response = await apiClient.put(`/users/${id}`, data);
-  return response.data;
+  return response.data.data;
 };
 
 // 获取用户的文章
@@ -35,18 +35,18 @@ export const getUserPosts = async (id: string, page = 1, limit = 10) => {
   const response = await apiClient.get(`/users/${id}/posts`, {
     params: { page, limit },
   });
-  return response.data;
+  return response.data.data;
 };
 
 // 关注用户
 export const followUser = async (id: string) => {
   const response = await apiClient.post(`/users/${id}/follow`);
-  return response.data;
+  return response.data.data;
 };
 
 // 取消关注
 export const unfollowUser = async (id: string) => {
   const response = await apiClient.delete(`/users/${id}/follow`);
-  return response.data;
+  return response.data.data;
 };
 

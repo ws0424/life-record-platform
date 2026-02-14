@@ -121,8 +121,11 @@ export default function CreatePage() {
       let imageUrls: string[] = [];
       if (images.length > 0) {
         const { uploadImages } = await import('@/lib/api/upload');
-        imageUrls = await uploadImages(images);
-        message.success(`成功上传 ${imageUrls.length} 张图片`);
+        const uploadResult = await uploadImages(images);
+        imageUrls = Array.isArray(uploadResult) ? uploadResult : [];
+        if (imageUrls.length > 0) {
+          message.success(`成功上传 ${imageUrls.length} 张图片`);
+        }
       }
       
       // 2. 创建内容
@@ -148,9 +151,16 @@ export default function CreatePage() {
       
       message.success('创建成功！');
       
-      // 跳转到对应的列表页
+      // 跳转到对应的列表页（处理单复数映射）
+      const routeMap: Record<ContentType, string> = {
+        daily: '/daily',
+        album: '/albums',
+        travel: '/travel',
+        mood: '/mood',
+      };
+      
       setTimeout(() => {
-        router.push(`/${contentType}`);
+        router.push(routeMap[contentType] || '/');
       }, 1000);
     } catch (err: any) {
       console.error('Create content error:', err);
